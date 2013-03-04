@@ -85,8 +85,8 @@ def init(stateFile):
 #############################################
 class TwitterApp(object):
     
-    def __init__(self, stateFile, DEBUG=False, QUIET=False):
-        self.DEBUG = DEBUG
+    def __init__(self, stateFile, LIVE=True, QUIET=False):
+        self.LIVE = LIVE
         self.QUIET = QUIET
         self.stateFile = stateFile
         self.state = State.readStateFile(stateFile)
@@ -94,7 +94,8 @@ class TwitterApp(object):
 
     def getTweeter(self):
         if self.tweeter is None:
-            self.tweeter = tweeter.Tweeter(DEBUG=self.DEBUG)
+            DEBUG = not self.LIVE
+            self.tweeter = tweeter.Tweeter(DEBUG=DEBUG)
         return self.tweeter
 
     # Perform one run
@@ -113,6 +114,9 @@ class TwitterApp(object):
         newRes = cPickle.load(open(newPickleFile))
         newIncidents = newRes['incidents']
         newEscalators, newElevators = splitIncidentsByUnitType(newIncidents)
+
+        sys.stdout.write('Read %i incidents\n'%len(newIncidents))
+        sys.stdout.flush()
 
         # Tweet this report
         self.reportDifferences(oldEscalators, newEscalators)
@@ -272,13 +276,14 @@ class TwitterApp(object):
     def tweet(self, msg):
         if not self.QUIET:
             sys.stdout.write('Tweeting: %s\n'%msg)
-        self.getTweeter().tweet(msg)
+        if not self.LIVE:
+            self.getTweeter().tweet(msg)
         
 
 def main():
 
     args = parser.parse_args()
-    DEBUG = True if args.test else False
+    LIVE = True if not args.test else False
 
     stateFile = os.path.join(OUTPUT_DIR, 'twitterApp.state')
 
@@ -286,7 +291,7 @@ def main():
         init(stateFile)
 
     # Read the state file
-    app = TwitterApp(stateFile, DEBUG=DEBUG)
+    app = TwitterApp(stateFile, LIVE=LIVE)
     app.tick()
 
 

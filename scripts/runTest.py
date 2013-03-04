@@ -53,7 +53,7 @@ s.inspectedUnits = set(['ONE', 'TWO'])
 s.write(testStateFile)
 
 # Report the differences
-T = twitterApp.TwitterApp(testStateFile, DEBUG=True)
+T = twitterApp.TwitterApp(testStateFile, LIVE=False)
 T.reportDifferences(data1['incidents'], data2['incidents'])
 T.processInspections(data2['incidents'])
 T.state.write('test.after.state')
