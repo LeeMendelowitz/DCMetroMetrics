@@ -85,8 +85,9 @@ def init(stateFile):
 #############################################
 class TwitterApp(object):
     
-    def __init__(self, stateFile, DEBUG=False):
+    def __init__(self, stateFile, DEBUG=False, QUIET=False):
         self.DEBUG = DEBUG
+        self.QUIET = QUIET
         self.stateFile = stateFile
         self.state = State.readStateFile(stateFile)
         self.tweeter = None
@@ -147,7 +148,7 @@ class TwitterApp(object):
             unit = inc.UnitName
             status = inc.SymptomDescription
             msg = 'BROKEN! {station}. Unit #{unit}. Status {status}'.format(unit=unit, station=station, status=status)
-            self.getTweeter().tweet(msg)
+            self.tweet(msg)
             self.state.unitIdToBrokeTime[inc.UnitId] = curTime
 
         # Tweet units that are turned off
@@ -156,7 +157,7 @@ class TwitterApp(object):
             unit = inc.UnitName
             status = inc.SymptomDescription
             msg = 'OFF! {station}. Unit #{unit}. Status {status}'.format(unit=unit, station=station, status=status)
-            self.getTweeter().tweet(msg)
+            self.tweet(msg)
             self.state.unitIdToBrokeTime[inc.UnitId] = curTime
 
         # Tweet units that are fixed
@@ -198,7 +199,7 @@ class TwitterApp(object):
             msg = '{title}! {station}. Unit #{unit}. Status was {status}.'.format(title=msgTitle, unit=unit, station=station, status=status)
             if timeStr:
                 msg += ' %s'%timeStr
-            self.getTweeter().tweet(msg)
+            self.tweet(msg)
 
         # Tweet units that have changed status
         for inc1, inc2 in diffRes['changedIncidents']:
@@ -207,7 +208,7 @@ class TwitterApp(object):
             status1 = inc1.SymptomDescription
             status2 = inc2.SymptomDescription
             msg = 'UPDATED: {station}. Unit #{unit}. Was {status1}, now {status2}'.format(unit=unit, station=station, status1=status1, status2=status2)
-            self.getTweeter().tweet(msg)
+            self.tweet(msg)
 
             # Transition to broken
             if (not inc1.isBroken() and inc2.isBroken()):
@@ -239,7 +240,7 @@ class TwitterApp(object):
             breakStr = makeEscalatorStr(self.state.numBreaks) + (' have broken' if self.state.numBreaks !=1 else ' has broken')
             msg = 'Good morning DC! In the past 24 hours, @wmata has inspected {0}. {1}, and {2}. #WMATA'
             msg = msg.format(inspectionStr, breakStr, fixStr)
-            self.getTweeter().tweet(msg)
+            self.tweet(msg)
 
             self.state.inspectedUnits = set()
             self.state.numBreaks = 0
@@ -266,7 +267,13 @@ class TwitterApp(object):
     def tweetPulse(self):
         timeStrFormat = '%Y_%m_%d_%H_%M_%S'
         timeStr = datetime.now().strftime(timeStrFormat)
-        self.getTweeter().tweet('Running now.... time: %s'%timeStr)
+        self.tweet('Running now.... time: %s'%timeStr)
+
+    def tweet(self, msg):
+        if not self.QUIET:
+            sys.stdout.write('Tweeting: %s\n'%msg)
+        self.getTweeter().tweet(msg)
+        
 
 def main():
 
