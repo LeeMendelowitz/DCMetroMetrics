@@ -13,6 +13,8 @@ if REPO_DIR is None:
 else:
     SCRIPT_DIR = os.path.join(REPO_DIR, 'scripts')
 
+LIVE = True
+
 def main():
 
     logFileName = os.path.join(OUTPUT_DIR, 'runTwitterApp.log')
@@ -24,12 +26,16 @@ def main():
 
     msg = '*'*50 + '\n'
     msg += '%s Running Twitter App\n'%timeStr
+    msg += 'Mode: %s\n'%('LIVE' if LIVE else 'NOT LIVE')
 
     logFile.write(msg)
     logFile.flush()
 
     twitterApp = os.path.join(SCRIPT_DIR, 'twitterApp.py')
-    cmd = ['python', twitterApp, '--test']
+    if LIVE:
+        cmd = ['python', twitterApp]
+    else:
+        cmd = ['python', twitterApp, '--test']
 
     p = subprocess.Popen(cmd, stdout = logFile, stderr = logFile)
     ret = p.wait()
