@@ -7,9 +7,11 @@ OUTPUT_DIR = os.environ.get('OPENSHIFT_DATA_DIR', None)
 if OUTPUT_DIR is None:
     OUTPUT_DIR = os.getcwd()
 
-SCRIPT_DIR = os.environ.get('OPENSHIFT_REPO_DIR', None)
-if SCRIPT_DIR is None:
+REPO_DIR = os.environ.get('OPENSHIFT_REPO_DIR', None)
+if REPO_DIR is None:
     SCRIPT_DIR = os.getcwd()
+else:
+    SCRIPT_DIR = os.path.join(REPO_DIR, 'scripts')
 
 def main():
 
