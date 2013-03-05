@@ -277,7 +277,7 @@ class TwitterApp(object):
     def tweet(self, msg):
         if not self.QUIET:
             sys.stdout.write('Tweeting: %s\n'%msg)
-        if not self.LIVE:
+        if self.LIVE:
             self.getTweeter().tweet(msg)
         
 
