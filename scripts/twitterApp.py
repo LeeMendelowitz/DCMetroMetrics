@@ -244,7 +244,8 @@ class TwitterApp(object):
             breakStr = makeEscalatorStr(self.state.numBreaks) + (' have broken' if self.state.numBreaks !=1 else ' has broken')
             msg = 'Good morning DC! In the past 24 hours, @wmata has inspected {0}. {1}, and {2}. #WMATA'
             msg = msg.format(inspectionStr, breakStr, fixStr)
-            self.tweet(msg)
+            # TO DO: Fix the message. It is too long!
+            #self.tweet(msg)
 
             self.state.inspectedUnits = set()
             self.state.numBreaks = 0
