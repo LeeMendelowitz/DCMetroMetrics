@@ -273,9 +273,12 @@ class TwitterApp(object):
         self.tweet('Running now.... time: %s'%timeStr)
 
     def tweet(self, msg):
+        curTime = datetime.now() # Store this instead of getting it each time?
+        metroOpen = metroIsOpen(curTime)
         if not self.QUIET:
+            sys.stdout.write('MetroOpen: %s\n'%str(metroOpen))
             sys.stdout.write('Tweeting: %s\n'%msg)
-        if self.LIVE:
+        if self.LIVE and metroOpen:
             self.getTweeter().tweet(msg)
         
 
@@ -293,7 +296,22 @@ def main():
     app = TwitterApp(stateFile, LIVE=LIVE)
     app.tick()
 
-
+# Return true if Metro is open at the given time
+def metroIsOpen(dt):
+    curTime = time(hour=dt.hour, minute=dt.minute, second = dt.second)
+    curDay = dt.weekday()
+    if curDay in (0, 1, 2, 3, 4):
+        # Monday thru Thursday, Friday
+        openTime = time(hour=5)
+        isOpen = (curTime >= openTime) 
+    elif curDay in (5,6):
+        # Saturday, Sunday
+        amCloseTime = time(hour=3)
+        amOpenTime = time(hour=7)
+        isOpen = (curTime <= amCloseTime) or (curTime >= amOpenTime)
+    else:
+        raise RuntimeError('Code should not get here!')
+    return isOpen
 
 if __name__ == '__main__':
     main()
