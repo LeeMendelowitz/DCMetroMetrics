@@ -200,9 +200,7 @@ class TwitterApp(object):
                 timeStr = 'Downtime %s.'%(', '.join(timeStr))
 
             msgTitle = 'FIXED' if wasBroken else 'ON'
-            msg = '{title}! {station}. Unit #{unit}. Status was {status}. #wmata'.format(title=msgTitle, unit=unit, station=station, status=status)
-            if timeStr:
-                msg += ' %s'%timeStr
+            msg = '{title}! {station}. Unit #{unit}. Status was {status}. {downtime} #wmata'.format(title=msgTitle, unit=unit, station=station, status=status, downtime=timeStr)
             self.tweet(msg)
 
         # Tweet units that have changed status
