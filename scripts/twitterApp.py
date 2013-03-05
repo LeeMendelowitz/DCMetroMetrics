@@ -211,7 +211,7 @@ class TwitterApp(object):
             unit = inc1.UnitName
             status1 = inc1.SymptomDescription
             status2 = inc2.SymptomDescription
-            msg = 'UPDATED: {station}. Unit #{unit}. Was {status1}, now {status2}'.format(unit=unit, station=station, status1=status1, status2=status2)
+            msg = 'UPDATED: {station}. Unit #{unit}. Was {status1}, now {status2}  #wmata'.format(unit=unit, station=station, status1=status1, status2=status2)
             self.tweet(msg)
 
             # Transition to broken
