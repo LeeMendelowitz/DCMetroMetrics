@@ -151,7 +151,7 @@ class TwitterApp(object):
             station = stations.codeToName[inc.StationCode] 
             unit = inc.UnitName
             status = inc.SymptomDescription
-            msg = 'BROKEN! {station}. Unit #{unit}. Status {status}'.format(unit=unit, station=station, status=status)
+            msg = 'BROKEN! {station}. Unit #{unit}. Status {status} #wmata'.format(unit=unit, station=station, status=status)
             self.tweet(msg)
             self.state.unitIdToBrokeTime[inc.UnitId] = curTime
 
@@ -160,7 +160,7 @@ class TwitterApp(object):
             station = stations.codeToName[inc.StationCode] 
             unit = inc.UnitName
             status = inc.SymptomDescription
-            msg = 'OFF! {station}. Unit #{unit}. Status {status}'.format(unit=unit, station=station, status=status)
+            msg = 'OFF! {station}. Unit #{unit}. Status {status} #wmata'.format(unit=unit, station=station, status=status)
             self.tweet(msg)
             self.state.unitIdToBrokeTime[inc.UnitId] = curTime
 
@@ -200,7 +200,7 @@ class TwitterApp(object):
                 timeStr = 'Downtime %s.'%(', '.join(timeStr))
 
             msgTitle = 'FIXED' if wasBroken else 'ON'
-            msg = '{title}! {station}. Unit #{unit}. Status was {status}.'.format(title=msgTitle, unit=unit, station=station, status=status)
+            msg = '{title}! {station}. Unit #{unit}. Status was {status}. #wmata'.format(title=msgTitle, unit=unit, station=station, status=status)
             if timeStr:
                 msg += ' %s'%timeStr
             self.tweet(msg)
@@ -240,12 +240,12 @@ class TwitterApp(object):
                 return myS
 
             inspectionStr = makeEscalatorStr(numInspections)
-            fixStr = makeEscalatorStr(self.state.numFixes) + (' have been fixed' if self.state.numFixes !=1 else ' has been fixed')
-            breakStr = makeEscalatorStr(self.state.numBreaks) + (' have broken' if self.state.numBreaks !=1 else ' has broken')
-            msg = 'Good morning DC! In the past 24 hours, @wmata has inspected {0}. {1}, and {2}. #WMATA'
+            fixStr = str(self.state.numFixes) + (' have been fixed' if self.state.numFixes !=1 else ' has been fixed')
+            breakStr = str(self.state.numBreaks) + (' have broken' if self.state.numBreaks !=1 else ' has broken')
+            msg = 'Good Morning DC! In the past 24 hours, @wmata has inspected {0}; {1}, and {2}. #WMATA'
             msg = msg.format(inspectionStr, breakStr, fixStr)
             # TO DO: Fix the message. It is too long!
-            #self.tweet(msg)
+            self.tweet(msg)
 
             self.state.inspectedUnits = set()
             self.state.numBreaks = 0
