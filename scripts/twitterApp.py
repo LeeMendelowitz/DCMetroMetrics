@@ -240,7 +240,7 @@ class TwitterApp(object):
             inspectionStr = makeEscalatorStr(numInspections)
             fixStr = str(self.state.numFixes) + (' have been fixed' if self.state.numFixes !=1 else ' has been fixed')
             breakStr = str(self.state.numBreaks) + (' have broken' if self.state.numBreaks !=1 else ' has broken')
-            msg = 'Good Morning DC! In the past 24 hours, @wmata has inspected {0}; {1}, and {2}. #WMATA'
+            msg = 'Good Morning DC! In the past 24 hours, @wmata has inspected {0}; {1}, and {2}. #WMATA #DailyStats'
             msg = msg.format(inspectionStr, breakStr, fixStr)
             # TO DO: Fix the message. It is too long!
             self.tweet(msg)
