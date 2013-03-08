@@ -115,7 +115,10 @@ class TwitterApp(object):
         newIncidents = newRes['incidents']
         newEscalators, newElevators = splitIncidentsByUnitType(newIncidents)
 
+        numOld = len(oldEscalators)
+        numNew = len(newEscalators)
         sys.stdout.write('Read %i incidents\n'%len(newIncidents))
+        sys.stdout.write('Read %i old escalator incidents, %i new escalator incidents\n'%(numOld, numNew))
         sys.stdout.flush()
 
         # Tweet this report
