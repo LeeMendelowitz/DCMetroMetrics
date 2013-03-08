@@ -154,7 +154,7 @@ class TwitterApp(object):
             station = stations.codeToName[inc.StationCode] 
             unit = inc.UnitName
             status = inc.SymptomDescription
-            msg = 'BROKEN! {station}. Unit #{unit}. Status {status} #wmata'.format(unit=unit, station=station, status=status)
+            msg = 'BROKEN! {station}. Unit #{unit}. Status {status}'.format(unit=unit, station=station, status=status)
             self.tweet(msg)
             self.state.unitIdToBrokeTime[inc.UnitId] = curTime
 
@@ -163,7 +163,7 @@ class TwitterApp(object):
             station = stations.codeToName[inc.StationCode] 
             unit = inc.UnitName
             status = inc.SymptomDescription
-            msg = 'OFF! {station}. Unit #{unit}. Status {status} #wmata'.format(unit=unit, station=station, status=status)
+            msg = 'OFF! {station}. Unit #{unit}. Status {status}'.format(unit=unit, station=station, status=status)
             self.tweet(msg)
             self.state.unitIdToBrokeTime[inc.UnitId] = curTime
 
@@ -203,7 +203,7 @@ class TwitterApp(object):
                 timeStr = 'Downtime %s.'%(', '.join(timeStr))
 
             msgTitle = 'FIXED' if wasBroken else 'ON'
-            msg = '{title}! {station}. Unit #{unit}. Status was {status}. {downtime} #wmata'.format(title=msgTitle, unit=unit, station=station, status=status, downtime=timeStr)
+            msg = '{title}! {station}. Unit #{unit}. Status was {status}. {downtime}'.format(title=msgTitle, unit=unit, station=station, status=status, downtime=timeStr)
             self.tweet(msg)
 
         # Tweet units that have changed status
@@ -212,7 +212,7 @@ class TwitterApp(object):
             unit = inc1.UnitName
             status1 = inc1.SymptomDescription
             status2 = inc2.SymptomDescription
-            msg = 'UPDATED: {station}. Unit #{unit}. Was {status1}, now {status2}  #wmata'.format(unit=unit, station=station, status1=status1, status2=status2)
+            msg = 'UPDATED: {station}. Unit #{unit}. Was {status1}, now {status2}'.format(unit=unit, station=station, status1=status1, status2=status2)
             self.tweet(msg)
 
             # Transition to broken
@@ -243,7 +243,7 @@ class TwitterApp(object):
             inspectionStr = makeEscalatorStr(numInspections)
             fixStr = str(self.state.numFixes) + (' have been fixed' if self.state.numFixes !=1 else ' has been fixed')
             breakStr = str(self.state.numBreaks) + (' have broken' if self.state.numBreaks !=1 else ' has broken')
-            msg = 'Good Morning DC! In the past 24 hours, @wmata has inspected {0}; {1}, and {2}. #WMATA #DailyStats'
+            msg = 'Good Morning DC! In the past 24 hours, @wmata has inspected {0}; {1}, and {2}. #wmata #DailyStats'
             msg = msg.format(inspectionStr, breakStr, fixStr)
             # TO DO: Fix the message. It is too long!
             self.tweet(msg)
