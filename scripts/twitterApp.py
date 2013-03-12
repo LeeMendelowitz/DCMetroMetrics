@@ -151,25 +151,25 @@ class TwitterApp(object):
         # Tweet units that are broken
         for inc in broken:
             self.state.numBreaks += 1
-            station = stations.codeToName[inc.StationCode] 
+            station = stations.codeToShortName[inc.StationCode] 
             unit = inc.UnitName
             status = inc.SymptomDescription
-            msg = 'BROKEN! {station}. Unit #{unit}. Status {status}'.format(unit=unit, station=station, status=status)
+            msg = 'BROKEN! #{station}. Unit #{unit}. Status {status}'.format(unit=unit, station=station, status=status)
             self.tweet(msg)
             self.state.unitIdToBrokeTime[inc.UnitId] = curTime
 
         # Tweet units that are turned off
         for inc in turnedOff:
-            station = stations.codeToName[inc.StationCode] 
+            station = stations.codeToShortName[inc.StationCode] 
             unit = inc.UnitName
             status = inc.SymptomDescription
-            msg = 'OFF! {station}. Unit #{unit}. Status {status}'.format(unit=unit, station=station, status=status)
+            msg = 'OFF! #{station}. Unit #{unit}. Status {status}'.format(unit=unit, station=station, status=status)
             self.tweet(msg)
             self.state.unitIdToBrokeTime[inc.UnitId] = curTime
 
         # Tweet units that are fixed
         for inc in diffRes['resolvedIncidents']:
-            station = stations.codeToName[inc.StationCode] 
+            station = stations.codeToShortName[inc.StationCode] 
             unit = inc.UnitName
             status = inc.SymptomDescription
 
@@ -203,16 +203,16 @@ class TwitterApp(object):
                 timeStr = 'Downtime %s.'%(', '.join(timeStr))
 
             msgTitle = 'FIXED' if wasBroken else 'ON'
-            msg = '{title}! {station}. Unit #{unit}. Status was {status}. {downtime}'.format(title=msgTitle, unit=unit, station=station, status=status, downtime=timeStr)
+            msg = '{title}! #{station}. Unit #{unit}. Status was {status}. {downtime}'.format(title=msgTitle, unit=unit, station=station, status=status, downtime=timeStr)
             self.tweet(msg)
 
         # Tweet units that have changed status
         for inc1, inc2 in diffRes['changedIncidents']:
-            station = stations.codeToName[inc1.StationCode] 
+            station = stations.codeToShortName[inc1.StationCode] 
             unit = inc1.UnitName
             status1 = inc1.SymptomDescription
             status2 = inc2.SymptomDescription
-            msg = 'UPDATED: {station}. Unit #{unit}. Was {status1}, now {status2}'.format(unit=unit, station=station, status1=status1, status2=status2)
+            msg = 'UPDATED: #{station}. Unit #{unit}. Was {status1}, now {status2}'.format(unit=unit, station=station, status1=status1, status2=status2)
             self.tweet(msg)
 
             # Transition to broken
