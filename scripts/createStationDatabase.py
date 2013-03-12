@@ -9,6 +9,7 @@
 import request
 import json
 from collections import defaultdict
+import renameStations
 
 def defineVariables():
     Req = request.Requester()
@@ -16,12 +17,14 @@ def defineVariables():
 
     codeToInfo = dict((sInfo['Code'], sInfo) for sInfo in allStations)
     codeToName = dict((sInfo['Code'], sInfo['Name']) for sInfo in allStations)
+    codeToShortName = dict((k,renameStations.shortName(v)) for k,v in codeToName.items())
     allCodes = [s['Code'] for s in allStations]
 
     nameToCodes = defaultdict(list)
     for code,name in codeToName.iteritems():
         nameToCodes[name].append(code)
     nameToCodes = dict(nameToCodes)
+    
 
     lineToCodes = defaultdict(list)
 
@@ -40,6 +43,7 @@ def defineVariables():
     res = { 'allStations' : allStations,
             'codeToInfo' : codeToInfo,
             'codeToName' : codeToName,
+            'codeToShortName' : codeToShortName,
             'nameToCodes': nameToCodes,
             'lineToCodes' : lineToCodes,
             'allCodes' : allCodes }
