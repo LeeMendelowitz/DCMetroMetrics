@@ -8,6 +8,7 @@ from time import sleep
 import stations
 from incident import Incident
 from datetime import datetime, date, time, timedelta
+from tweepy.error import TweepError
 
 import argparse
 
@@ -282,7 +283,10 @@ class TwitterApp(object):
             sys.stdout.write('MetroOpen: %s\n'%str(metroOpen))
             sys.stdout.write('Tweeting: %s\n'%msg)
         if self.LIVE and metroOpen:
-            self.getTweeter().tweet(msg)
+            try:
+                self.getTweeter().tweet(msg)
+            except TweepError as e:
+                sys.stdout.write('CAUGHT EXCEPTION! Reason: %s Message: %s\n'%(e.reason, e.message))
         
 
 def main():
