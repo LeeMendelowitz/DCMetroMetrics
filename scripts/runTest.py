@@ -25,6 +25,8 @@ newIncident = copy.deepcopy(inc[-1])
 newIncident.UnitName = 'MyUnit'
 newIncident.UnitId = 'MyUnitEscalator'
 newIncident.UnitType = 'ESCALATOR'
+brokeUnitId = newIncident.UnitId
+lastBrokeTime = datetime.now() - timedelta(hours=50)
 inc.append(newIncident)
 
 newIncident = copy.deepcopy(newIncident)
@@ -47,6 +49,7 @@ testStateFile = 'test.state'
 s = twitterApp.State(pickle1, pickle2)
 s.nextInspectionReportTime = datetime.combine(date=date.today(), time=time(hour=0))
 s.unitIdToBrokeTime[fixedUnitId] = fixedUnitTime
+s.unitIdToLastFixTime[brokeUnitId] = lastBrokeTime
 s.numBreaks = 10
 s.numFixes = 5
 s.inspectedUnits = set(['ONE', 'TWO'])

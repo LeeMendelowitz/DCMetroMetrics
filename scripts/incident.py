@@ -48,14 +48,19 @@ class Incident(object):
     def isEscalator(self):
         return self.UnitType == 'ESCALATOR'
 
+    def notBroken(self):
+        categories = ('PREV. MAINT. INSPECTION', 'SAFETY INSPECTION', 'SCHEDULED SUPPORT', 'REHAB/MODERNIZATION', 'TURNED OFF/WALKER')
+        return self.SymptomDescription in categories
+
     def isInspection(self):
-        return self.SymptomDescription == 'PREV. MAINT. INSPECTION'
+        categories = ('PREV. MAINT. INSPECTION', 'SAFETY INSPECTION')
+        return self.SymptomDescription in categories
 
     def isWalker(self):
         return self.SymptomDescription == 'TURNED OFF/WALKER'
 
     def isBroken(self):
-        return not (self.isWalker() or self.isInspection())
+        return not (self.notBroken())
 
     def __getitem__(self, k):
         return getattr(self, k)
