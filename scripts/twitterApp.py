@@ -158,7 +158,6 @@ class TwitterApp(object):
             unit = inc.UnitName
             status = inc.SymptomDescription
             self.state.unitIdToBrokeTime[inc.UnitId] = curTime
-            import pdb; pdb.set_trace()
             lastBrokeTime = self.state.unitIdToLastFixTime.get(inc.UnitId, None)
 
             lastBrokeStr = ''
