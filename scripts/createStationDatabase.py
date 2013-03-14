@@ -65,3 +65,6 @@ def run():
     moduleName = 'stations.py'
     varDict = defineVariables()
     writeModule(moduleName, varDict)
+
+if __name__ == '__main__':
+    run()
