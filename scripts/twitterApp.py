@@ -12,6 +12,8 @@ from tweepy.error import TweepError
 
 import argparse
 
+TWEETLEN = 140
+
 OUTPUT_DIR = os.environ.get('OPENSHIFT_DATA_DIR', None)
 if OUTPUT_DIR is None:
     OUTPUT_DIR = os.getcwd()
@@ -37,6 +39,7 @@ class State(object):
             nextInspectionReportTime += timedelta(days=1)
 
         attrList = [ ('unitIdToBrokeTime', {}),
+                     ('unitIdToLastFixTime', {}),
                      ('inspectedUnits', set()),
                      ('numBreaks', 0),
                      ('numFixes', 0),
@@ -140,11 +143,10 @@ class TwitterApp(object):
         diffRes = diffIncidentLists(oldList, newList)
 
         # For new incidents, distinguish between broken and turned off.
-        offCategories = set( ['TURNED OFF/WALKER', 'PREV. MAINT. INSPECTION'] )
         broken = []
         turnedOff = []
         for inc in diffRes['newIncidents']:
-            if inc.SymptomDescription in offCategories:
+            if inc.notBroken():
                 turnedOff.append(inc)
             else:
                 broken.append(inc)
@@ -155,9 +157,29 @@ class TwitterApp(object):
             station = stations.codeToShortName[inc.StationCode] 
             unit = inc.UnitName
             status = inc.SymptomDescription
-            msg = 'BROKEN! #{station}. Unit #{unit}. Status {status}'.format(unit=unit, station=station, status=status)
-            self.tweet(msg)
             self.state.unitIdToBrokeTime[inc.UnitId] = curTime
+            import pdb; pdb.set_trace()
+            lastBrokeTime = self.state.unitIdToLastFixTime.get(inc.UnitId, None)
+
+            lastBrokeStr = ''
+            if lastBrokeTime is not None:
+                secPerDay = 3600*24.0
+                lastBrokeDays = int((curTime - lastBrokeTime).total_seconds()/secPerDay)
+                if lastBrokeDays == 0:
+                    lastBrokeStr = 'Last broke earlier today.'
+                elif lastBrokeDays == 1:
+                    lastBrokeStr = 'Last broke yesterday.'
+                elif lastBrokeDays > 1:
+                    lastBrokeStr = 'Last broke %i days ago.'%lastBrokeDays
+
+            msg = 'BROKEN! #{station}. Unit #{unit}. Status {status}'.format(unit=unit, station=station, status=status)
+
+            # Append last broke string if there is space
+            msg2 = '%s. %s'%(msg, lastBrokeStr)
+            if len(msg2) <= TWEETLEN:
+                msg = msg2
+
+            self.tweet(msg)
 
         # Tweet units that are turned off
         for inc in turnedOff:
@@ -174,34 +196,19 @@ class TwitterApp(object):
             unit = inc.UnitName
             status = inc.SymptomDescription
 
-            # Only count this escalator as a fix if it wasn't a Walker or an Inspection
+            # Distinguish between units that were broken vs. units that aren't
             wasBroken = inc.isBroken()
+            lastBrokeTime = None
             if wasBroken:
                 self.state.numFixes += 1
+                self.state.unitIdToLastFixTime[inc.UnitId] = curTime
 
-            # Compute the downtime
-            timeStr = ''
-            #secondsOutOfService = int((curTime - inc.TimeOutOfService).total_seconds())
             secondsOutOfService = 0
             if inc.UnitId in self.state.unitIdToBrokeTime:
                 secondsOutOfService = int((curTime - self.state.unitIdToBrokeTime[inc.UnitId]).total_seconds())
                 del self.state.unitIdToBrokeTime[inc.UnitId]
-
-            if secondsOutOfService > 0:
-                days = int(secondsOutOfService / (60*60*24))
-                rem = int(secondsOutOfService - (60*60*24)*days)
-                hr = int(rem / (60*60))
-                rem = int(rem - hr*(60*60))
-                mn = int(rem/60)
-                timeStr = []
-                if days > 0:
-                    sfx = 'days' if days > 1 else 'day'
-                    timeStr.append('%i %s'%(days, sfx))
-                if hr > 0:
-                    timeStr.append('%i hrs'%hr)
-                if mn > 0:
-                    timeStr.append('%i min'%mn)
-                timeStr = 'Downtime %s.'%(', '.join(timeStr))
+            timeStr = secondsToTimeStr(secondsOutOfService)
+            timeStr = 'Downtime %s.'%(timeStr)
 
             msgTitle = 'FIXED' if wasBroken else 'ON'
             msg = '{title}! #{station}. Unit #{unit}. Status was {status}. {downtime}'.format(title=msgTitle, unit=unit, station=station, status=status, downtime=timeStr)
@@ -209,6 +216,7 @@ class TwitterApp(object):
 
         # Tweet units that have changed status
         for inc1, inc2 in diffRes['changedIncidents']:
+            assert(inc1.UnitId == inc2.UnitId)
             station = stations.codeToShortName[inc1.StationCode] 
             unit = inc1.UnitName
             status1 = inc1.SymptomDescription
@@ -220,6 +228,7 @@ class TwitterApp(object):
             if (not inc1.isBroken() and inc2.isBroken()):
                 self.state.numBreaks += 1
             elif (not inc2.isBroken() and inc1.isBroken()):
+                self.state.unitIdToLastFixTime[inc1.UnitId] = curTime
                 self.state.numFixes += 1
 
         # Clean up any units which are not in the latest incident list but are in the unitIdToBrokeTime dict
@@ -319,6 +328,29 @@ def metroIsOpen(dt):
     else:
         raise RuntimeError('Code should not get here!')
     return isOpen
+
+
+# Convert seconds to a time string
+# example: 160 minutes = "2 hrs, 40 min."
+def secondsToTimeStr(sec):
+    timeStr = ''
+    if sec > 60:
+        days = int(sec / (60*60*24))
+        rem = int(sec - (60*60*24)*days)
+        hr = int(rem / (60*60))
+        rem = int(rem - hr*(60*60))
+        mn = int(rem/60)
+        timeStr = []
+        if days > 0:
+            sfx = 'days' if days > 1 else 'day'
+            timeStr.append('%i %s'%(days, sfx))
+        if hr > 0:
+            sfx = 'hrs' if hr > 1 else 'hr'
+            timeStr.append('%i %s'%(hr,sfx))
+        if mn > 0:
+            timeStr.append('%i min'%mn)
+        timeStr = ', '.join(timeStr)
+    return timeStr
 
 if __name__ == '__main__':
     main()
