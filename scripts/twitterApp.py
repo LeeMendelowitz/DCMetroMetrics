@@ -110,12 +110,14 @@ class TwitterApp(object):
         # Read the pickle file created during the last run
         oldPickleFile = self.state.pickle_file_new
         oldRes = cPickle.load(open(oldPickleFile))
+        lastTime = oldRes['requestTime']
         oldIncidents = oldRes['incidents']
         oldEscalators, oldElevators = splitIncidentsByUnitType(oldIncidents)
 
         # Generate a new pickle file for this run
         newPickleFile = self.request()
         newRes = cPickle.load(open(newPickleFile))
+        thisTime = newRes['requestTime']
         newIncidents = newRes['incidents']
         newEscalators, newElevators = splitIncidentsByUnitType(newIncidents)
 
@@ -125,9 +127,20 @@ class TwitterApp(object):
         sys.stdout.write('Read %i old escalator incidents, %i new escalator incidents\n'%(numOld, numNew))
         sys.stdout.flush()
 
+        # Temporarily disable tweeting if the difference between consecutive updates is too long
+        disabled = False
+        timeDiff = (thisTime - lastTime).total_seconds()
+        if self.LIVE and timeDiff > 5*60:
+            disabled = True
+            self.LIVE = False
+        
         # Tweet this report
-        self.reportDifferences(oldEscalators, newEscalators)
+        self.reportDifferences(oldEscalators, newEscalators, thisTime)
         self.processInspections(newEscalators)
+
+        # Renable tweeting
+        if disabled:
+            self.LIVE = True
 
         # Update the state
         self.state.pickle_file_old = oldPickleFile
@@ -135,9 +148,7 @@ class TwitterApp(object):
         self.state.write(self.stateFile)
 
     # Make tweets and update the state's unitIdToBrokeTime
-    def reportDifferences(self, oldList, newList):
-
-        curTime = datetime.now()
+    def reportDifferences(self, oldList, newList, curTime):
 
         # Perform escalator diff
         diffRes = diffIncidentLists(oldList, newList)
@@ -186,7 +197,7 @@ class TwitterApp(object):
             unit = inc.UnitName
             status = inc.SymptomDescription
             msg = 'OFF! #{station}. Unit #{unit}. Status {status}'.format(unit=unit, station=station, status=status)
-            self.tweet(msg)
+            #self.tweet(msg) # Don't tweet if unit was turned off
             self.state.unitIdToBrokeTime[inc.UnitId] = curTime
 
         # Tweet units that are fixed
@@ -211,7 +222,9 @@ class TwitterApp(object):
 
             msgTitle = 'FIXED' if wasBroken else 'ON'
             msg = '{title}! #{station}. Unit #{unit}. Status was {status}. {downtime}'.format(title=msgTitle, unit=unit, station=station, status=status, downtime=timeStr)
-            self.tweet(msg)
+            # Only tweet if the unit was broken and is now fixed.
+            if wasBroken:
+                self.tweet(msg)
 
         # Tweet units that have changed status
         for inc1, inc2 in diffRes['changedIncidents']:
@@ -221,7 +234,9 @@ class TwitterApp(object):
             status1 = inc1.SymptomDescription
             status2 = inc2.SymptomDescription
             msg = 'UPDATED: #{station}. Unit #{unit}. Was {status1}, now {status2}'.format(unit=unit, station=station, status1=status1, status2=status2)
-            self.tweet(msg)
+            # Only tweet if one of the states is a broken state:
+            if inc1.isBroken() or inc2.isBroken():
+                self.tweet(msg)
 
             # Transition to broken
             if (not inc1.isBroken() and inc2.isBroken()):
@@ -254,7 +269,6 @@ class TwitterApp(object):
             breakStr = str(self.state.numBreaks) + (' have broken' if self.state.numBreaks !=1 else ' has broken')
             msg = 'Good Morning DC! In the past 24 hours, @wmata has inspected {0}; {1}, and {2}. #wmata #DailyStats'
             msg = msg.format(inspectionStr, breakStr, fixStr)
-            # TO DO: Fix the message. It is too long!
             self.tweet(msg)
 
             self.state.inspectedUnits = set()
@@ -289,6 +303,7 @@ class TwitterApp(object):
         metroOpen = metroIsOpen(curTime)
         if not self.QUIET:
             sys.stdout.write('MetroOpen: %s\n'%str(metroOpen))
+            sys.stdout.write('LIVE: %s\n'%str(self.LIVE))
             sys.stdout.write('Tweeting: %s\n'%msg)
         if self.LIVE and metroOpen:
             try:
