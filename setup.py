@@ -1,5 +1,8 @@
 from setuptools import setup
 
+# Define DUMMY to force git push
+DUMMY = 1
+
 setup(name='YourAppName', version='1.0',
       description='OpenShift Python-2.7 Community Cartridge based application',
       author='Your Name', author_email='ramr@example.org',
