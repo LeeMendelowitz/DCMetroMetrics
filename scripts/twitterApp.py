@@ -14,6 +14,11 @@ import argparse
 
 TWEETLEN = 140
 
+# If the twitter app has not run in the last 1.5 hours,
+# silence tweeting. This is to avoid a flurry of tweets all
+# at once.
+SILENCE_AFTER_GAP = 1.5*3600
+
 OUTPUT_DIR = os.environ.get('OPENSHIFT_DATA_DIR', None)
 if OUTPUT_DIR is None:
     OUTPUT_DIR = os.getcwd()
@@ -130,7 +135,9 @@ class TwitterApp(object):
         # Temporarily disable tweeting if the difference between consecutive updates is too long
         disabled = False
         timeDiff = (thisTime - lastTime).total_seconds()
-        if self.LIVE and timeDiff > 5*60:
+        if timeDiff > 60*2.0:
+            sys.stdout.write('DELAY WARNING! The twitter app has not run in %.2f seconds!\n'%timeDiff)
+        if self.LIVE and timeDiff > SILENCE_AFTER_GAP:
             disabled = True
             self.LIVE = False
         
