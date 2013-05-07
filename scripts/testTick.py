@@ -10,3 +10,4 @@ while True:
     fout.write('Here!\n')
     sys.stderr.write('Tick!\n')
     time.sleep(2)
+    fout.close()
