@@ -402,7 +402,7 @@ def secondsToTimeStrCompact(sec):
     rem = sec - hrs*3600
     minutes = int(rem/60.0)
     rem = rem - 60*minutes
-    timeStr = '{hr:0>2d}:{min:0>2d}:{sec:0>2d}'.format(hr=hrs,min=minutes,sec=rem)
+    timeStr = '{hr:0>2d}:{min:0>2d}'.format(hr=hrs,min=minutes)
     return timeStr
 
 if __name__ == '__main__':
