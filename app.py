@@ -23,12 +23,14 @@ except IOError:
 
 def run_gevent_server(app, ip, port=8080):
    from gevent.pywsgi import WSGIServer
-   WSGIServer((ip, port), app).start()
+   w = WSGIServer((ip, port), app)
+   return w
 
 
 def run_simple_httpd_server(app, ip, port=8080):
    from wsgiref.simple_server import make_server
-   make_server(ip, port, app).start()
+   w = make_server(ip, port, app)
+   return w
 
 
 #
@@ -50,11 +52,13 @@ if __name__ == '__main__':
    print 'Starting WSGIServer on %s:%d ... ' % (ip, port)
 
    # Note: we run the servers asynchronously
+   w = None
    try:
-      run_gevent_server(zapp.application, ip, port)
+      w = run_gevent_server(zapp.application, ip, port)
    except:
       print 'gevent probably not installed - using default simple server ...'
-      run_simple_httpd_server(zapp.application, ip, port)
+      w = run_simple_httpd_server(zapp.application, ip, port)
+   w.start()
 
    # Run the Twitter App forever. Note: This blocks, since it's an infinite loop!
    runTwitterApp.runLoop()
