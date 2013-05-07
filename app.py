@@ -20,8 +20,6 @@ try:
 except IOError:
    pass
 
-import pdb; pdb.set_trace()
-
 def run_gevent_server(app, ip, port=8080):
    from gevent.pywsgi import WSGIServer
    w = WSGIServer((ip, port), app)
