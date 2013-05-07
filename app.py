@@ -61,4 +61,8 @@ if __name__ == '__main__':
    w.start()
 
    # Run the Twitter App forever. Note: This blocks, since it's an infinite loop!
-   runTwitterApp.runLoop()
+   twitterApp = runTwitterApp.TwitterApp()
+   twitterApp.join()
+
+   # We should not arrive here, because the twitter app should run forever
+   w.stop()
