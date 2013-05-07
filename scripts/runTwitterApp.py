@@ -2,6 +2,7 @@ import os
 import sys
 import subprocess
 from datetime import datetime
+import time
 
 OUTPUT_DIR = os.environ.get('OPENSHIFT_DATA_DIR', None)
 if OUTPUT_DIR is None:
@@ -13,9 +14,10 @@ if REPO_DIR is None:
 else:
     SCRIPT_DIR = os.path.join(REPO_DIR, 'scripts')
 
+SLEEP = 5
 LIVE = True
 
-def main():
+def runOnce():
 
     logFileName = os.path.join(OUTPUT_DIR, 'runTwitterApp.log')
     logFile = open(logFileName, 'a')
@@ -43,6 +45,10 @@ def main():
     logFile.flush()
     logFile.write('App exited with return code: %i\n\n'%ret)
 
+def runLoop():
+    while True:
+        runOnce()
+        time.sleep(SLEEP)
 
 if __name__ == '__main__':
-    main()
+    runLoop()
