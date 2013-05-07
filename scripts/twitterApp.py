@@ -131,11 +131,11 @@ class TwitterApp(object):
         thisTime = newRes['requestTime']
         newIncidents = newRes['incidents']
 
-        # Compute the escalator availability this tick
-        self.numIncidents = len(newIncidents)
-        self.availability = 1.0 - self.numIncidents/float(NUM_ESCALATORS)
-
         newEscalators, newElevators = splitIncidentsByUnitType(newIncidents)
+
+        # Compute the escalator availability this tick
+        self.numIncidents = len(newEscalators)
+        self.availability = 1.0 - self.numIncidents/float(NUM_ESCALATORS)
 
         numOld = len(oldEscalators)
         numNew = len(newEscalators)
