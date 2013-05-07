@@ -6,7 +6,12 @@ import subprocess
 
 PYCART_DIR = ''.join(['python-', '.'.join(map(str, sys.version_info[:2]))])
 HOME = os.environ.get('OPENSHIFT_HOMEDIR', os.getcwd())
-SCRIPTS = os.path.join(HOME, 'scripts')
+
+REPO_DIR = os.environ.get('OPENSHIFT_REPO_DIR', None)
+if REPO_DIR is None:
+    SCRIPT_DIR = os.getcwd()
+else:
+    SCRIPT_DIR = os.path.join(REPO_DIR, 'scripts')
 
 try:
    zvirtenv = os.path.join(os.environ['OPENSHIFT_HOMEDIR'], PYCART_DIR,
@@ -44,7 +49,7 @@ if __name__ == '__main__':
    print 'Starting WSGIServer on %s:%d ... ' % (ip, port)
 
    # Launch the MetroEscalators background process
-   cmd = ['python', os.path.join(SCRIPTS, 'testTick.py')]
+   cmd = ['python', os.path.join(SCRIPT_DIR, 'testTick.py')]
    p = subprocess.Popen(cmd)
 
    try:
