@@ -49,7 +49,7 @@ if __name__ == '__main__':
    print 'Starting WSGIServer on %s:%d ... ' % (ip, port)
 
    # Launch the MetroEscalators background process
-   cmd = ['python', os.path.join(SCRIPT_DIR, 'testTick.py')]
+   cmd = ['python', os.path.join(SCRIPT_DIR, 'runTwitterApp.py')]
    p = subprocess.Popen(cmd)
 
    try:
