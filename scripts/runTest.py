@@ -57,7 +57,7 @@ s.write(testStateFile)
 
 # Report the differences
 T = twitterApp.TwitterApp(testStateFile, LIVE=False)
-T.reportDifferences(data1['incidents'], data2['incidents'])
+T.reportDifferences(data1['incidents'], data2['incidents'], datetime.now())
 T.processInspections(data2['incidents'])
 T.state.write('test.after.state')
 

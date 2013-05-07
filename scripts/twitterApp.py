@@ -14,10 +14,14 @@ import argparse
 
 TWEETLEN = 140
 
+
 # If the twitter app has not run in the last 1.5 hours,
 # silence tweeting. This is to avoid a flurry of tweets all
 # at once.
 SILENCE_AFTER_GAP = 1.5*3600
+
+# Number of escalators in the system
+NUM_ESCALATORS = 588
 
 OUTPUT_DIR = os.environ.get('OPENSHIFT_DATA_DIR', None)
 if OUTPUT_DIR is None:
@@ -99,6 +103,8 @@ class TwitterApp(object):
         self.QUIET = QUIET
         self.stateFile = stateFile
         self.state = State.readStateFile(stateFile)
+        self.numIncidents = 0
+        self.availability = 1.0
         self.tweeter = None
 
     def getTweeter(self):
@@ -124,6 +130,11 @@ class TwitterApp(object):
         newRes = cPickle.load(open(newPickleFile))
         thisTime = newRes['requestTime']
         newIncidents = newRes['incidents']
+
+        # Compute the escalator availability this tick
+        self.numIncidents = len(newIncidents)
+        self.availability = self.numIncidents/float(NUM_ESCALATORS)
+
         newEscalators, newElevators = splitIncidentsByUnitType(newIncidents)
 
         numOld = len(oldEscalators)
@@ -169,6 +180,9 @@ class TwitterApp(object):
             else:
                 broken.append(inc)
 
+        # Make availability string.
+        availabilityStr = '%5.2f%% work.'%(100*self.availability)
+
         # Tweet units that are broken
         for inc in broken:
             self.state.numBreaks += 1
@@ -183,16 +197,19 @@ class TwitterApp(object):
                 secPerDay = 3600*24.0
                 lastBrokeDays = int((curTime - lastBrokeTime).total_seconds()/secPerDay)
                 if lastBrokeDays == 0:
-                    lastBrokeStr = 'Last broke earlier today.'
+                    lastBrokeStr = 'Last broke earlier today'
                 elif lastBrokeDays == 1:
-                    lastBrokeStr = 'Last broke yesterday.'
+                    lastBrokeStr = 'Last broke yesterday'
                 elif lastBrokeDays > 1:
-                    lastBrokeStr = 'Last broke %i days ago.'%lastBrokeDays
+                    lastBrokeStr = 'Last broke %i days ago'%lastBrokeDays
 
             msg = 'BROKEN! #{station}. Unit #{unit}. Status {status}'.format(unit=unit, station=station, status=status)
 
             # Append last broke string if there is space
             msg2 = '%s. %s'%(msg, lastBrokeStr)
+            if len(msg2) <= TWEETLEN:
+                msg = msg2
+            msg2 = '%s. %s'%(msg, availabilityStr)
             if len(msg2) <= TWEETLEN:
                 msg = msg2
 
@@ -224,11 +241,17 @@ class TwitterApp(object):
             if inc.UnitId in self.state.unitIdToBrokeTime:
                 secondsOutOfService = int((curTime - self.state.unitIdToBrokeTime[inc.UnitId]).total_seconds())
                 del self.state.unitIdToBrokeTime[inc.UnitId]
-            timeStr = secondsToTimeStr(secondsOutOfService)
-            timeStr = 'Downtime %s.'%(timeStr)
+            timeStr = secondsToTimeStrCompact(secondsOutOfService)
+            timeStr = 'Downtime %s'%(timeStr)
 
             msgTitle = 'FIXED' if wasBroken else 'ON'
             msg = '{title}! #{station}. Unit #{unit}. Status was {status}. {downtime}'.format(title=msgTitle, unit=unit, station=station, status=status, downtime=timeStr)
+
+            # Add availabilty string
+            msg2 = '%s. %s'%(msg, availabilityStr)
+            if len(msg2) <= TWEETLEN:
+                msg = msg2
+
             # Only tweet if the unit was broken and is now fixed.
             if wasBroken:
                 self.tweet(msg)
@@ -371,6 +394,15 @@ def secondsToTimeStr(sec):
         if mn > 0:
             timeStr.append('%i min'%mn)
         timeStr = ', '.join(timeStr)
+    return timeStr
+
+def secondsToTimeStrCompact(sec):
+    timeStr = ''
+    hrs = int(sec/3600.0)
+    rem = sec - hrs*3600
+    minutes = int(rem/60.0)
+    rem = rem - 60*minutes
+    timeStr = '{hr:0>2d}:{min:0>2d}:{sec:0>2d}'.format(hr=hrs,min=minutes,sec=rem)
     return timeStr
 
 if __name__ == '__main__':
