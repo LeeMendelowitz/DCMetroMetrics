@@ -56,7 +56,7 @@ def runLoop():
 ##########################################
 # Run the Twitter App as a Greenlet. This allows
 # us to run the app concurrently with the WSGI server.
-def TwitterApp(Greenlet)
+class TwitterApp(Greenlet):
 
     def __init__(self):
         Greenlet.__init__(self)
