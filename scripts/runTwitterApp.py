@@ -14,7 +14,7 @@ if REPO_DIR is None:
 else:
     SCRIPT_DIR = os.path.join(REPO_DIR, 'scripts')
 
-SLEEP = 5
+SLEEP = 30
 LIVE = True
 
 def runOnce():
