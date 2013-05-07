@@ -133,7 +133,7 @@ class TwitterApp(object):
 
         # Compute the escalator availability this tick
         self.numIncidents = len(newIncidents)
-        self.availability = self.numIncidents/float(NUM_ESCALATORS)
+        self.availability = 1.0 - self.numIncidents/float(NUM_ESCALATORS)
 
         newEscalators, newElevators = splitIncidentsByUnitType(newIncidents)
 
