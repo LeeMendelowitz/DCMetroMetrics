@@ -20,6 +20,7 @@ try:
 except IOError:
    pass
 
+import pdb; pdb.set_trace()
 
 def run_gevent_server(app, ip, port=8080):
    from gevent.pywsgi import WSGIServer
@@ -32,8 +33,10 @@ def run_simple_httpd_server(app, ip, port=8080):
    w = make_server(ip, port, app)
    return w
 
-sys.path.append(SCRIPT_DIR)
 import gevent
+from gevent import Greenlet
+
+sys.path.append(SCRIPT_DIR)
 import runTwitterApp
 
 ##########################################
