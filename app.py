@@ -2,8 +2,11 @@
 import imp
 import os
 import sys
+import subprocess
 
 PYCART_DIR = ''.join(['python-', '.'.join(map(str, sys.version_info[:2]))])
+HOME = os.environ.get('OPENSHIFT_HOMEDIR', os.getcwd())
+SCRIPTS = os.path.join(HOME, 'scripts')
 
 try:
    zvirtenv = os.path.join(os.environ['OPENSHIFT_HOMEDIR'], PYCART_DIR,
@@ -39,9 +42,13 @@ if __name__ == '__main__':
 
    #  Use gevent if we have it, otherwise run a simple httpd server.
    print 'Starting WSGIServer on %s:%d ... ' % (ip, port)
+
+   # Launch the MetroEscalators background process
+   cmd = ['python', os.path.join(SCRIPTS, 'testTick.py')]
+   p = subprocess.Popen(cmd)
+
    try:
       run_gevent_server(zapp.application, ip, port)
    except:
       print 'gevent probably not installed - using default simple server ...'
       run_simple_httpd_server(zapp.application, ip, port)
-
