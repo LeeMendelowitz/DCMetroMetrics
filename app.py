@@ -32,13 +32,28 @@ def run_simple_httpd_server(app, ip, port=8080):
    w = make_server(ip, port, app)
    return w
 
+sys.path.append(SCRIPT_DIR)
+import gevent
+import runTwitterApp
+
+##########################################
+# Run the Twitter App as a Greenlet. This allows
+# us to run the app concurrently with the WSGI server.
+class TwitterApp(Greenlet):
+
+    def __init__(self):
+        Greenlet.__init__(self)
+
+    def _run(self):
+        while True:
+            runTwitterApp.runOnce()
+            gevent.sleep(runTwitterApp.SLEEP)
+
 
 #
 # IMPORTANT: Put any additional includes below this line.  If placed above this
 # line, it's possible required libraries won't be in your searchable path
 # 
-sys.path.append(SCRIPT_DIR)
-import runTwitterApp
 
 #
 #  main():
@@ -61,7 +76,8 @@ if __name__ == '__main__':
    w.start()
 
    # Run the Twitter App forever. Note: This blocks, since it's an infinite loop!
-   twitterApp = runTwitterApp.TwitterApp()
+   twitterApp = TwitterApp()
+   twitterApp.start()
    twitterApp.join()
 
    # We should not arrive here, because the twitter app should run forever
