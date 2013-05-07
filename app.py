@@ -23,19 +23,20 @@ except IOError:
 
 def run_gevent_server(app, ip, port=8080):
    from gevent.pywsgi import WSGIServer
-   WSGIServer((ip, port), app).serve_forever()
+   WSGIServer((ip, port), app).start()
 
 
 def run_simple_httpd_server(app, ip, port=8080):
    from wsgiref.simple_server import make_server
-   make_server(ip, port, app).serve_forever()
+   make_server(ip, port, app).start()
 
 
 #
 # IMPORTANT: Put any additional includes below this line.  If placed above this
 # line, it's possible required libraries won't be in your searchable path
 # 
-
+sys.path.append(SCRIPT_DIR)
+import runTwitterApp
 
 #
 #  main():
@@ -48,12 +49,12 @@ if __name__ == '__main__':
    #  Use gevent if we have it, otherwise run a simple httpd server.
    print 'Starting WSGIServer on %s:%d ... ' % (ip, port)
 
-   # Launch the MetroEscalators background process
-   cmd = ['python', os.path.join(SCRIPT_DIR, 'runTwitterApp.py')]
-   p = subprocess.Popen(cmd)
-
+   # Note: we run the servers asynchronously
    try:
       run_gevent_server(zapp.application, ip, port)
    except:
       print 'gevent probably not installed - using default simple server ...'
       run_simple_httpd_server(zapp.application, ip, port)
+
+   # Run the Twitter App forever. Note: This blocks, since it's an infinite loop!
+   runTwitterApp.runLoop()
