@@ -4,9 +4,6 @@ import subprocess
 from datetime import datetime
 import time
 
-import gevent
-from gevent import Greenlet
-
 OUTPUT_DIR = os.environ.get('OPENSHIFT_DATA_DIR', None)
 if OUTPUT_DIR is None:
     OUTPUT_DIR = os.getcwd()
@@ -53,18 +50,6 @@ def runLoop():
         runOnce()
         time.sleep(SLEEP)
 
-##########################################
-# Run the Twitter App as a Greenlet. This allows
-# us to run the app concurrently with the WSGI server.
-class TwitterApp(Greenlet):
-
-    def __init__(self):
-        Greenlet.__init__(self)
-
-    def _run(self):
-        while True:
-            runOnce()
-            gevent.sleep(SLEEP)
 
 if __name__ == '__main__':
     runLoop()
