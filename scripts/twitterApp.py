@@ -52,6 +52,7 @@ class State(object):
                      ('inspectedUnits', set()),
                      ('numBreaks', 0),
                      ('numFixes', 0),
+                     ('availabilities', []),
                      ('nextInspectionReportTime', nextInspectionReportTime)]
 
         # Set attributes to their default values
@@ -137,6 +138,10 @@ class TwitterApp(object):
         self.numIncidents = len(newEscalators)
         self.availability = 1.0 - self.numIncidents/float(NUM_ESCALATORS)
 
+        if metroIsOpen(thisTime):
+            self.state.availabilities.append(self.availability)
+
+
         numOld = len(oldEscalators)
         numNew = len(newEscalators)
         sys.stdout.write('Read %i incidents\n'%len(newIncidents))
@@ -181,7 +186,7 @@ class TwitterApp(object):
                 broken.append(inc)
 
         # Make availability string.
-        availabilityStr = '%5.2f%% work.'%(100*self.availability)
+        availabilityStr = '%5.1f%% work.'%(100*self.availability)
 
         # Tweet units that are broken
         for inc in broken:
@@ -291,19 +296,27 @@ class TwitterApp(object):
             numInspections = len(self.state.inspectedUnits)
 
             def makeEscalatorStr(num):
-                myS = '%i escalators'%num if num != 1 else '1 escalator'
+                myS = '%i esc.'%num if num != 1 else '1 esc.'
                 return myS
+
+            def computeAvailability():
+                a = self.state.availabilities
+                return 100*float(sum(a))/len(a) if a else 100.0
 
             inspectionStr = makeEscalatorStr(numInspections)
             fixStr = str(self.state.numFixes) + (' have been fixed' if self.state.numFixes !=1 else ' has been fixed')
             breakStr = str(self.state.numBreaks) + (' have broken' if self.state.numBreaks !=1 else ' has broken')
-            msg = 'Good Morning DC! In the past 24 hours, @wmata has inspected {0}; {1}, and {2}. #wmata #DailyStats'
-            msg = msg.format(inspectionStr, breakStr, fixStr)
+
+            avgAvail = computeAvailability()
+
+            msg = 'Good Morning DC! #WMATA Escalator #DailyStats Inspected={0}, Broken={1}, Fixed={2}, Availability={3:5.1f}%'
+            msg = msg.format(numInspections, self.state.numBreaks, self.state.numFixes, avgAvail)
             self.tweet(msg)
 
             self.state.inspectedUnits = set()
             self.state.numBreaks = 0
             self.state.numFixes = 0
+            self.state.availabilities = []
 
             # Set the next inspection report time to be 8 AM of the next day
             tomorrow = date.today() + timedelta(days=1)
