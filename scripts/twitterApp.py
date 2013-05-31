@@ -217,7 +217,7 @@ class TwitterApp(object):
             msg2 = '%s. %s'%(msg, availabilityStr)
             if len(msg2) <= TWEETLEN:
                 msg = msg2
-            msg2 = '%s. #wmatagoodwill'%(msg)
+            msg2 = '%s #wmatagoodwill'%(msg)
             if len(msg2) <= TWEETLEN:
                 msg = msg2
 
