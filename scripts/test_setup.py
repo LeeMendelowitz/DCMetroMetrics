@@ -45,17 +45,17 @@ def setupMongoDB():
     dbpath = os.environ["OPENSHIFT_MONGODB_DB_LOG_DIR"]
 
     # Run mongodb
-    cmd = ['mongod', '--dbpath', dbpath, '--journal']
-    p_mongod = subprocess.Popen(cmd)
+    cmd = ['mongod', '--dbpath', dbpath]
+    devnull = open(os.devnull, 'w')
+    p_mongod = subprocess.Popen(cmd, stdout=devnull, stderr=devnull)
 
-    serr("RUNING MONGOD. Sleeping...")
+    serr("Setting Up MongoDB. Sleeping...")
     time.sleep(5)
-    serr("DONE SLEEP\n")
+    serr("DONE!\n")
 
     # Add the user to the admin db
     try:
-        serr('ADDING NEW ADMIN USER\n')
-        sys.stderr.flush()
+        #serr('ADDING NEW ADMIN USER\n')
         host = os.environ["OPENSHIFT_MONGODB_DB_HOST"]
         port = int(os.environ["OPENSHIFT_MONGODB_DB_PORT"])
         user = os.environ["OPENSHIFT_MONGODB_DB_USERNAME"]
@@ -63,22 +63,18 @@ def setupMongoDB():
         client = MongoClient(host, port, j=True)
         db = client.admin
         res = db.add_user(user, password, roles=['userAdminAnyDatabase', 'readWriteAnyDatabase','dbAdminAnyDatabase'])
-        serr('DONE ADDING NEW ADMIN USER. Returned: %s\n'%(str(res)))
+        #serr('DONE ADDING NEW ADMIN USER. Returned: %s\n'%(str(res)))
 #        db = client.dummy
 #        res = db.add_user(user, password, roles=['readWrite', 'dbAdmin', 'userAdmin'])
         db = client.testDB
         db.dummy.remove()
         db.dummy.insert({'firstName':'Lee', 'lastName':'Mendelowitz'})
-        sys.stderr.flush()
-        sys.stdout.flush()
         client.close()
 
-        serr('Closed Client\n')
-        sys.stderr.flush()
+        #serr('Closed Client\n')
 
     except Exception as e:
         serr('Caught Exception: %s\n'%str(e))
-        sys.stderr.flush()
 
     p_mongod.kill()
     p_mongod.wait()
@@ -87,13 +83,17 @@ p_mongod = None
 
 def runMongod():
     global p_mongod
+    serr("Running MongoD. Sleeping...")
+    sys.stderr.flush()
     dbpath = os.environ["OPENSHIFT_MONGODB_DB_LOG_DIR"]
 
     # Run mongodb
-    cmd = ['mongod', '--dbpath', dbpath, '--auth', '--journal']
+    cmd = ['mongod', '--dbpath', dbpath, '--auth']
     devnull = open(os.devnull, 'w')
     p_mongod = subprocess.Popen(cmd, stdout=devnull, stderr=devnull)
     time.sleep(5)
+    serr("DONE!\n")
+    sys.stderr.flush()
 
 def testConnectMongoDB():
     dbpath = os.environ["OPENSHIFT_MONGODB_DB_LOG_DIR"]
@@ -105,17 +105,16 @@ def testConnectMongoDB():
 
     # Try authenticating with admin
     db = client.admin
-    serr('Attempting Authentication\n')
-    sys.stderr.flush()
+    #serr('Attempting Authentication\n')
     res = db.authenticate(user, password)
-    serr('Authenticate returned: %s\n'%str(res))
+    #serr('Authenticate returned: %s\n'%str(res))
 
     # Try getting data from dummy collection
     db = client.testDB
     cursor = db.dummy.find()
-    for item in cursor:
-        print item
-    serr('Found records: %i\n'%cursor.count())
+    count = cursor.count()
+    if count == 0:
+        raise RuntimeError("Found no records in dummy database")
 
 def killMongod():
     if p_mongod:
@@ -123,15 +122,18 @@ def killMongod():
         p_mongod.wait()
 
 def startup():
+    print 'IN STARTUP'
     setupPaths()
     setupMongoDB()
     runMongod()
     try:
        testConnectMongoDB()
-    except Exception as e:
+    except Exception:
         sys.stderr.write('Caught Exception: %s\n'%(str(e)))
+    print 'DONE STARTUP'
 
 def shutdown():
+    print 'IN SHUTDOWN'
     killMongod()
 
 def getDB():
@@ -144,10 +146,10 @@ def getDB():
 
     # Try authenticating with admin
     db = client.admin
-    serr('Attempting Authentication\n')
+    #serr('Attempting Authentication\n')
     sys.stderr.flush()
     res = db.authenticate(user, password)
-    serr('Authenticate returned: %s\n'%str(res))
+    #serr('Authenticate returned: %s\n'%str(res))
 
     db = client.MetroEscalators
     return db
