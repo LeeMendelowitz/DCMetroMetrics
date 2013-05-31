@@ -21,6 +21,10 @@ def getSymptomToId(db):
     symptomDict = dict((d['symptom_desc'],d['_id']) for d in symptoms)
     return symptomDict
 
+def getEsc(db, escId):
+    c = db.escalators.find({'_id' : escId})
+    return getOne(c)
+
 ##########################################
 # Get one item from the cursor. Return None if there is no item.
 def getOne(cursor):
@@ -76,7 +80,7 @@ def addEscalator(db, curTime, unit_id, station_code, station_name, esc_desc, sta
 
 def addSymptomCode(db, symptom_code, symptom_desc):
     query = {'_id' : int(symptom_code)}
-    count = db.escalators.find(query).count()
+    count = db.symptom_codes.find(query).count()
     if count == 0:
         d = {'_id' : int(symptom_code),
              'symptom_desc': symptom_desc}
@@ -92,12 +96,14 @@ def updateDBFromIncidentData(db, inc, curTime):
     station_desc = ''
     station_name = inc.StationName
     if ',' in station_name:
-        station_desc, station_name = station_name.split(',', 1)
-    addEscalator(db, curTime, inc.UnitName, inc.StationCode, station_name,
+        station_name, station_desc = station_name.split(',', 1)
+    station_name = station_name.strip()
+    station_desc = station_desc.strip()
+    addEscalator(db, curTime, inc.UnitId, inc.StationCode, station_name,
        esc_desc = inc.LocationDescription, station_desc = station_desc)
 
     # Add the symptom code to the database
-    addSymptomCode(db, inc.SymptomCode, inc.SymptomDesc)
+    addSymptomCode(db, inc.SymptomCode, inc.SymptomDescription)
 
 ##########################################################
 # For each escalator, retrieve the latest status updates.
@@ -143,7 +149,9 @@ def getLatestStatuses(db):
 # Value is dictionary with keys: ['cur_update', 'last_update', 'last_operational', 'last_break']
 def processIncidents(db, curIncidents, curTime, tickDelta):
 
+    #import pdb; pdb.set_trace()
     sys.stdout.write('Processing %i incidents\n'%len(curIncidents))
+    sys.stdout.flush()
     for inc in curIncidents:
         updateDBFromIncidentData(db, inc, curTime)
 
@@ -158,6 +166,7 @@ def processIncidents(db, curIncidents, curTime, tickDelta):
 
     # Get the last known statuses for all escalators.
     # Recast escStatuses as a defaultdict
+    import pdb; pdb.set_trace()
     escStatusItems = getLatestStatuses(db).items()
     default_entry = {'last_update' : None,
                      'last_operational' : None,
@@ -186,7 +195,9 @@ def processIncidents(db, curIncidents, curTime, tickDelta):
                'symptom_code' : int(newStatus)}
         docs.append(doc)
         changedStatusData = escStatuses[escId]
-        changedStatusData['cur_status'] = doc
-        changedStatusDict[escId] = changedStatus
-    db.escalator_statuses.insert(docs)
+        changedStatusData['cur_update'] = doc
+        changedStatusDict[escId] = changedStatusData
+    if docs:
+        sys.stderr.write('Inserting %i statuses into escalator_statuses collection\n'%len(docs))
+        db.escalator_statuses.insert(docs)
     return changedStatusDict
