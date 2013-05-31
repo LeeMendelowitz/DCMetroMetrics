@@ -21,7 +21,15 @@ class Incident(object):
          u'UnitStatus',
          u'DisplayOrder']
 
-        for k in keys:
+        requiredKeys = ['SymptomDescription',
+                        'LocationDescription',
+                        'UnitName',
+                        'UnitType',
+                        'SymptomCode',
+                        'StationName',
+                        'StationCode']
+
+        for k in requiredKeys:
             if k not in data:
                 raise RuntimeError('Key missing in incident data: %s'%k)
 
@@ -32,6 +40,13 @@ class Incident(object):
 
     def addAttr(self):
         self.UnitId = self.UnitName + self.UnitType
+        self.cleanTimes()
+
+
+    def cleanTimes(self):
+        attrs = ['DateOutOfServ', 'TimeOutOfService', 'DateUpdated']
+        if not all(hasattr(self, a) for a in attrs):
+            return
 
         # Clean up the out of service and update times
         outOfServiceDate = utils.parseMetroDate(self.DateOutOfServ)

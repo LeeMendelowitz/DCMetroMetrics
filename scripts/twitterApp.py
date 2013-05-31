@@ -2,6 +2,7 @@ import os
 import sys
 import cPickle
 import makeEscalatorRequest
+metroApiRequest = makeEscalatorRequest.twitterRequest()
 from utils import *
 import tweeter
 from time import sleep
@@ -95,6 +96,17 @@ def init(stateFile):
     state.write(stateFileOut)
     stateFileOut.close()
 
+####################################################
+# Connect to MongoClient and authenticate
+def getMongoClient():
+    host = os.environ["OPENSHIFT_MONGODB_DB_HOST"]
+    port = int(os.environ["OPENSHIFT_MONGODB_DB_PORT"])
+    user = os.environ["OPENSHIFT_MONGODB_DB_USERNAME"]
+    password = os.environ["OPENSHIFT_MONGODB_DB_PASSWORD"]
+    mongo_client = MongoClient(host, port)
+    admin_db = mongo_client.admin
+    res = admin_db.authenticate(user, password)
+    return mongo_client
 
 #############################################
 class TwitterApp(object):
@@ -107,6 +119,37 @@ class TwitterApp(object):
         self.numIncidents = 0
         self.availability = 1.0
         self.tweeter = None
+        self.mongo_client = None
+        self.mongo_db = None
+
+    def connectToDB(self):
+        self.mongo_client = getMongoClient()
+        self.mongo_db = self.mongo_client.escalator_app
+
+    ##########################################
+    # Get the list of current incidents from the metroAPI.
+    # Store in the
+    # collection of current incidents. Update the 
+    # app state collection.
+    def getIncidents(self):
+        res = metroApiRequest()
+        curTime = datetime.now()
+        incidents = res['incidents']
+        incidents = [i for i in incidents if i.isEscalator()]
+
+        # Store the current list of incidents
+
+
+        self.updateAppState(runTime = curTime)
+        
+
+    def updateAppState(self, runTime = None, nextReportTime = None):
+        assert(self.mongo_db)
+        updateSpec = [('runTime', runTime), ('nextReportTime':nextReportTime)]
+        updateSpec = [(k,v) for k,v in updateSpec if v is not None]
+        if updateSpec:
+            updateSpec = dict(updateSpec)
+            self.mongo_db.appstate.update({'_id' : 1}, {'$set' : updateSpec})
 
     def getTweeter(self):
         if self.tweeter is None:

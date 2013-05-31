@@ -3,9 +3,9 @@ from setuptools import setup
 # Define DUMMY to force git push
 DUMMY = 1
 
-setup(name='YourAppName', version='1.0',
-      description='OpenShift Python-2.7 Community Cartridge based application',
-      author='Your Name', author_email='ramr@example.org',
+setup(name='MetroEscalators', version='1.0',
+      description='WMATA Escalator Data',
+      author='Lee Mendelowitz', author_email='MetroEscalators@gmail.com',
       url='http://www.python.org/sigs/distutils-sig/',
 
       #  Uncomment one or more lines below in the install_requires section
@@ -14,7 +14,7 @@ setup(name='YourAppName', version='1.0',
                            'tweepy',
                            'requests',
                         #  'MySQL-python',
-                        #  'pymongo',
+                           'pymongo',
                         #  'psycopg2',
       ],
      )
