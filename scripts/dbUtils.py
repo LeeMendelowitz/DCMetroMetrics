@@ -12,7 +12,6 @@ OPERATIONAL_CODE = -1
 
 ###############################
 def getDB():
-    dbpath = os.environ["OPENSHIFT_MONGODB_DB_LOG_DIR"]
     host = os.environ["OPENSHIFT_MONGODB_DB_HOST"]
     port = int(os.environ["OPENSHIFT_MONGODB_DB_PORT"])
     user = os.environ["OPENSHIFT_MONGODB_DB_USERNAME"]
