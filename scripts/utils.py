@@ -88,3 +88,16 @@ def hasAttr(obj, attr):
     except AttributeError:
         hasAttribute = False
     return hasAttribute
+
+def readEscalatorTsv(fname):
+    fin = open(fname)
+    fieldNames = ['unit_id', 'station_code', 'station_name', 
+                  'station_desc', 'esc_desc']
+    escData = []
+    for l in fin:
+        fields = l.strip().split('\t')
+        assert(len(fields) == len(fieldNames))
+        d = dict((k,v.strip()) for k,v in zip(fieldNames,fields))
+        escData.append(d)
+    fin.close()
+    return escData

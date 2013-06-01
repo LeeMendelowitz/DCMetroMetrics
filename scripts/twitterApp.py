@@ -2,6 +2,7 @@ import os
 import sys
 import cPickle
 import makeEscalatorRequest
+metroApiRequest = makeEscalatorRequest.twitterRequest()
 from utils import *
 import tweeter
 from time import sleep
@@ -9,11 +10,12 @@ import stations
 from incident import Incident
 from datetime import datetime, date, time, timedelta
 from tweepy.error import TweepError
+import dbUtils
+import utils
 
 import argparse
 
 TWEETLEN = 140
-
 
 # If the twitter app has not run in the last 1.5 hours,
 # silence tweeting. This is to avoid a flurry of tweets all
@@ -29,6 +31,21 @@ if OUTPUT_DIR is None:
 
 parser = argparse.ArgumentParser(description='Run @MetroEscalators app')
 parser.add_argument('--test', action='store_true', help='Run in Test Mode (does not tweet)')
+
+def updateDB(incidents, curTime, tickDelta):
+    db = dbUtils.getDB()
+
+    # Initialize the escalator database if necessary
+    numEscalators = db.escalators.count()
+    NUM_ESCALATORS = 588
+    if numEscalators < NUM_ESCALATORS:
+        escalatorTsv = os.path.join(os.environ['OPENSHIFT_DATA_DIR'], 'escalators.tsv')
+        escData = utils.readEscalatorTsv(escalatorTsv)
+        assert(len(escData) == NUM_ESCALATORS)
+        dbUtils.initializeEscalators(db, escData, curTime)
+
+    res = dbUtils.processIncidents(db, incidents, curTime, tickDelta) 
+    return res
 
 #############################################
 # Defines the state of the twitter app.
@@ -85,7 +102,6 @@ class State(object):
 #############################################
 # Initiate the app by creating two pickle files of incidents
 def init(stateFile):
-
     pickleFile1 = TwitterApp.request()
     sleep(2)
     pickleFile2 = TwitterApp.request()
@@ -107,6 +123,31 @@ class TwitterApp(object):
         self.numIncidents = 0
         self.availability = 1.0
         self.tweeter = None
+
+    ##########################################
+    # Get the list of current incidents from the metroAPI.
+    # Store in the
+    # collection of current incidents. Update the 
+    # app state collection.
+    def getIncidents(self):
+        res = metroApiRequest()
+        curTime = datetime.now()
+        incidents = res['incidents']
+        incidents = [i for i in incidents if i.isEscalator()]
+
+        # Store the current list of incidents
+
+
+        self.updateAppState(runTime = curTime)
+        
+
+    def updateAppState(self, runTime = None, nextReportTime = None):
+        assert(self.mongo_db)
+        updateSpec = [('runTime', runTime), ('nextReportTime', nextReportTime)]
+        updateSpec = [(k,v) for k,v in updateSpec if v is not None]
+        if updateSpec:
+            updateSpec = dict(updateSpec)
+            self.mongo_db.appstate.update({'_id' : 1}, {'$set' : updateSpec})
 
     def getTweeter(self):
         if self.tweeter is None:
@@ -150,10 +191,10 @@ class TwitterApp(object):
 
         # Temporarily disable tweeting if the difference between consecutive updates is too long
         disabled = False
-        timeDiff = (thisTime - lastTime).total_seconds()
-        if timeDiff > 60*2.0:
-            sys.stdout.write('DELAY WARNING! The twitter app has not run in %.2f seconds!\n'%timeDiff)
-        if self.LIVE and timeDiff > SILENCE_AFTER_GAP:
+        tickDelta = (thisTime - lastTime).total_seconds()
+        if tickDelta > 60*2.0:
+            sys.stdout.write('DELAY WARNING! The twitter app has not run in %.2f seconds!\n'%tickDelta)
+        if self.LIVE and tickDelta > SILENCE_AFTER_GAP:
             disabled = True
             self.LIVE = False
         
@@ -169,6 +210,8 @@ class TwitterApp(object):
         self.state.pickle_file_old = oldPickleFile
         self.state.pickle_file_new = newPickleFile
         self.state.write(self.stateFile)
+
+        updateDB(newEscalators, thisTime, tickDelta)
 
     # Make tweets and update the state's unitIdToBrokeTime
     def reportDifferences(self, oldList, newList, curTime):
