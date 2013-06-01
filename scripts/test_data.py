@@ -6,6 +6,8 @@ from incident import Incident
 from datetime import datetime, timedelta
 from collections import defaultdict
 import dbUtils
+import time
+import twitterApp
 
 test_setup.setupPaths()
 
@@ -75,8 +77,12 @@ def printUpdates(db, updateDict):
 def runTest(db):
     testData = getTestData()
     for incList, curTime, tickDelta in testData:
-        res = dbUtils.processIncidents(db, incList, curTime, tickDelta)
+        #res = dbUtils.processIncidents(db, incList, curTime, tickDelta)
+        res = twitterApp.updateDB(incList, curTime, tickDelta)
         printUpdates(db, res)
+        sys.stderr.write('SLEEPING....')
+        time.sleep(2)
+        sys.stderr.write('DONE\n')
 
 def run():
     test_setup.startup()

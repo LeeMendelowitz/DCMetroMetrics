@@ -4,7 +4,30 @@ import pymongo
 import sys
 import os
 from collections import defaultdict
+from datetime import timedelta
 
+invDict = lambda d: dict((v,k) for k,v in d.iteritems())
+
+OPERATIONAL_CODE = -1
+
+###############################
+def getDB():
+    dbpath = os.environ["OPENSHIFT_MONGODB_DB_LOG_DIR"]
+    host = os.environ["OPENSHIFT_MONGODB_DB_HOST"]
+    port = int(os.environ["OPENSHIFT_MONGODB_DB_PORT"])
+    user = os.environ["OPENSHIFT_MONGODB_DB_USERNAME"]
+    password = os.environ["OPENSHIFT_MONGODB_DB_PASSWORD"]
+    client = pymongo.MongoClient(host, port)
+
+    # Try authenticating with admin
+    db = client.admin
+    #serr('Attempting Authentication\n')
+    res = db.authenticate(user, password)
+    #serr('Authenticate returned: %s\n'%str(res))
+
+    db = client.MetroEscalators
+    addSymptomCode(db, OPERATIONAL_CODE, 'OPERATIONAL')
+    return db
 
 ########################################
 # Create dictionary from escalator unit id
@@ -42,6 +65,28 @@ def getSome(cursor, N):
             break
     return results
 
+def updateAppState(db, lastRunTime = None, nextDailyStatusTime = None):
+    query = {'_id' : 1}
+    update = {}
+    if lastRunTime is not None:
+        update['lastRunTime'] = lastRunTime
+    if nextDailyStatsTime is not None:
+        update['nextDailyStatsTime'] = nextDailyStatusTime
+    if not update:
+        return
+    db.app_state.find_and_modify(query=query, update=update, upsert=True)
+
+########################################
+# Initialize the escalator databased with entries
+# Initialize the escalator_statuses database with default
+# OPERATIONAL entries
+def initializeEscalators(db, escDataList, curTime):
+    addSymptomCode(db, OPERATIONAL_CODE, 'OPERATIONAL')
+    for d in escDataList:
+        addEscalator(db, curTime, d['unit_id'], d['station_code'],
+                         d['station_name'], d['esc_desc'],
+                         d.get('station_desc',None))
+
 ########################################
 # Add escalator to the database if it does not exist already.
 # Note: This will not modify the escalator attributes if a document
@@ -73,7 +118,7 @@ def addEscalator(db, curTime, unit_id, station_code, station_name, esc_desc, sta
         symptomToId = getSymptomToId(db)
         operational_code = symptomToId['OPERATIONAL']
         doc = {'escalator_id' : escId,
-               'time' : curTime,
+               'time' : curTime - timedelta(milliseconds=1),
                'tickDelta' : 0,
                'symptom_code' : operational_code}
         db.escalator_statuses.insert(doc)
@@ -111,8 +156,16 @@ def getLatestStatuses(db):
 
     # Get the unique escalator ids
     esc_ids = db.escalator_statuses.distinct('escalator_id')
+
+    db.escalator_statuses.ensure_index([('escalator_id', pymongo.ASCENDING),
+                                        ('time', pymongo.DESCENDING)])
+
+    unitToId = getUnitToId(db)
+    escIdToUnit = invDict(unitToId)
     symptomToId = getSymptomToId(db)
     operational_code = symptomToId['OPERATIONAL']
+    symptomCodeToSymptom = invDict(symptomToId)
+    docToStr = lambda d: doc2Str(d, escIdToUnit, symptomCodeToSymptom)
 
     last_status = {}
 
@@ -122,6 +175,17 @@ def getLatestStatuses(db):
         sort_params = [('time', pymongo.DESCENDING)]
         cursor = db.escalator_statuses.find({'escalator_id' : esc_id}, sort=sort_params)
         latest = getSome(cursor, 1000) # Latest status updates for this escalator
+
+        ###########################
+#        # DEBUG
+#        sys.stdout.write('\n\n\n' + '*'*50 + '\n')
+#        sys.stdout.write('Latest Status for escalator %s\n'%escIdToUnit[esc_id])
+#        for doc in latest:
+#            sys.stdout.write('%s\n'%docToStr(doc))
+#        sys.stdout.write('*'*50+'\n\n\n')
+        ###########################
+
+
         last_update = latest[0] if latest else None
 
         # Get the latest status where escalator was operating
@@ -141,6 +205,16 @@ def getLatestStatuses(db):
                                'last_break' : last_break}
     return last_status
 
+
+def doc2Str(doc, escIdToUnit, symptomCodeToSymptom):  
+    if doc is None:
+        return 'None'
+    outputStr = '{esc}\t{code}\t{timeStr}'
+    outputStr = outputStr.format(esc = escIdToUnit[doc['escalator_id']],
+                                 code = symptomCodeToSymptom[doc['symptom_code']],
+                                 timeStr = str(doc['time']))
+    return outputStr
+
 ########################################################
 # Determine which escalators that have changed status,
 # and update the database with units have been updated.
@@ -149,14 +223,16 @@ def getLatestStatuses(db):
 # Value is dictionary with keys: ['cur_update', 'last_update', 'last_operational', 'last_break']
 def processIncidents(db, curIncidents, curTime, tickDelta):
 
-    #import pdb; pdb.set_trace()
-    sys.stdout.write('Processing %i incidents\n'%len(curIncidents))
+    sys.stdout.write('dbUtils.processIncidents: Processing %i incidents\n'%len(curIncidents))
+    sys.stdout.write('escalator_statuses has %i documents\n'%(db.escalator_statuses.find().count()))
     sys.stdout.flush()
     for inc in curIncidents:
         updateDBFromIncidentData(db, inc, curTime)
 
     unitToId = getUnitToId(db)
+    escIdToUnit = invDict(unitToId)
     symptomToId = getSymptomToId(db)
+    symptomCodeToSymptom = invDict(symptomToId)
     operational_code = symptomToId['OPERATIONAL']
 
     # Create dictionary of escalator to the current status
@@ -166,7 +242,6 @@ def processIncidents(db, curIncidents, curTime, tickDelta):
 
     # Get the last known statuses for all escalators.
     # Recast escStatuses as a defaultdict
-    import pdb; pdb.set_trace()
     escStatusItems = getLatestStatuses(db).items()
     default_entry = {'last_update' : None,
                      'last_operational' : None,
@@ -176,6 +251,17 @@ def processIncidents(db, curIncidents, curTime, tickDelta):
     escIdToLastStatus = defaultdict(lambda: operational_code)
     escIdToLastStatus.update((escId, escStatus['last_update']['symptom_code']) for
                               escId, escStatus in escStatuses.iteritems())
+
+    #### DEBUG #########################
+#    docToStr = lambda d: doc2Str(d, escIdToUnit, symptomCodeToSymptom)
+#    sys.stderr.write('-'*50 + '\n\n')
+#    for escId,escData in escStatusItems:
+#        lines = ['Statuses for escalator %s'%(escIdToUnit[escId])]
+#        lines.extend('%s %s'%(k, docToStr(v)) for k,v in escData.iteritems())
+#        lines.append('-----------------')
+#        sys.stderr.write('%s\n'%('\n'.join(lines)))
+#    sys.stderr.write('-'*50 + '\n\n')
+    ####################################
 
     # Determine those escalators that have changed status
     escIds = sorted(set(escIdToCurStatus.keys() + escIdToLastStatus.keys()))
@@ -197,7 +283,21 @@ def processIncidents(db, curIncidents, curTime, tickDelta):
         changedStatusData = escStatuses[escId]
         changedStatusData['cur_update'] = doc
         changedStatusDict[escId] = changedStatusData
+
+        #### DEBUG
+#        sys.stderr.write('Esc Name: %s OldStatus: %s NewStatus: %s\n' % \
+#                         (escIdToUnit[escId], symptomCodeToSymptom.get(oldStatus, 'None'),
+#                                              symptomCodeToSymptom.get(newStatus, 'None'))
+#                         )
+        ####
     if docs:
-        sys.stderr.write('Inserting %i statuses into escalator_statuses collection\n'%len(docs))
         db.escalator_statuses.insert(docs)
+#        #### DEBUG
+#        sys.stderr.write('-'*50 + '\n\n')
+#        sys.stderr.write('Inserting %i statuses into escalator_statuses collection\n'%len(docs))
+#        docToStr = lambda d: doc2Str(d, escIdToUnit, symptomCodeToSymptom)
+#        for doc in docs:
+#            sys.stderr.write('%s\n'%docToStr(doc))
+#        sys.stderr.write('-'*50 + '\n\n')
+#        ####
     return changedStatusDict
