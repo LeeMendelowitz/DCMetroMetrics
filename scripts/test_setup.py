@@ -147,7 +147,6 @@ def getDB():
     # Try authenticating with admin
     db = client.admin
     #serr('Attempting Authentication\n')
-    sys.stderr.flush()
     res = db.authenticate(user, password)
     #serr('Authenticate returned: %s\n'%str(res))
 
