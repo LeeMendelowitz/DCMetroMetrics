@@ -1,6 +1,7 @@
 import pymongo
 from keys import HotCarKeys as keys
 import tweepy
+from tweepy import TweepError
 import sys
 import re
 from datetime import datetime
@@ -111,7 +112,11 @@ def tick(db, tweetLive = False):
             continue
         sys.stderr.write('Response for Tweet %i: %s\n'%(tweet.id, response))
         if tweetLive:
-            T.update_status(response, in_reply_to_status_id = tweet.id)
+            try:
+                T.update_status(response, in_reply_to_status_id = tweet.id)
+            except TweepError as e:
+                sys.stderr.write('Caught TweepError!: %s'%str(e))
+                
 
 ########################################
 # Get hot car data from a tweet
