@@ -44,17 +44,22 @@ def getColors(text):
     colors = [c for c in colors if c is not None]
     return colors
 
+def getTweepyAPI():
+    auth = tweepy.OAuthHandler(keys.consumer_key, keys.consumer_secret)
+    auth.set_access_token(keys.access_token, keys.access_token_secret)
+    T = tweepy.API(auth)
+    return T
+
 #######################################
 def tick(db, tweetLive = False):
     curTime = datetime.now()
     sys.stderr.write('Running HotCar Tick. %s\n'%(str(curTime)))
     sys.stderr.write('Tweeting Live: %s\n'%str(tweetLive))
+    sys.stderr.flush()             
     initAppState(db, curTime)
     appState = next(db.hotcars_appstate.find({'_id' : 1}))
 
-    auth = tweepy.OAuthHandler(keys.consumer_key, keys.consumer_secret)
-    auth.set_access_token(keys.access_token, keys.access_token_secret)
-    T = tweepy.API(auth)
+    T = getTweepyAPI()
 
     # Get the latest tweets about WMATA hotcars
     tweets = list(T.search('wmata hotcar',
@@ -79,15 +84,14 @@ def tick(db, tweetLive = False):
     tweetIds = set(t.id for t in filteredTweets)
     assert(len(tweetIds) == len(filteredTweets))
 
+    tweetResponses = []
     for tweet in filteredTweets:
         hotCarData = getHotCarData(tweet)
         updateDBFromTweet(db, tweet, hotCarData)
         response = genResponseTweet(tweet, hotCarData)
-        if response:
-            print 'Response for Tweet %i'%tweet.id, response
-            if tweetLive:
-                T.update_status(response, in_reply_to_status_id = tweet.id)
-                 
+        if response is not None:
+            tweetResponses.append((tweet, response))
+
     # Update the app state
     maxTweetId = appState['lastTweetId']
     if filteredTweets:
@@ -95,6 +99,13 @@ def tick(db, tweetLive = False):
     update = {'_id' : 1, 'lastRunTime': curTime, 'lastTweetId': maxTweetId}
     query = {'_id' : 1}
     db.hotcars_appstate.find_and_modify(query=query, update=update, upsert=True)
+
+    for tweet, response in tweetResponses:
+        if response is None:
+            continue
+        sys.stderr.write('Response for Tweet %i: %s\n'%(tweet.id, response))
+        if tweetLive:
+            T.update_status(response, in_reply_to_status_id = tweet.id)
 
 ########################################
 # Get hot car data from a tweet
