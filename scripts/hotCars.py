@@ -9,8 +9,7 @@ from datetime import datetime
 def initAppState(db, curTime):
     if db.hotcars_appstate.count() == 0:
         doc = {'_id' : 1,
-               'lastRunTime' : curTime,
-               'lastTweetId' : 0}
+               'lastRunTime' : curTime}
         db.hotcars_appstate.insert(doc)
 
 ##########################
@@ -61,10 +60,20 @@ def tick(db, tweetLive = False):
 
     T = getTweepyAPI()
 
+    # Determine the last hot car tweet we saw, so we can search for
+    # tweets that have occurred since
+    lastTweetId = 0
+    if db.hotcars_tweets.count() > 0:
+        sortParams = [('_id', pymongo.DESCENDING)]
+        doc = next(db.hotcars_tweets.find(sort=sortParams))
+        lastTweetId = doc['_id']
+    
+    sys.stderr.write('last tweet id: %i\n'%lastTweetId)
+
     # Get the latest tweets about WMATA hotcars
     tweets = list(T.search('wmata hotcar',
                    rpp=100,
-                   since_id = appState['lastTweetId'],
+                   since_id = lastTweetId,
                    result_type = 'recent'))
 
     isRetweet = lambda t: len(t.text) >= 2 and t.text[0:2] == 'RT'
@@ -93,10 +102,7 @@ def tick(db, tweetLive = False):
             tweetResponses.append((tweet, response))
 
     # Update the app state
-    maxTweetId = appState['lastTweetId']
-    if filteredTweets:
-        maxTweetId = max(tweet.id for tweet in filteredTweets)
-    update = {'_id' : 1, 'lastRunTime': curTime, 'lastTweetId': maxTweetId}
+    update = {'_id' : 1, 'lastRunTime': curTime}
     query = {'_id' : 1}
     db.hotcars_appstate.find_and_modify(query=query, update=update, upsert=True)
 
