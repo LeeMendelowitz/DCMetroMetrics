@@ -74,9 +74,9 @@ def setupMongoDB():
 
         # Clear out the collections
         db = client.MetroEscalators
-        db.hotcars.remove()
-        db.hotcars_tweets.remove()
-        db.hotcars_appstate.remove()
+        #db.hotcars.remove()
+        #db.hotcars_tweets.remove()
+        #db.hotcars_appstate.remove()
 
         client.close()
 
