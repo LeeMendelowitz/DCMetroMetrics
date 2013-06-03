@@ -34,7 +34,7 @@ def getColors(text):
                      'BLUE' : ['BL'],
                      'GREEN' : ['GR'],
                      'YELLOW' : ['YL'],
-                     'ORANGE' : ['OR'],
+                     'ORANGE' : [],
                      #'SILVER' : ['SL']
                    }
     for c in colorToWords:
