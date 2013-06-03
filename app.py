@@ -81,11 +81,11 @@ if __name__ == '__main__':
    twitterApp = TwitterApp()
    twitterApp.start()
 
-   hotCarApplication = HotCarApp(LIVE=True)
-   hotCarApplication.start()
+   #hotCarApplication = HotCarApp(LIVE=True)
+   #hotCarApplication.start()
 
    twitterApp.join()
-   hotCarApplication.join()
+   #hotCarApplication.join()
 
    # We should not arrive here, because the twitter app should run forever
    w.stop()
