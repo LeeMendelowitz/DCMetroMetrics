@@ -45,13 +45,15 @@ def setupMongoDB():
     dbpath = os.environ["OPENSHIFT_MONGODB_DB_LOG_DIR"]
 
     # Run mongodb
-    cmd = ['mongod', '--dbpath', dbpath]
-    devnull = open(os.devnull, 'w')
-    p_mongod = subprocess.Popen(cmd, stdout=devnull, stderr=devnull)
+    # 6/2/2013: NOTE: My macbook is running a mongod instance, so there is no need to start one
 
-    serr("Setting Up MongoDB. Sleeping...")
-    time.sleep(5)
-    serr("DONE!\n")
+#    cmd = ['mongod', '--dbpath', dbpath]
+#    devnull = open(os.devnull, 'w')
+#    p_mongod = subprocess.Popen(cmd, stdout=devnull, stderr=devnull)
+#
+#    serr("Setting Up MongoDB. Sleeping...")
+#    time.sleep(5)
+#    serr("DONE!\n")
 
     # Add the user to the admin db
     try:
@@ -69,6 +71,13 @@ def setupMongoDB():
         db = client.testDB
         db.dummy.remove()
         db.dummy.insert({'firstName':'Lee', 'lastName':'Mendelowitz'})
+
+        # Clear out the collections
+        db = client.MetroEscalators
+        db.hotcars.remove()
+        db.hotcars_tweets.remove()
+        db.hotcars_appstate.remove()
+
         client.close()
 
         #serr('Closed Client\n')
@@ -76,8 +85,8 @@ def setupMongoDB():
     except Exception as e:
         serr('Caught Exception: %s\n'%str(e))
 
-    p_mongod.kill()
-    p_mongod.wait()
+#    p_mongod.kill()
+    #p_mongod.wait()
 
 p_mongod = None
 
@@ -125,7 +134,8 @@ def startup():
     print 'IN STARTUP'
     setupPaths()
     setupMongoDB()
-    runMongod()
+    # 6/2/2013: NOTE: My macbook is running a mongod instance, so there is no need to start one
+    #runMongod()
     try:
        testConnectMongoDB()
     except Exception:
@@ -134,7 +144,8 @@ def startup():
 
 def shutdown():
     print 'IN SHUTDOWN'
-    killMongod()
+    # 6/2/2013: NOTE: My macbook is running a mongod instance, so there is no need to start one
+    #killMongod()
 
 def getDB():
     dbpath = os.environ["OPENSHIFT_MONGODB_DB_LOG_DIR"]
