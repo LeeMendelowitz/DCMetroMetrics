@@ -36,6 +36,7 @@ from gevent import Greenlet
 
 sys.path.append(SCRIPT_DIR)
 import runTwitterApp
+from hotCarApp import HotCarApp
 
 ##########################################
 # Run the Twitter App as a Greenlet. This allows
@@ -79,7 +80,12 @@ if __name__ == '__main__':
    # Run the Twitter App forever. Note: This blocks, since it's an infinite loop!
    twitterApp = TwitterApp()
    twitterApp.start()
+
+   hotCarApplication = HotCarApp(LIVE=True)
+   hotCarApplication.start()
+
    twitterApp.join()
+   hotCarApplication.join()
 
    # We should not arrive here, because the twitter app should run forever
    w.stop()

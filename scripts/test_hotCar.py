@@ -6,7 +6,7 @@ def runTest():
     hotCarApp.runOnce()
 
 def runTestGreenlet():
-    G = hotCarApp.HotCarApp()
+    G = hotCarApp.HotCarApp(LIVE=False)
     print 'Starting Hot Car App!'
     G.start()
     print 'Hot Car App Started!'
