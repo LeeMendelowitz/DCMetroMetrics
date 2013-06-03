@@ -1,7 +1,6 @@
 import test_setup
 import hotCarApp
 
-
 def runTest():
     hotCarApp.runOnce()
 

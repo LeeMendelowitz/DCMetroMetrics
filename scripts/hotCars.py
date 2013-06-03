@@ -10,15 +10,18 @@ from datetime import datetime
 def initAppState(db, curTime):
     if db.hotcars_appstate.count() == 0:
         doc = {'_id' : 1,
-               'lastRunTime' : curTime}
+               'lastRunTime' : curTime,
+               'lastTweetId' : 0}
         db.hotcars_appstate.insert(doc)
 
 ##########################
 # Preprocess tweet text by padding 4 digit numbers with spaces,
 # and converting all characters to uppercase
-def preprocessText(text):
-    pp = re.sub('(\d+)', ' \\1 ', text).upper()
-    return pp
+def preprocessText(tweetText):
+    tweetText = tweetText.encode('ascii', errors='ignore')
+    tweetText = re.sub('[^a-zA-Z0-9\s]',' ', tweetText).upper()
+    tweetText = re.sub('(\d+)', ' \\1 ', tweetText).upper()
+    return tweetText
 
 ###########################
 # Get 4 digit numbers
@@ -50,6 +53,17 @@ def getTweepyAPI():
     T = tweepy.API(auth)
     return T
 
+###########################
+# Return a list of unique tweets from a list of tweets
+def uniqueTweets(tweetList):    
+    seen = set()
+    unique = []
+    for t in tweetList:
+        if t.id not in seen:
+            seen.add(t.id)
+            unique.append(t)
+    return unique
+
 #######################################
 def tick(db, tweetLive = False):
     curTime = datetime.now()
@@ -58,24 +72,32 @@ def tick(db, tweetLive = False):
     sys.stderr.flush()             
     initAppState(db, curTime)
     appState = next(db.hotcars_appstate.find({'_id' : 1}))
+    lastTweetId = appState.get('lastTweetId', 0)
 
     T = getTweepyAPI()
 
     # Determine the last hot car tweet we saw, so we can search for
     # tweets that have occurred since
-    lastTweetId = 0
-    if db.hotcars_tweets.count() > 0:
-        sortParams = [('_id', pymongo.DESCENDING)]
-        doc = next(db.hotcars_tweets.find(sort=sortParams))
-        lastTweetId = doc['_id']
-    
+#    lastTweetId = 0
+#    if db.hotcars_tweets.count() > 0:
+#        sortParams = [('_id', pymongo.DESCENDING)]
+#        doc = next(db.hotcars_tweets.find(sort=sortParams))
+#        lastTweetId = doc['_id']
+#
     sys.stderr.write('last tweet id: %i\n'%lastTweetId)
+#    lastTweetId = 0
+#    sys.stderr.write('Forcing last tweet id: %i\n'%lastTweetId)
 
     # Get the latest tweets about WMATA hotcars
-    tweets = list(T.search('wmata hotcar',
+    queries = ['wmata hotcar', 'wmata hot car']
+    tweets = []
+    for q in queries:
+        res = T.search(q,
                    rpp=100,
                    since_id = lastTweetId,
-                   result_type = 'recent'))
+                   result_type = 'recent')
+        tweets.extend(t for t in res)
+    tweets = uniqueTweets(tweets)
 
     isRetweet = lambda t: len(t.text) >= 2 and t.text[0:2] == 'RT'
     def filterPass(t):
@@ -97,13 +119,23 @@ def tick(db, tweetLive = False):
     tweetResponses = []
     for tweet in filteredTweets:
         hotCarData = getHotCarData(tweet)
-        updateDBFromTweet(db, tweet, hotCarData)
-        response = genResponseTweet(tweet, hotCarData)
-        if response is not None:
-            tweetResponses.append((tweet, response))
+        validTweet = tweetIsValid(tweet, hotCarData)
+        if not validTweet:
+            continue
+
+        updated = updateDBFromTweet(db, tweet, hotCarData)
+
+        # If we updated the database with data on this tweet,
+        # generate a response tweet
+        if updated:
+            response = genResponseTweet(tweet, hotCarData)
+            if response is not None:
+                tweetResponses.append((tweet, response))
 
     # Update the app state
-    update = {'_id' : 1, 'lastRunTime': curTime}
+    maxTweetId = max([t.id for t in filteredTweets]) if filteredTweets else 0
+    maxTweetId = max(maxTweetId, lastTweetId)
+    update = {'_id' : 1, 'lastRunTime': curTime, 'lastTweetId' : maxTweetId}
     query = {'_id' : 1}
     db.hotcars_appstate.find_and_modify(query=query, update=update, upsert=True)
 
@@ -132,11 +164,21 @@ def updateDBFromTweet(db, tweet, hotCarData):
 
     sys.stderr.write('hotcars_tweets has %i docs\n'%(db.hotcars_tweets.count()))
     sys.stderr.write('Updating hotcar_tweets collection with tweet %i\n'%tweet.id)
+    tweetText = tweet.text.encode('utf-8', errors='ignore')
+
+    # Check if this is a duplicate, and abort if so.
+    count = db.hotcars_tweets.find({'_id' : tweet.id}).count()
+    if count > 0:
+        sys.stderr.write('No update made. Tweet %i is a duplicate.\n'%tweet.id)
+        updated = False
+        return updated
+
     doc = {'_id' : tweet.id,
            'user_id' : tweet.from_user_id,
            'text' : tweet.text,
            'time' : tweet.created_at}
     db.hotcars_tweets.insert(doc)
+    updated = True
 
     carNums = hotCarData['cars']
     colors = hotCarData['colors']
@@ -155,7 +197,56 @@ def updateDBFromTweet(db, tweet, hotCarData):
                'time' : tweet.created_at}
         db.hotcars.insert(doc)
     else:
-        sys.stderr.write('NOT updating hotcars collection with tweet %i:\n\t%s\n'%(tweet.id, tweet.text))
+        sys.stderr.write('NOT updating hotcars collection with tweet %i:\n\t%s\n'%(tweet.id, tweetText))
+
+    return updated
+
+###########################################################
+# Return True if we should store hot car data on this tweet
+# and generate a twitter response
+def tweetIsValid(tweet, hotCarData):
+
+    carNums = hotCarData['cars']
+
+    # Require a single car to be named in the tweet
+    if len(carNums) != 1:
+        return False
+
+    carNumStr = str(carNums[0])
+    carNumInt = int(carNums[0])
+    firstDigit = carNumStr[0]
+
+
+    # Car ranges are from Wikipedia, inclusive
+    carRanges = { '1' : (1000, 1299),
+                  '2' : (2000, 2075),
+                  '3' : (3000, 3289),
+                  '4' : (4000, 4099),
+                  '5' : (5000, 5191),
+                  '6' : (6000, 6183)
+                }
+
+    if firstDigit not in carRanges:
+        return False
+
+    # Require the car to be a valid number
+    minNum, maxNum = carRanges[firstDigit]
+    carNumValid = carNumInt <= maxNum and carNumInt >= minNum
+    if not carNumValid:
+        return False
+
+    # Check if the tweet has any forbidded words
+    excludedWords = ['series'] # People may refer to 3000 series cars
+    excludedWords = [w.upper() for w in excludedWords]
+    excludedWords = set(excludedWords)
+    tweetText = preprocessText(tweet.text)
+    tweetWords = tweetText.split()
+    numExcluded = sum(1 for w in tweetWords if w in excludedWords)
+    if numExcluded > 0:
+        return False
+
+    # The tweet is good!
+    return True
 
 ########################################
 # Generate reponse tweet
@@ -166,8 +257,9 @@ def genResponseTweet(tweet, hotCarData):
     if not tweetValid:
         return None
 
+    normalize = lambda s: s[0].upper() + s[1:].lower()
     user = tweet.from_user
-    color = colors[0] if len(colors) == 1 else ''
+    color = normalize(colors[0]) if len(colors) == 1 else ''
     car = carNums[0]
     if color:
         msg = '@wmata {color} Car {car} is a #WMATAHotCar HT @{user}'.format(color=color, car=car, user=user)
