@@ -14,6 +14,52 @@ def initAppState(db, curTime):
                'lastTweetId' : 0}
         db.hotcars_appstate.insert(doc)
 
+    if db.hotcars_tweeters.count() == 0:
+        initTweetersDB(db)
+
+##########################
+def initTweetersDB(db):
+
+    # initialize the database of tweeters
+    hotcarTweetIds = db.hotcars.distinct('tweet_id')
+    tweeterIds = []
+    for tweetId in hotcarTweetIds:
+        rec = next(db.hotcars_tweets.find({'_id': tweetId}))
+        tweeterId = rec['user_id']
+        tweeterIds.append(tweeterId)
+    sys.stderr.write('Looking up %i tweetIds\n'%len(tweeterIds))
+
+    T = getTweepyAPI()
+    numAdded = 0
+    for twitterId in tweeterIds:
+        res = T.get_user(twitterId)
+        handle = res.screen_name
+        doc = {'_id' : twitterId,
+               'handle' : handle}
+        if db.hotcars_tweeters.find({'_id' : twitterId}).count() == 0:
+            db.hotcars_tweeters.insert(doc)
+            numAdded += 1
+    sys.stderr.write('Added %i docs to hotcars_tweeters collection\n'%numAdded)
+
+#########################################
+# Get all hot car reports for a given car
+def getHotCarReportsForCar(db, carNum):
+    carNumStr = str(carNum)
+    query = {'car_number' : carNumStr}
+    db.hotcars.ensure_index([('car_number',pymongo.ASCENDING),('time', pymongo.DESCENDING)])
+    cursor = db.hotcars.find(query).sort('time', pymongo.DESCENDING)
+    hotCarReports = list(cursor)
+    return hotCarReports
+
+def getAllHotCarReports(db):
+    db.hotcars.ensure_index([('car_number',pymongo.ASCENDING),('time', pymongo.DESCENDING)])
+    cursor = db.hotcars.find(query).sort('time', pymongo.DESCENDING)
+    hotCarReportDict = defaultdict(list)
+    for report in cursor:
+        hotCarReportDict[report['car_number']].append(report)
+    return hotCarReports
+
+
 ##########################
 # Preprocess tweet text by padding 4 digit numbers with spaces,
 # and converting all characters to uppercase
@@ -47,10 +93,13 @@ def getColors(text):
     colors = [c for c in colors if c is not None]
     return colors
 
+T = None
 def getTweepyAPI():
-    auth = tweepy.OAuthHandler(keys.consumer_key, keys.consumer_secret)
-    auth.set_access_token(keys.access_token, keys.access_token_secret)
-    T = tweepy.API(auth)
+    global T
+    if T is None:
+        auth = tweepy.OAuthHandler(keys.consumer_key, keys.consumer_secret)
+        auth.set_access_token(keys.access_token, keys.access_token_secret)
+        T = tweepy.API(auth)
     return T
 
 ###########################
@@ -173,12 +222,19 @@ def updateDBFromTweet(db, tweet, hotCarData):
         updated = False
         return updated
 
+    # Store the tweet
     doc = {'_id' : tweet.id,
            'user_id' : tweet.from_user_id,
            'text' : tweet.text,
            'time' : tweet.created_at}
     db.hotcars_tweets.insert(doc)
     updated = True
+
+    # Store the user information
+    update = {'_id' : tweet.from_user_id,
+           'handle' : tweet.from_user}
+    query = {'_id': tweet.from_user_id}
+    db.hotcars_tweeters.find_and_modify(query=query, update=update, upsert=True)
 
     carNums = hotCarData['cars']
     colors = hotCarData['colors']
