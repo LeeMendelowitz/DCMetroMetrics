@@ -20,6 +20,6 @@ setup(name='MetroEscalators', version='1.0',
                            'oauth2',
                            'simplejson',
                            'httplib2',
-                           'python-twitter',
+                           'python-twitter'
       ],
      )
