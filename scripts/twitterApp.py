@@ -2,16 +2,17 @@ import os
 import sys
 import cPickle
 import makeEscalatorRequest
-metroApiRequest = makeEscalatorRequest.twitterRequest()
+metroApiRequest = makeEscalatorRequest.twitterRequest
 from utils import *
-import tweeter
+from keys import MetroEscalatorKeys
 from time import sleep
 import stations
 from incident import Incident
 from datetime import datetime, date, time, timedelta
-from tweepy.error import TweepError
+from twitter import TwitterError
 import dbUtils
 import utils
+import twitterUtils
 
 import argparse
 
@@ -37,7 +38,6 @@ def updateDB(incidents, curTime, tickDelta):
 
     # Initialize the escalator database if necessary
     numEscalators = db.escalators.count()
-    NUM_ESCALATORS = 588
     if numEscalators < NUM_ESCALATORS:
         escalatorTsv = os.path.join(os.environ['OPENSHIFT_DATA_DIR'], 'escalators.tsv')
         escData = utils.readEscalatorTsv(escalatorTsv)
@@ -122,7 +122,7 @@ class TwitterApp(object):
         self.state = State.readStateFile(stateFile)
         self.numIncidents = 0
         self.availability = 1.0
-        self.tweeter = None
+        self.twitterApi = None
 
     ##########################################
     # Get the list of current incidents from the metroAPI.
@@ -130,6 +130,8 @@ class TwitterApp(object):
     # collection of current incidents. Update the 
     # app state collection.
     def getIncidents(self):
+        raise RuntimeError('NotImplemented')
+    '''
         res = metroApiRequest()
         curTime = datetime.now()
         incidents = res['incidents']
@@ -139,21 +141,24 @@ class TwitterApp(object):
 
 
         self.updateAppState(runTime = curTime)
+    '''
         
 
     def updateAppState(self, runTime = None, nextReportTime = None):
+        raise RuntimeError('NotImplemented')
+        '''
         assert(self.mongo_db)
         updateSpec = [('runTime', runTime), ('nextReportTime', nextReportTime)]
         updateSpec = [(k,v) for k,v in updateSpec if v is not None]
         if updateSpec:
             updateSpec = dict(updateSpec)
             self.mongo_db.appstate.update({'_id' : 1}, {'$set' : updateSpec})
+        '''
 
-    def getTweeter(self):
-        if self.tweeter is None:
-            DEBUG = not self.LIVE
-            self.tweeter = tweeter.Tweeter(DEBUG=DEBUG)
-        return self.tweeter
+    def getTwitterApi(self):
+        if self.twitterApi is None:
+            self.twitterApi = twitterUtils.getApi(keys=MetroEscalatorKeys)
+        return self.twitterApi
 
     # Perform one run
     def tick(self):
@@ -393,8 +398,9 @@ class TwitterApp(object):
             sys.stdout.write('Tweeting: %s\n'%msg)
         if self.LIVE and metroOpen:
             try:
-                self.getTweeter().tweet(msg)
-            except TweepError as e:
+                api = self.getTwitterApi()
+                api.PostUpdate(msg)
+            except TwitterError as e:
                 sys.stdout.write('CAUGHT EXCEPTION! Reason: %s Message: %s\n'%(e.reason, e.message))
         
 
