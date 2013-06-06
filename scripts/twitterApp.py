@@ -156,6 +156,9 @@ class TwitterApp(object):
         '''
 
     def getTwitterApi(self):
+        if not self.LIVE:
+            self.twitterApi = None
+            return None
         if self.twitterApi is None:
             self.twitterApi = twitterUtils.getApi(keys=MetroEscalatorKeys)
         return self.twitterApi
