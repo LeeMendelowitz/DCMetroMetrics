@@ -19,6 +19,7 @@ setup(name='MetroEscalators', version='1.0',
                            'pymongo',
                            'simplejson',
                            'httplib2',
-                           'python-twitter'
+                           'python-twitter',
+                           'bottle'
       ],
      )
