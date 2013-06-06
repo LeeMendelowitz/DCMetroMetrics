@@ -25,26 +25,12 @@ sys.path.append(SCRIPT_DIR)
 from runTwitterApp import TwitterApp
 from hotCarApp import HotCarApp
 
-##########################################
-# Run the Twitter App as a Greenlet. This allows
-# us to run the app concurrently with the WSGI server.
-class TwitterApp(Greenlet):
-
-    def __init__(self, LIVE=False):
-        Greenlet.__init__(self)
-        self.LIVE = LIVE # Tweet if True
-
-    def _run(self):
-        while True:
-            runTwitterApp.runOnce(LIVE=self.LIVE)
-            gevent.sleep(runTwitterApp.SLEEP)
-
 def run(LIVE=False):
    ip   = os.environ['OPENSHIFT_INTERNAL_IP']
    port = 8080
 
    # Load the bottleApp module
-   bottleAppPath = 'wsgi/bottleApp.py'
+   bottleAppPath = os.path.join(REPO_DIR,'wsgi', 'bottleApp.py')
    bottleApp = imp.load_source('bottleApp', bottleAppPath)
 
    # Run MetroEsclaators twitter App
@@ -57,7 +43,7 @@ def run(LIVE=False):
 
    # Run the server. Note: This call blocks
    bottle = bottleApp.application
-   bottle.run(host=ip, port=port, server=gevent)
+   bottle.run(host=ip, port=port, server='gevent')
 
    twitterApp.join()
    hotCarApplication.join()
