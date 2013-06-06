@@ -2,7 +2,7 @@ import os
 import sys
 import subprocess
 from datetime import datetime
-import time
+from gevent import Greenlet
 
 OUTPUT_DIR = os.environ.get('OPENSHIFT_DATA_DIR', None)
 if OUTPUT_DIR is None:
@@ -15,16 +15,14 @@ else:
     SCRIPT_DIR = os.path.join(REPO_DIR, 'scripts')
 
 SLEEP = 30
-LIVE = True
 
-def runOnce():
+def runOnce(LIVE=False):
 
     logFileName = os.path.join(OUTPUT_DIR, 'runTwitterApp.log')
     logFile = open(logFileName, 'a')
 
     n = datetime.now()
     timeStr = n.strftime('%d-%B-%Y %H:%M:%S')
-
 
     msg = '*'*50 + '\n'
     msg += '%s Running Twitter App\n'%timeStr
@@ -45,11 +43,17 @@ def runOnce():
     logFile.flush()
     logFile.write('App exited with return code: %i\n\n'%ret)
 
-def runLoop():
-    while True:
-        runOnce()
-        time.sleep(SLEEP)
+##########################################
+# Run the Twitter App as a Greenlet. This allows
+# us to run the app concurrently with the WSGI server.
+class TwitterApp(Greenlet):
 
+    def __init__(self, SLEEP=SLEEP, LIVE=False):
+        Greenlet.__init__(self)
+        self.LIVE = LIVE # Tweet if True
+        self.SLEEP = SLEEP
 
-if __name__ == '__main__':
-    runLoop()
+    def _run(self):
+        while True:
+            runOnce(LIVE=self.LIVE)
+            gevent.sleep(self.SLEEP)

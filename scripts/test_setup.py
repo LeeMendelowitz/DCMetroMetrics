@@ -23,7 +23,10 @@ vals = [
     ('OPENSHIFT_MONGODB_DB_LOG_DIR', os.path.join(home_dir, 'mongodb')),
     ('OPENSHIFT_MONGODB_DB_PASSWORD', "123456"),
     ('OPENSHIFT_MONGODB_DB_HOST', 'localhost'),
-    ('OPENSHIFT_MONGODB_DB_PORT', '27017')
+    ('OPENSHIFT_MONGODB_DB_PORT', '27017'),
+    ('OPENSHIFT_PYTHON_DIR', ''),
+    ('OPENSHIFT_HOME_DIR', home_dir),
+    ('OPENSHIFT_INTERNAL_IP', 'localhost')
 ]
 
 dir_keys = ['OPENSHIFT_DATA_DIR', 'OPENSHIFT_REPO_DIR', 'OPENSHIFT_MONGODB_DB_LOG_DIR']
@@ -74,9 +77,9 @@ def setupMongoDB():
 
         # Clear out the collections
         db = client.MetroEscalators
-        #db.hotcars.remove()
-        #db.hotcars_tweets.remove()
-        #db.hotcars_appstate.remove()
+        db.hotcars.remove()
+        db.hotcars_tweets.remove()
+        db.hotcars_appstate.remove()
 
         client.close()
 
