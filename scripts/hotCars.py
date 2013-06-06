@@ -206,10 +206,9 @@ def tick(db, tweetLive = False):
         sys.stderr.write('Response for Tweet %i: %s\n'%(tweet.id, response))
         if tweetLive:
             try:
-                T.update_status(response, in_reply_to_status_id = tweet.id)
+                T.PostUpdate(response, in_reply_to_status_id = tweet.id)
             except TwitterError as e:
                 sys.stderr.write('Caught TwitterError!: %s'%str(e))
-                
 
 ########################################
 # Get hot car data from a tweet
