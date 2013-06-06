@@ -17,6 +17,9 @@ setup(name='MetroEscalators', version='1.0',
                            'pymongo',
                         #  'psycopg2',
                            'python-dateutil==1.5',
-                           'python-twitter'
+                           'oauth2',
+                           'simplejson',
+                           'httplib2',
+                           'python-twitter',
       ],
      )
