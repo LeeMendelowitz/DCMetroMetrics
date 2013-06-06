@@ -11,11 +11,12 @@ setup(name='MetroEscalators', version='1.0',
       #  Uncomment one or more lines below in the install_requires section
       #  for the specific client drivers/modules your application needs.
       install_requires=['greenlet', 'gevent',
-                           'tweepy',
+                           #'tweepy',
                            'requests',
                         #  'MySQL-python',
                            'pymongo',
                         #  'psycopg2',
-                           'python-dateutil==1.5'
+                           'python-dateutil==1.5',
+                           'python-twitter'
       ],
      )
