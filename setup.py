@@ -16,5 +16,6 @@ setup(name='MetroEscalators', version='1.0',
                         #  'MySQL-python',
                            'pymongo',
                         #  'psycopg2',
+                           'python-dateutil==1.5'
       ],
      )
