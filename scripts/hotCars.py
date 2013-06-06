@@ -1,10 +1,13 @@
 import pymongo
 from keys import HotCarKeys as keys
-import tweepy
-from tweepy import TweepError
+from twitter import TwitterError
+import twitterUtils
 import sys
 import re
 from datetime import datetime
+import time
+from collections import defaultdict
+
 
 ##########################
 def initAppState(db, curTime):
@@ -29,7 +32,7 @@ def initTweetersDB(db):
         tweeterIds.append(tweeterId)
     sys.stderr.write('Looking up %i tweetIds\n'%len(tweeterIds))
 
-    T = getTweepyAPI()
+    T = getTwitterAPI()
     numAdded = 0
     for twitterId in tweeterIds:
         res = T.get_user(twitterId)
@@ -51,13 +54,27 @@ def getHotCarReportsForCar(db, carNum):
     hotCarReports = list(cursor)
     return hotCarReports
 
+#########################################
+# Add text, user_id, handle fields to the record
+def makeFullHotCarReport(db, rec):
+    tweetId = rec['tweet_id']
+    tweetRec = db.hotcars_tweets.find_one({'_id' : tweetId})
+    rec['user_id'] = tweetRec['user_id']
+    rec['text'] = tweetRec['text']
+    tweeterRec = db.hotcars_tweeters.find_one({'_id' : tweetRec['user_id']})
+    rec['handle'] = tweeterRec['handle']
+    return rec
+     
+
+#########################################
 def getAllHotCarReports(db):
     db.hotcars.ensure_index([('car_number',pymongo.ASCENDING),('time', pymongo.DESCENDING)])
-    cursor = db.hotcars.find(query).sort('time', pymongo.DESCENDING)
+    cursor = db.hotcars.find().sort('time', pymongo.DESCENDING)
     hotCarReportDict = defaultdict(list)
     for report in cursor:
+        report = makeFullHotCarReport(db, report)
         hotCarReportDict[report['car_number']].append(report)
-    return hotCarReports
+    return hotCarReportDict
 
 
 ##########################
@@ -94,12 +111,10 @@ def getColors(text):
     return colors
 
 T = None
-def getTweepyAPI():
+def getTwitterAPI():
     global T
     if T is None:
-        auth = tweepy.OAuthHandler(keys.consumer_key, keys.consumer_secret)
-        auth.set_access_token(keys.access_token, keys.access_token_secret)
-        T = tweepy.API(auth)
+        T = twitterUtils.getApi(keys)
     return T
 
 ###########################
@@ -123,7 +138,7 @@ def tick(db, tweetLive = False):
     appState = next(db.hotcars_appstate.find({'_id' : 1}))
     lastTweetId = appState.get('lastTweetId', 0)
 
-    T = getTweepyAPI()
+    T = getTwitterAPI()
 
     # Determine the last hot car tweet we saw, so we can search for
     # tweets that have occurred since
@@ -141,26 +156,23 @@ def tick(db, tweetLive = False):
     queries = ['wmata hotcar', 'wmata hot car']
     tweets = []
     for q in queries:
-        res = T.search(q,
-                   rpp=100,
-                   since_id = lastTweetId,
-                   result_type = 'recent')
+        res = T.GetSearch(q, count=100, since_id = lastTweetId, result_type='recent')
         tweets.extend(t for t in res)
     tweets = uniqueTweets(tweets)
 
-    isRetweet = lambda t: len(t.text) >= 2 and t.text[0:2] == 'RT'
     def filterPass(t):
-        if isRetweet(t):
+
+        # Reject retweets
+        if t.retweeted_status:
             return False
 
         # Ignore tweets from self
         me = 'MetroHotCars'
-        if t.from_user.upper() == me.upper():
+        if t.user.screen_name.upper() == me.upper():
             return False
 
         return True
 
-    retweets = [t for t in tweets if isRetweet(t)]
     filteredTweets = [t for t in tweets if filterPass(t)]
     tweetIds = set(t.id for t in filteredTweets)
     assert(len(tweetIds) == len(filteredTweets))
@@ -195,8 +207,8 @@ def tick(db, tweetLive = False):
         if tweetLive:
             try:
                 T.update_status(response, in_reply_to_status_id = tweet.id)
-            except TweepError as e:
-                sys.stderr.write('Caught TweepError!: %s'%str(e))
+            except TwitterError as e:
+                sys.stderr.write('Caught TwitterError!: %s'%str(e))
                 
 
 ########################################
@@ -208,6 +220,11 @@ def getHotCarData(tweet):
     return {'cars' : carNums,
             'colors' : colors }
 
+def makeUTCDateTime(secSinceEpoch):
+    t = time.gmtime(secSinceEpoch)
+    dt = datetime(t.tm_year, t.tm_mon, t.tm_mday,
+                  t.tm_hour, t.tm_min, t.tm_sec)
+    return dt
 ########################################
 def updateDBFromTweet(db, tweet, hotCarData):
 
@@ -223,17 +240,20 @@ def updateDBFromTweet(db, tweet, hotCarData):
         return updated
 
     # Store the tweet
+    # TO DO: Store the timestamp as a datetime representing UTC time
+
+        
     doc = {'_id' : tweet.id,
-           'user_id' : tweet.from_user_id,
+           'user_id' : tweet.user.id,
            'text' : tweet.text,
-           'time' : tweet.created_at}
+           'time' : makeUTCDateTime(tweet.created_at_in_seconds)}
     db.hotcars_tweets.insert(doc)
     updated = True
 
     # Store the user information
-    update = {'_id' : tweet.from_user_id,
-           'handle' : tweet.from_user}
-    query = {'_id': tweet.from_user_id}
+    update = {'_id' : tweet.user.id,
+           'handle' : tweet.user.screen_name}
+    query = {'_id': tweet.user.id}
     db.hotcars_tweeters.find_and_modify(query=query, update=update, upsert=True)
 
     carNums = hotCarData['cars']
@@ -250,7 +270,7 @@ def updateDBFromTweet(db, tweet, hotCarData):
         doc = {'tweet_id' : tweet.id,
                'car_number' : carNum,
                'color' : color,
-               'time' : tweet.created_at}
+               'time' : makeUTCDateTime(tweet.created_at_in_seconds)}
         db.hotcars.insert(doc)
     else:
         sys.stderr.write('NOT updating hotcars collection with tweet %i:\n\t%s\n'%(tweet.id, tweetText))
@@ -314,7 +334,7 @@ def genResponseTweet(tweet, hotCarData):
         return None
 
     normalize = lambda s: s[0].upper() + s[1:].lower()
-    user = tweet.from_user
+    user = tweet.user.screen_name
     color = normalize(colors[0]) if len(colors) == 1 else ''
     car = carNums[0]
     if color:

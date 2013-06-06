@@ -7,7 +7,7 @@ import json
 import cPickle
 import requests
 from collections import defaultdict, Counter
-import datetime
+from datetime import datetime
 from incident import Incident
 
 Req = request.Requester()
@@ -74,7 +74,7 @@ def twitterRequest():
     incidents = [Incident(i) for i in incidents]
 
     result = { 'incidents' : incidents,
-               'requestTime' : datetime.datetime.now() }
+               'requestTime' : datetime.now() }
     return result
 
 

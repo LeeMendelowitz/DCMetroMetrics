@@ -3,39 +3,26 @@ import imp
 import os
 import sys
 import subprocess
+import argparse
 
-PYCART_DIR = ''.join(['python-', '.'.join(map(str, sys.version_info[:2]))])
-HOME = os.environ.get('OPENSHIFT_HOMEDIR', os.getcwd())
-
-REPO_DIR = os.environ.get('OPENSHIFT_REPO_DIR', None)
-if REPO_DIR is None:
-    SCRIPT_DIR = os.getcwd()
-else:
-    SCRIPT_DIR = os.path.join(REPO_DIR, 'scripts')
+PY_DIR = os.environ['OPENSHIFT_PYTHON_DIR']
+REPO_DIR = os.environ['OPENSHIFT_REPO_DIR']
+SCRIPT_DIR = os.path.join(REPO_DIR, 'scripts')
 
 try:
-   zvirtenv = os.path.join(os.environ['OPENSHIFT_HOMEDIR'], PYCART_DIR,
-                           'virtenv', 'bin', 'activate_this.py')
+   zvirtenv = os.path.join(PY_DIR, 'virtenv', 'bin', 'activate_this.py')
    execfile(zvirtenv, dict(__file__ = zvirtenv) )
 except IOError:
    pass
 
-def run_gevent_server(app, ip, port=8080):
-   from gevent.pywsgi import WSGIServer
-   w = WSGIServer((ip, port), app)
-   return w
-
-
-def run_simple_httpd_server(app, ip, port=8080):
-   from wsgiref.simple_server import make_server
-   w = make_server(ip, port, app)
-   return w
-
+# Import modules
 import gevent
 from gevent import Greenlet
+from gevent import monkey; monkey.patch_all() # Needed for bottle
 
+# Import application modules
 sys.path.append(SCRIPT_DIR)
-import runTwitterApp
+from runTwitterApp import TwitterApp
 from hotCarApp import HotCarApp
 
 ##########################################
@@ -43,49 +30,37 @@ from hotCarApp import HotCarApp
 # us to run the app concurrently with the WSGI server.
 class TwitterApp(Greenlet):
 
-    def __init__(self):
+    def __init__(self, LIVE=False):
         Greenlet.__init__(self)
+        self.LIVE = LIVE # Tweet if True
 
     def _run(self):
         while True:
-            runTwitterApp.runOnce()
+            runTwitterApp.runOnce(LIVE=self.LIVE)
             gevent.sleep(runTwitterApp.SLEEP)
 
-
-#
-# IMPORTANT: Put any additional includes below this line.  If placed above this
-# line, it's possible required libraries won't be in your searchable path
-# 
-
-#
-#  main():
-#
-if __name__ == '__main__':
+def run(LIVE=False):
    ip   = os.environ['OPENSHIFT_INTERNAL_IP']
    port = 8080
-   zapp = imp.load_source('application', 'wsgi/application')
 
-   #  Use gevent if we have it, otherwise run a simple httpd server.
-   print 'Starting WSGIServer on %s:%d ... ' % (ip, port)
+   # Load the bottleApp module
+   bottleAppPath = 'wsgi/bottleApp.py'
+   bottleApp = imp.load_source('bottleApp', bottleAppPath)
 
-   # Note: we run the servers asynchronously
-   w = None
-   try:
-      w = run_gevent_server(zapp.application, ip, port)
-   except:
-      print 'gevent probably not installed - using default simple server ...'
-      w = run_simple_httpd_server(zapp.application, ip, port)
-   w.start()
-
-   # Run the Twitter App forever. Note: This blocks, since it's an infinite loop!
-   twitterApp = TwitterApp()
+   # Run MetroEsclaators twitter App
+   twitterApp = TwitterApp(LIVE=LIVE)
    twitterApp.start()
 
-   hotCarApplication = HotCarApp(LIVE=True)
+   # Run HotCar twitter app
+   hotCarApplication = HotCarApp(LIVE=LIVE)
    hotCarApplication.start()
+
+   # Run the server. Note: This call blocks
+   bottle = bottleApp.application
+   bottle.run(host=ip, port=port, server=gevent)
 
    twitterApp.join()
    hotCarApplication.join()
 
-   # We should not arrive here, because the twitter app should run forever
-   w.stop()
+if __name__ == '__main__':
+    run(LIVE=True)
