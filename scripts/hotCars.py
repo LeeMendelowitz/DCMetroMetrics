@@ -82,8 +82,14 @@ def getAllHotCarReports(db):
 # and converting all characters to uppercase
 def preprocessText(tweetText):
     tweetText = tweetText.encode('ascii', errors='ignore')
-    tweetText = re.sub('[^a-zA-Z0-9\s]',' ', tweetText).upper()
-    tweetText = re.sub('(\d+)', ' \\1 ', tweetText).upper()
+    tweetText = tweetText.upper()
+    tweetText = re.sub('[^a-zA-Z0-9\s]',' ', tweetText)
+    # Separate numbers embedded in words
+    tweetText = re.sub('(\d+)', ' \\1 ', tweetText)
+    # Make consecutive white space a single space
+    tweetText = re.sub('\s+', ' ', tweetText)
+    # Remove reference to 1000, 2000, ..., 6000 Series
+    tweetText = re.sub('[1-6]000 SERIES', '', tweetText)
     return tweetText
 
 ###########################
@@ -96,11 +102,11 @@ def getCarNums(text):
 #######################################
 # Get colors mentioned from a tweet
 def getColors(text):
-    colorToWords = { 'RED' : ['RD'],
+    colorToWords = { 'RED' : ['RD', 'RL'],
                      'BLUE' : ['BL'],
-                     'GREEN' : ['GR'],
+                     'GREEN' : ['GR', 'GL'],
                      'YELLOW' : ['YL'],
-                     'ORANGE' : [],
+                     'ORANGE' : ['OL'],
                      #'SILVER' : ['SL']
                    }
     for c in colorToWords:
@@ -127,6 +133,23 @@ def uniqueTweets(tweetList):
             seen.add(t.id)
             unique.append(t)
     return unique
+
+def getManuallyTaggedTweets(db):
+    if db.hotcars_manual_tweets.count() == 0:
+        return []
+    docs = list(db.hotcars_manual_tweets.find())
+    tweetIds = [d['_id'] for d in docs]
+    tweets = []
+    for tid in tweetIds:
+        T = getTwitterAPI()
+        try:
+            tweet = T.GetStatus(tid)
+            tweets.append(tweet)
+            sys.stderr.write('Got manual weet %i! Removing from hotcars_manual_tweets\n'%tid)
+            db.hotcars_manual_tweets.remove({'_id' : tid})
+        except TwitterError as e:
+            sys.stderr.write('Caught TwitterError when trying to get manually tagged tweet %i: %s\n'%(tid, str(e)))
+    return tweets
 
 #######################################
 def tick(db, tweetLive = False):
@@ -158,6 +181,10 @@ def tick(db, tweetLive = False):
     for q in queries:
         res = T.GetSearch(q, count=100, since_id = lastTweetId, result_type='recent')
         tweets.extend(t for t in res)
+
+    # Get tweets which have been manually curated
+    tweets.extend(getManuallyTaggedTweets(db))
+
     tweets = uniqueTweets(tweets)
 
     def filterPass(t):
@@ -207,6 +234,11 @@ def tick(db, tweetLive = False):
         if tweetLive:
             try:
                 T.PostUpdate(response, in_reply_to_status_id = tweet.id)
+
+                # Update the acknowledgement status of the tweet
+                query = {'_id' : tweet.id}
+                update = {'$set' : {'ack' : True}}
+                db.hotcars_tweets.find_and_modify(query=query, update=update)
             except TwitterError as e:
                 sys.stderr.write('Caught TwitterError!: %s'%str(e))
 
@@ -239,40 +271,37 @@ def updateDBFromTweet(db, tweet, hotCarData):
         return updated
 
     # Store the tweet
-    # TO DO: Store the timestamp as a datetime representing UTC time
-
-        
     doc = {'_id' : tweet.id,
            'user_id' : tweet.user.id,
-           'text' : tweet.text,
-           'time' : makeUTCDateTime(tweet.created_at_in_seconds)}
+           'text' : tweetText,
+           'time' : makeUTCDateTime(tweet.created_at_in_seconds),
+           'ack' : False}
     db.hotcars_tweets.insert(doc)
     updated = True
 
-    # Store the user information
+    # Store the twitter user information
     update = {'_id' : tweet.user.id,
            'handle' : tweet.user.screen_name}
     query = {'_id': tweet.user.id}
     db.hotcars_tweeters.find_and_modify(query=query, update=update, upsert=True)
 
+
+    # Update hotcars collection
+    sys.stderr.write('hotcars has %i docs\n'%(db.hotcars.count()))
     carNums = hotCarData['cars']
     colors = hotCarData['colors']
-
-    # Only add tweet data to the hotcars collection if 
-    # a single car is listed, and it appears to be a good car number
-    tweetValid = len(carNums)==1 and carNums[0][0] in '123456'
-    if tweetValid:
-        sys.stderr.write('hotcars has %i docs\n'%(db.hotcars.count()))
+    carNum = int(carNums[0])
+    color = colors[0] if colors and len(colors)==1 else 'NONE'
+    doc = {'tweet_id' : tweet.id,
+           'car_number' : carNum,
+           'color' : color,
+           'time' : makeUTCDateTime(tweet.created_at_in_seconds)}
+    count = db.hotcars.find({'tweet_id' : tweet.id}).count()
+    if count == 0:
         sys.stderr.write('Updating hotcars collection with tweet %i\n'%tweet.id)
-        carNum = int(carNums[0])
-        color = colors[0] if colors and len(colors)==1 else 'NONE'
-        doc = {'tweet_id' : tweet.id,
-               'car_number' : carNum,
-               'color' : color,
-               'time' : makeUTCDateTime(tweet.created_at_in_seconds)}
         db.hotcars.insert(doc)
     else:
-        sys.stderr.write('NOT updating hotcars collection with tweet %i:\n\t%s\n'%(tweet.id, tweetText))
+        sys.stderr.write('Not updating hotcars collection with tweet %i. Entry already exists!\n'%tweet.id)
 
     return updated
 
@@ -280,6 +309,15 @@ def updateDBFromTweet(db, tweet, hotCarData):
 # Return True if we should store hot car data on this tweet
 # and generate a twitter response
 def tweetIsValid(tweet, hotCarData):
+
+    # Ignore tweets from self
+    me = 'MetroHotCars'
+    if tweet.user.screen_name.upper() == me.upper():
+        return False
+
+    # Ignore retweets
+    if tweet.retweeted_status is not None:
+        return False
 
     carNums = hotCarData['cars']
 
