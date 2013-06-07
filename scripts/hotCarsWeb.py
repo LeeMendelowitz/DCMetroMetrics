@@ -14,8 +14,12 @@ def tweetLinks(records):
         return s.format(url=url, handle=handle)
 
     linkHtmls = [getLinkHtml(rec) for rec in records]
-    linkString = ' '.join(linkHtmls)
+    linkString = ' , '.join(linkHtmls)
     return linkString
 
-
-
+def makeColorString(records):
+    colors = [rec['color'] for rec in records]
+    colors = [c for c in colors if c != 'NONE']
+    colors = set(colors)
+    colorStr = ', '.join(colors)
+    return colorStr
