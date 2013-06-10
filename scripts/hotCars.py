@@ -96,7 +96,7 @@ def preprocessText(tweetText):
 # Get 4 digit numbers
 def getCarNums(text):
     nums = re.findall('\d+', text)
-    validNums = [s for s in nums if len(s)==4]
+    validNums = list(set(s for s in nums if len(s)==4))
     return validNums
 
 #######################################
