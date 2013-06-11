@@ -87,7 +87,7 @@ def preprocessText(tweetText):
     # Remove any handles that are not @WMATA, to avoid mistaking
     # a 4 digit number in handle as a car number
     words = tweetText.split()
-    words = [w for w in in words if (w[0] != '@') or (w == '@WMATA')]
+    words = [w for w in words if (w[0] != '@') or (w == '@WMATA')]
     tweetText = ' '.join(tweetText)
 
     # Replace alphanumerica characters with spaces
