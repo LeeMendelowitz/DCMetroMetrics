@@ -217,7 +217,7 @@ def tick(db, tweetLive = False):
 
     tweetResponses = []
     for tweet in filteredTweets:
-        hotCarData = getHotCarData(tweet)
+        hotCarData = getHotCarData(tweet.text)
         validTweet = tweetIsValid(tweet, hotCarData)
         if not validTweet:
             continue
@@ -227,9 +227,23 @@ def tick(db, tweetLive = False):
         # If we updated the database with data on this tweet,
         # generate a response tweet
         if updated:
-            response = genResponseTweet(tweet, hotCarData)
+            user = tweet.user.screen_name
+            response = genResponseTweet(user, hotCarData)
             if response is not None:
-                tweetResponses.append((tweet, response))
+                tweetResponses.append((tweet.id, response))
+
+    # Generate reponse tweets for any tweets which have not yet been acknowledged
+    unacknowledged = list(db.hotcars_tweets.find({'ack' : False}))
+    for doc in unacknowledged:
+        tweetText = doc['text']
+        user_id = doc['user_id']
+        tweeterDoc = db.hotcars_tweeters.find_one({'_id': user_id})
+        if tweeterDoc is None:
+            sys.stderr.write('Warning: Could not acknowledge unacknowledged tweet %i because user %s could not be found\n'%(doc['_id'], user_id))
+            continue
+        response = genResponseTweet(tweeterDoc['handle'], getHotCarData(tweetText))
+        if response is not None:
+            tweetResponses.append((doc['_id'], response))
 
     # Update the app state
     maxTweetId = max([t.id for t in filteredTweets]) if filteredTweets else 0
@@ -238,16 +252,16 @@ def tick(db, tweetLive = False):
     query = {'_id' : 1}
     db.hotcars_appstate.find_and_modify(query=query, update=update, upsert=True)
 
-    for tweet, response in tweetResponses:
+    for tweetId, response in tweetResponses:
         if response is None:
             continue
-        sys.stderr.write('Response for Tweet %i: %s\n'%(tweet.id, response))
+        sys.stderr.write('Response for Tweet %i: %s\n'%(tweetId, response))
         if tweetLive:
             try:
-                T.PostUpdate(response, in_reply_to_status_id = tweet.id)
+                T.PostUpdate(response, in_reply_to_status_id = tweetId)
 
                 # Update the acknowledgement status of the tweet
-                query = {'_id' : tweet.id}
+                query = {'_id' : tweetId}
                 update = {'$set' : {'ack' : True}}
                 db.hotcars_tweets.find_and_modify(query=query, update=update)
             except TwitterError as e:
@@ -255,8 +269,8 @@ def tick(db, tweetLive = False):
 
 ########################################
 # Get hot car data from a tweet
-def getHotCarData(tweet):
-    pp = preprocessText(tweet.text)
+def getHotCarData(text):
+    pp = preprocessText(text)
     carNums = getCarNums(pp)
     colors = getColors(pp)
     return {'cars' : carNums,
@@ -374,7 +388,7 @@ def tweetIsValid(tweet, hotCarData):
 
 ########################################
 # Generate reponse tweet
-def genResponseTweet(tweet, hotCarData):
+def genResponseTweet(toScreenName, hotCarData):
     carNums = hotCarData['cars']
     colors = hotCarData['colors']
     tweetValid = len(carNums)==1 and carNums[0][0] in '123456'
@@ -382,7 +396,7 @@ def genResponseTweet(tweet, hotCarData):
         return None
 
     normalize = lambda s: s[0].upper() + s[1:].lower()
-    user = tweet.user.screen_name
+    user = toScreenName
     color = normalize(colors[0]) if len(colors) == 1 else ''
     car = carNums[0]
     if color:
