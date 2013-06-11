@@ -176,7 +176,7 @@ def tick(db, tweetLive = False):
 #    sys.stderr.write('Forcing last tweet id: %i\n'%lastTweetId)
 
     # Get the latest tweets about WMATA hotcars
-    queries = ['wmata hotcar', 'wmata hot car']
+    queries = ['wmata hotcar', 'wmata hot car', 'wmata hotcars', 'wmata hot cars']
     tweets = []
     for q in queries:
         res = T.GetSearch(q, count=100, since_id = lastTweetId, result_type='recent')
