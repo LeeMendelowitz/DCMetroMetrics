@@ -83,11 +83,22 @@ def getAllHotCarReports(db):
 def preprocessText(tweetText):
     tweetText = tweetText.encode('ascii', errors='ignore')
     tweetText = tweetText.upper()
+
+    # Remove any handles that are not @WMATA, to avoid mistaking
+    # a 4 digit number in handle as a car number
+    words = tweetText.split()
+    words = [w for w in in words if (w[0] != '@') or (w == '@WMATA')]
+    tweetText = ' '.join(tweetText)
+
+    # Replace alphanumerica characters with spaces
     tweetText = re.sub('[^a-zA-Z0-9\s]',' ', tweetText)
+
     # Separate numbers embedded in words
     tweetText = re.sub('(\d+)', ' \\1 ', tweetText)
+
     # Make consecutive white space a single space
     tweetText = re.sub('\s+', ' ', tweetText)
+
     # Remove reference to 1000, 2000, ..., 6000 Series
     tweetText = re.sub('[1-6]000 SERIES', '', tweetText)
     return tweetText
