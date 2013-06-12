@@ -198,6 +198,8 @@ def tick(db, tweetLive = False):
 
     tweets = uniqueTweets(tweets)
 
+    sys.stderr.write('Twitter search returned %i unique tweets\n'%len(tweets))
+
     def filterPass(t):
 
         # Reject retweets
@@ -214,6 +216,8 @@ def tick(db, tweetLive = False):
     filteredTweets = [t for t in tweets if filterPass(t)]
     tweetIds = set(t.id for t in filteredTweets)
     assert(len(tweetIds) == len(filteredTweets))
+
+    sys.stderr.write('Filtered to %i tweets after removing re-/self-tweets\n'%len(filteredTweets))
 
     tweetResponses = []
     for tweet in filteredTweets:
