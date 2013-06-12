@@ -88,7 +88,7 @@ def preprocessText(tweetText):
     # a 4 digit number in handle as a car number
     words = tweetText.split()
     words = [w for w in words if (w[0] != '@') or (w == '@WMATA')]
-    tweetText = ' '.join(tweetText)
+    tweetText = ' '.join(words)
 
     # Replace alphanumerica characters with spaces
     tweetText = re.sub('[^a-zA-Z0-9\s]',' ', tweetText)
@@ -219,9 +219,13 @@ def tick(db, tweetLive = False):
 
     sys.stderr.write('Filtered to %i tweets after removing re-/self-tweets\n'%len(filteredTweets))
 
+    tweetData = [(t,getHotCarData(t.text)) for t in filteredTweets]
+    tweetData = [(t,hcd) for t,hcd in tweetData if tweetIsValid(t, hcd)]
+
+    sys.stderr.write('Have %i tweets about hot cars\n'%len(tweetData))
+
     tweetResponses = []
-    for tweet in filteredTweets:
-        hotCarData = getHotCarData(tweet.text)
+    for tweet, hotCarData in tweetData:
         validTweet = tweetIsValid(tweet, hotCarData)
         if not validTweet:
             continue
@@ -238,6 +242,7 @@ def tick(db, tweetLive = False):
 
     # Generate reponse tweets for any tweets which have not yet been acknowledged
     unacknowledged = list(db.hotcars_tweets.find({'ack' : False}))
+    sys.stderr.write('Found %i unacknowledged tweets\n'%(len(unacknowledged)))
     for doc in unacknowledged:
         tweetText = doc['text']
         user_id = doc['user_id']
