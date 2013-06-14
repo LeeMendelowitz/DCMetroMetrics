@@ -186,6 +186,20 @@ def tick(db, tweetLive = False):
 #    lastTweetId = 0
 #    sys.stderr.write('Forcing last tweet id: %i\n'%lastTweetId)
 
+    # Generate reponse tweets for any tweets which have not yet been acknowledged
+    unacknowledged = list(db.hotcars_tweets.find({'ack' : False}))
+    sys.stderr.write('Found %i unacknowledged tweets\n'%(len(unacknowledged)))
+    for doc in unacknowledged:
+        tweetText = doc['text']
+        user_id = doc['user_id']
+        tweeterDoc = db.hotcars_tweeters.find_one({'_id': user_id})
+        if tweeterDoc is None:
+            sys.stderr.write('Warning: Could not acknowledge unacknowledged tweet %i because user %s could not be found\n'%(doc['_id'], user_id))
+            continue
+        response = genResponseTweet(tweeterDoc['handle'], getHotCarData(tweetText))
+        if response is not None:
+            tweetResponses.append((doc['_id'], response))
+
     # Get the latest tweets about WMATA hotcars
     queries = ['wmata hotcar', 'wmata hot car', 'wmata hotcars', 'wmata hot cars']
     tweets = []
@@ -240,19 +254,6 @@ def tick(db, tweetLive = False):
             if response is not None:
                 tweetResponses.append((tweet.id, response))
 
-    # Generate reponse tweets for any tweets which have not yet been acknowledged
-    unacknowledged = list(db.hotcars_tweets.find({'ack' : False}))
-    sys.stderr.write('Found %i unacknowledged tweets\n'%(len(unacknowledged)))
-    for doc in unacknowledged:
-        tweetText = doc['text']
-        user_id = doc['user_id']
-        tweeterDoc = db.hotcars_tweeters.find_one({'_id': user_id})
-        if tweeterDoc is None:
-            sys.stderr.write('Warning: Could not acknowledge unacknowledged tweet %i because user %s could not be found\n'%(doc['_id'], user_id))
-            continue
-        response = genResponseTweet(tweeterDoc['handle'], getHotCarData(tweetText))
-        if response is not None:
-            tweetResponses.append((doc['_id'], response))
 
     # Update the app state
     maxTweetId = max([t.id for t in filteredTweets]) if filteredTweets else 0
