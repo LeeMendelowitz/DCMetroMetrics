@@ -15,7 +15,7 @@ class HotCarApp(Greenlet):
 
     def __init__(self, LIVE=False):
         Greenlet.__init__(self)
-        self.SLEEP = 10 # Run every 10 seconds
+        self.SLEEP = 40 # Run every 10 seconds
         self.LIVE = LIVE
 
     # Run forever
