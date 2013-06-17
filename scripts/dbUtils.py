@@ -8,7 +8,7 @@ from datetime import datetime, time, date, timedelta
 from operator import itemgetter
 import copy
 
-from escalatorUtils import symptomToCategory
+from escalatorUtils import symptomToCategory, OPERATIONAL_CODE
 import stations
 from metroTimes import TimeRange
 
@@ -22,17 +22,24 @@ escIdToUnit = None
 symptomToId = None
 symptomCodeToSymptom = None
 escIdToEscData = None
-opCode = None
+opCode = OPERATIONAL_CODE
 ################################
 
 
 
 ################################
 def updateGlobals(force=True):
-    global db, unitToEscId, escIdToUnit, symptomToId, symptomCodeToSymptom, opCode, escIdToEscData
-    globalList = [db, unitToEscId, escIdToUnit, symptomToId, symptomCodeToSymptom, opCode, escIdToEscData]
+    global db, unitToEscId, escIdToUnit, symptomToId, symptomCodeToSymptom, escIdToEscData
+    globalList = [db, unitToEscId, escIdToUnit, symptomToId, symptomCodeToSymptom, escIdToEscData]
     if force or any(g is None for g in globalList):
         db = getDB()
+
+        # Add the operational code
+        db.symptom_codes.find_and_modify({'_id' : OPERATIONAL_CODE},
+                                         update = {'_id' : OPERATIONAL_CODE,
+                                                   'symptom_desc' : 'OPERATIONAL'},
+                                         upsert=True)
+
         unitToEscId = getUnitToId(db)
         escIdToUnit = invDict(unitToEscId)
         symptomToId = getSymptomToId(db)
@@ -364,12 +371,13 @@ def doc2Str(doc):
 # - lastOp
 # - lastStatus: The status before this tick's update
 # - newStatus: The updated status
-def processIncidents(db, curIncidents, curTime, tickDelta):
+def processIncidents(db, curIncidents, curTime, tickDelta, log=sys.stdout):
 
     updateGlobals(force=False)
 
-    sys.stdout.write('dbUtils.processIncidents: Processing %i incidents\n'%len(curIncidents))
-    sys.stdout.write('escalator_statuses has %i documents\n'%(db.escalator_statuses.find().count()))
+    log = log.write
+    log('dbUtils.processIncidents: Processing %i incidents\n'%len(curIncidents))
+    log('escalator_statuses has %i documents\n'%(db.escalator_statuses.find().count()))
     sys.stdout.flush()
 
     # Add any escalators or symptom codes if we are seeing them for the first time
@@ -451,9 +459,9 @@ def groupStatusesByStationCode(statuses):
         stationCodeToStatus[s['station_code']].append(s)
     return stationCodeToStatus
 
-###############################
+#####################################################################
 # Determine the escalator availabilities of the system
-# TO DO: Compute weighted availability
+# Also compute the weighted availability and the station availability
 def getSystemAvailability():
     db = getDB()
     latestStatuses = getLatestStatuses(db)

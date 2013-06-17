@@ -2,6 +2,8 @@
 # for use with escalators
 from collections import defaultdict
 
+OPERATIONAL_CODE = -1
+
 ###################################################
 # Define symptomToCategory. Consider adding these
 # to the symptom_codes database
