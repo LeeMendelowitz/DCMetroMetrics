@@ -133,3 +133,26 @@ class TimeRange(object):
             secOpen += (te - ts).total_seconds()
             t = te
         return secOpen
+
+def secondsToDHM(seconds):
+    secondsPerDay = 24 * 3600
+    numDays = int(seconds/secondsPerDay)
+    rem = seconds - numDays*secondsPerDay
+    d = datetime(2000,1,1) + timedelta(seconds=rem)
+    dstr = d.strftime('%Hh %Mm')
+    if numDays > 0:
+        timeStr = '%id %s'%(numDays, dstr)
+    else:
+        timeStr = dstr
+    return timeStr
+
+def secondsToHMS(seconds):
+    secondsPerDay = 24 * 3600
+    numDays = int(seconds/secondsPerDay)
+    rem = seconds - numDays*secondsPerDay
+    d = datetime(2000,1,1) + timedelta(seconds=rem)
+    hours = numDays*24 + d.hour
+    minutes = d.minute
+    seconds = d.second
+    timeStr = '%ih %im %is'%(hours,minutes,seconds)
+    return timeStr
