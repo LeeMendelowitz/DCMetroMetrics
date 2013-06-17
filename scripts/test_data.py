@@ -8,6 +8,8 @@ from collections import defaultdict
 import dbUtils
 import time
 import twitterApp
+import twitterApp
+from twitterApp import TwitterApp
 
 test_setup.setupPaths()
 
@@ -15,7 +17,6 @@ DATA_DIR = os.environ['OPENSHIFT_DATA_DIR']
 TEST_DATA_DIR = os.path.join(DATA_DIR, 'test_data')
 
 testDataFile = os.path.join(TEST_DATA_DIR, 'data.tsv')
-OPERATIONAL_CODE = -1
 
 def readTestData(tsvFile):
     fin = open(tsvFile)
@@ -23,18 +24,20 @@ def readTestData(tsvFile):
     incFields = ['UnitName', 'UnitType', 'StationCode',
               'StationName', 'LocationDescription', 'SymptomCode',
               'SymptomDescription']
-    otherFields = ['Group']
+    otherFields = ['offset']
     allFields = incFields + otherFields
+    numFields = len(allFields)
     data = []
     for l in fin:
         fieldVals = l.strip().split('\t')
-        assert(len(fieldVals) == len(allFields))
+        fieldVals = fieldVals[0:numFields]
+#        assert(len(fieldVals) == len(allFields))
         nIncFields = len(incFields)
         incFieldVals = fieldVals[:nIncFields]
         oFieldVals = fieldVals[nIncFields:]
         incData = dict(zip(incFields, incFieldVals))
-        group = int(oFieldVals[0])
-        data.append((incData,group))
+        offset = int(oFieldVals[0])
+        data.append((incData,offset))
     return data
 
 
@@ -44,16 +47,15 @@ def getTestData():
     for d,group in data:
         groupToData[group].append(Incident(d))
     groupKeys = sorted(groupToData.keys())
-    tdelta = timedelta(seconds=30) # seconds
-    n = datetime.now()
-    startTime = n - len(groupKeys)*tdelta
+    oneSec = timedelta(seconds=1) # 1 second
+    startTime = datetime(2013, 1, 1, 12, 0, 0)
     
     res = []
-    for i,k in enumerate(groupKeys):
-        incidents = groupToData[k]
-        tickDelta = tdelta.seconds
-        curTime = startTime + i*tdelta
-        res.append([incidents, curTime, tickDelta])
+    for i, offset in enumerate(groupKeys):
+        incidents = groupToData[offset]
+        offset_delta = offset*oneSec
+        curTime = startTime + offset_delta
+        res.append([curTime, incidents])
 
     return res
 
@@ -76,18 +78,30 @@ def printUpdates(db, updateDict):
 
 def runTest(db):
     testData = getTestData()
-    for incList, curTime, tickDelta in testData:
+    log = sys.stdout
+    T = TwitterApp(log, LIVE=False)
+    db = dbUtils.getDB()
+
+    # Clear out the databases
+    db.escalator_appstate.remove()
+    db.escalators.remove()
+    db.escalator_statuses.remove()
+    db.symptom_codes.remove()
+    db.escalator_tweet_outbox.remove()
+
+    # Initialize the databases
+    #now = datetime.now()
+    now = datetime(2013, 1, 1, 12, 0, 0)
+    twitterApp.initDB(db, curTime=now)
+
+    for curTime, incList in testData:
         #res = dbUtils.processIncidents(db, incList, curTime, tickDelta)
-        res = twitterApp.updateDB(incList, curTime, tickDelta)
-        printUpdates(db, res)
-        sys.stderr.write('SLEEPING....')
-        time.sleep(2)
-        sys.stderr.write('DONE\n')
+        sys.stdout.write('*'*50 + '\nRunning tick:\n\n')
+        T.runTick(db, curTime, incList, log=log)
 
 def run():
     test_setup.startup()
     db = test_setup.getDB()
-    dbUtils.addSymptomCode(db, OPERATIONAL_CODE, 'OPERATIONAL')
     runTest(db)
     test_setup.shutdown()
 

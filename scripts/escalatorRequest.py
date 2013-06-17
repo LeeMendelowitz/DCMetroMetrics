@@ -1,16 +1,21 @@
+##################################################
+#  Get escalator incidents through the wmata API
+##################################################
+
+# Python modules
 import time
-import stations
-import request
 import os
 import sys
-import json
 import cPickle
-import requests
 from collections import defaultdict, Counter
 from datetime import datetime
-from incident import Incident
 
-Req = request.Requester()
+# Custom modules
+import stations
+import wmataApi
+api = wmataApi.WMATA_API()
+WMATA_API_ERROR = wmataApi.WMATA_API_ERROR
+from incident import Incident
 
 # Summarize results to standard output
 def summarize(result):
@@ -41,17 +46,7 @@ def summarize(result):
 def run():
     requestTime = time.localtime()
     timeStr = time.strftime('%d_%b_%Y-%H_%M_%S', requestTime)
-
-    incidents = []
-
-#    for sc in stations.allCodes:
-#        res = Req.getEscalator(params={'StationCode':sc})
-#        d = res.json()['ElevatorIncidents']
-#        station = stations.codeToName[sc]
-#        #sys.stderr.write('Station: %s Code: %s Num. Incidents: %i\n'%(station, sc, len(d)))
-#        incidents.extend(d)
-
-    res = Req.getEscalator()
+    res = api.getEscalator()
     incidents = res.json()['ElevatorIncidents']
 
     websiteTxt = Req.getEscalatorWebpageStatus().text
@@ -68,17 +63,13 @@ def run():
     fout.close()
 
 # Make a request for the twitter app
-def twitterRequest():
-    res = Req.getEscalator()
+def getELESIncidents():
+    res = api.getEscalator()
     incidents = res.json()['ElevatorIncidents']
     incidents = [Incident(i) for i in incidents]
-
     result = { 'incidents' : incidents,
                'requestTime' : datetime.now() }
     return result
-
-
-
 
 if __name__ == '__main__':
     run()
