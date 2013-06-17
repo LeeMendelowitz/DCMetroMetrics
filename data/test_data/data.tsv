@@ -1,8 +1,17 @@
-UnitName	UnitType	StationCode	StationName	LocationDescription	SymptomCode	SymptomDescription	Group
-A03N01	ESCALATOR	A03	Dupont Circle, North	Escalator to street	2	Lazy	1
-A03N02	ESCALATOR	A03	Dupont Circle, North	Escalator to street	3	Slippery	1
-A02X012	ESCALATOR	A02	Farragut North, 17th Street	Escalator to street	4	Power	2
-A03N02	ESCALATOR	A03	Dupont Circle, North	Escalator to street	3	Slippery	2
-A02X012	ESCALATOR	A02	Farragut North, 17th Street	Escalator to street	4	Power	3
-A03N02	ESCALATOR	A03	Dupont Circle, North	Escalator to street	3	Slippery	3
-A02X012	ESCALATOR	A02	Farragut North, 17th Street	Escalator to street	4	Power	4
+UnitName	UnitType	StationCode	StationName	LocationDescription	SymptomCode	SymptomDescription	TickOffset
+A03N01	ESCALATOR	A03	Dupont Circle, North	Escalator to street	2	Lazy	10
+A03N02	ESCALATOR	A03	Dupont Circle, North	Escalator to street	3	Slippery	10
+A02S01	ESCALATOR	A02	Farragut North, 17th Street	Escalator to street	4	Power	20
+A03N02	ESCALATOR	A03	Dupont Circle, North	Escalator to street	3	Slippery	20
+A02S01	ESCALATOR	A02	Farragut North, 17th Street	Escalator to street	4	Power	30
+A03N02	ESCALATOR	A03	Dupont Circle, North	Escalator to street	3	Slippery	30
+A02S01	ESCALATOR	A02	Farragut North, 17th Street	Escalator to street	4	Power	40
+A02S01	ESCALATOR	A02	Farragut North, 17th Street	Escalator to street	5	PowerStillOff	50
+A03N01	ESCALATOR	A03	Dupont Circle, North	Escalator to street	2	Lazy	60
+A03N02	ESCALATOR	A03	Dupont Circle, North	Escalator to street	3	Slippery	60
+A02S01	ESCALATOR	A02	Farragut North, 17th Street	Escalator to street	4	Power	70
+A03N02	ESCALATOR	A03	Dupont Circle, North	Escalator to street	3	Slippery	70
+A02S01	ESCALATOR	A02	Farragut North, 17th Street	Escalator to street	4	Power	80
+A03N02	ESCALATOR	A03	Dupont Circle, North	Escalator to street	3	Slippery	80
+A02S01	ESCALATOR	A02	Farragut North, 17th Street	Escalator to street	4	Power	90
+A02S01	ESCALATOR	A02	Farragut North, 17th Street	Escalator to street	5	PowerStillOff	100

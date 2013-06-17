@@ -6,14 +6,61 @@
 # imported
 #############################################
 
-import request
+import wmataApi
 import json
 from collections import defaultdict
 import renameStations
+import numpy as np
+
+
+class StationData(object):
+    def __init__(self, codes, numEscalators, numRiders, weight):
+        self.numEscalators = numEscalators
+        self.numRiders = numRiders
+        self.weight = weight
+        self.codes = codes
+        self.escalatorWeight = float(self.weight)/self.numEscalators if self.numEscalators > 0 else 0.0
+
+    def makeDict(self):
+        keys = ['numEscalators', 'numRiders', 'weight', 'codes', 'escalatorWeight']
+        d = dict((k, self.__dict__[k]) for k in keys)
+        return d
+
+#######################################
+# Get the weight of each escalator,
+# to compute weighted availability
+def getStationData():
+    import os
+    import pandas
+    cwd = os.getcwd()
+    repo_root = os.path.split(cwd)[0]
+    dataFile = os.path.join(repo_root,'data', 'stations.data.csv')
+    stationData = pandas.read_table(dataFile)
+    codes = stationData['Codes']
+    riders = stationData['2012***']
+    numEsc = stationData['N']
+    stationsWithEsc = numEsc > 0
+    stationsWithNoEsc = np.logical_not(stationsWithEsc)
+    denom = float(riders[stationsWithEsc].sum())
+    weight = riders/denom
+    weight[stationsWithNoEsc] = 0.0
+
+    stationCodeToData = {}
+    for myCodes, myWeight, riderCount, escCount in zip(codes, weight, riders, numEsc):
+        if pandas.isnull(myCodes):
+            continue
+        myCodes = myCodes.split(',')
+        sd = StationData(myCodes, escCount, riderCount, myWeight)
+        for c in myCodes:
+            stationCodeToData[c] = sd
+
+    stationCodeToData = dict((k,v.makeDict()) for k,v in stationCodeToData.items())
+    return stationCodeToData
+
 
 def defineVariables():
-    Req = request.Requester()
-    allStations = json.loads(Req.getStations().text)['Stations']
+    api = wmataApi.WMATA_API()
+    allStations = json.loads(api.getStations().text)['Stations']
 
     codeToInfo = dict((sInfo['Code'], sInfo) for sInfo in allStations)
     codeToName = dict((sInfo['Code'], sInfo['Name']) for sInfo in allStations)
@@ -40,13 +87,21 @@ def defineVariables():
             lineToCodes[l].append(s['Code'])
     lineToCodes = dict(lineToCodes)
 
+    codeToData = getStationData()
+    for c, d in codeToData.iteritems():
+        d['name'] = codeToName[c]
+
+
+
+
     res = { 'allStations' : allStations,
             'codeToInfo' : codeToInfo,
             'codeToName' : codeToName,
             'codeToShortName' : codeToShortName,
             'nameToCodes': nameToCodes,
             'lineToCodes' : lineToCodes,
-            'allCodes' : allCodes }
+            'allCodes' : allCodes,
+            'codeToData' : codeToData}
     return res
 
 def writeModule(moduleName, varDict):
