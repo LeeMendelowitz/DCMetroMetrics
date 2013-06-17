@@ -15,7 +15,7 @@ import twitterUtils
 from escalatorRequest import getELESIncidents, WMATA_API_ERROR
 from utils import *
 from keys import MetroEscalatorKeys
-from escalatorUtils import symptomToCategory
+from escalatorUtils import symptomToCategory, OPERATIONAL_CODE
 
 
 TWEET_LEN = 140
@@ -33,8 +33,6 @@ NUM_ESCALATORS = 588
 OUTPUT_DIR = os.environ.get('OPENSHIFT_DATA_DIR', None)
 if OUTPUT_DIR is None:
     OUTPUT_DIR = os.getcwd()
-
-OPERATIONAL_CODE = -1
 
 def initDB(db, curTime):
 
@@ -107,7 +105,7 @@ class TwitterApp(object):
     # Execute the tick
     def runTick(self, db, curTime, escIncidents, log = sys.stdout):
 
-        log = log.write
+        printLog = log.write
 
         # Get the app state to determine the tick delta
         appState = db.escalator_appstate.find_one()
@@ -115,7 +113,7 @@ class TwitterApp(object):
                     if appState is not None else 0.0
 
         # Determine escalators which changed status
-        changedStatusDict = dbUtils.processIncidents(db, escIncidents, curTime, tickDelta)
+        changedStatusDict = dbUtils.processIncidents(db, escIncidents, curTime, tickDelta, log=log)
 
         # Generate tweets for escalators which have changed status
         tweetMsgs = generateTweets(db, changedStatusDict)
@@ -130,12 +128,13 @@ class TwitterApp(object):
         twitterApi = self.getTwitterApi()
         tweetLive = self.LIVE and metroIsOpen(curTime)
         if len(tweetMsgs) > MAX_TICK_TWEETS:
-            log("Disabling live tweeting due to excessive number" +\
+            printLog("Disabling live tweeting due to excessive number" +\
                        " of tweets: %i tweets\n"%len(tweetMsgs))
             tweetLive = False
         if tickDelta > SILENCE_GAP:
-            log("Disabling live tweeting due to tick delta of %i seconds\n"%(int(tickDelta)))
+            printLog("Disabling live tweeting due to tick delta of %i seconds\n"%(int(tickDelta)))
             tweetLive = False
+
         sendTweets(db, twitterApi, tweetLive=tweetLive, log=self.log)
 
         # Update the app state
@@ -147,11 +146,11 @@ class TwitterApp(object):
         lastStatsTime = None
         if appState is not None:
             lastStatsTime = appState.get('lastDailyStatsTime', None)
-        delta = (curTime - lastStatsTime).total_seconds() if lastStatsTime else None
-        oneDay = 24.0*3600.0 # seconds in a day
+        lastRanDay = lastStatsTime.weekday() if lastStatsTime else None
 
         # Send the daily stats at 8 AM
-        runStats = (curTime.hour > 8) and ((delta is None) or delta > oneDay)
+        runStats = (curTime.hour > 8)
+        runStats = runStats and ((lastRanDay is None) or (lastRanDay != curTime.weekday()))
 
         # If we do not need to run the dailyStats, return
         if not runStats:
@@ -331,8 +330,7 @@ def generateTweets(db, changedStatusDict):
     docToStr = lambda d: doc2Str(d, escIdToUnit, symptomCodeToSymptom)
 
     availabilityData = dbUtils.getSystemAvailability()
-    availability = availabilityData['availability']
-    availabilityStr = '%.1f%% work.'%(100.0*availability)
+
 
     # Extend a tweet by appending another string only if it doesnt violate
     # tweet legnth
@@ -359,7 +357,8 @@ def generateTweets(db, changedStatusDict):
         # Get 6 char escalator code
         unit = escIdToUnit[escid][0:6]
         escData = dbUtils.getEsc(db, escid)
-        station = stations.codeToShortName[escData['station_code']]
+        stationCode = escData['station_code']
+        station = stations.codeToShortName[stationCode]
 
         tweetMsg = ''
 
@@ -406,7 +405,14 @@ def generateTweets(db, changedStatusDict):
             tweetMsg = tweetMsg.format(station=station, unit=unit,
                                        symptom1 = lastSymptom  ,
                                        symptom2 = curSymptom)
-        tweetMsg = extendTweet(tweetMsg, availabilityStr)
+
+        # Tack on availability data
+        sAvail = availabilityData['stationToAvailability'][stationCode]
+        aStr =  'A=%.1f%%'%(100.0*availabilityData['availability'])
+        wAStr = 'wA=%.1f%%'%(100.0*availabilityData['weightedAvailability'])
+        sAstr = 'sA=%.1f%%'%(100.0*sAvail)
+        tweetMsg = extendTweet(tweetMsg, aStr)
+        tweetMsg = extendTweet(tweetMsg, '%s %s'%(wAStr, sAstr))
         tweetMsgs.append(tweetMsg)
     return tweetMsgs
 

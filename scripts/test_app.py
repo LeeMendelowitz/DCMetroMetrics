@@ -11,6 +11,9 @@ import imp
 # Setup environmental variables
 test_setup.setupPaths()
 
+# Clear the database
+test_setup.clearDB()
+
 # Run the application
 cwd = os.getcwd()
 REPO_DIR = os.environ['OPENSHIFT_REPO_DIR']

@@ -150,6 +150,19 @@ def shutdown():
     # 6/2/2013: NOTE: My macbook is running a mongod instance, so there is no need to start one
     #killMongod()
 
+def clearDB():
+    db = getDB()
+
+    # Clear out the collections
+    db.hotcars.remove()
+    db.hotcars_tweets.remove()
+    db.hotcars_appstate.remove()
+    db.escalator_appstate.remove()
+    db.escalators.remove()
+    db.escalator_statuses.remove()
+    db.symptom_codes.remove()
+    db.escalator_tweet_outbox.remove()
+
 def getDB():
     dbpath = os.environ["OPENSHIFT_MONGODB_DB_LOG_DIR"]
     host = os.environ["OPENSHIFT_MONGODB_DB_HOST"]
