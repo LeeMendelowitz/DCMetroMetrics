@@ -46,16 +46,25 @@ def runOnce(LIVE=False):
     logFile.write('App exited with return code: %i\n\n'%ret)
 
 ##########################################
-# Run the Twitter App as a Greenlet. This allows
-# us to run the app concurrently with the WSGI server.
+# Run the Twitter App as a Greenlet.
 class TwitterApp(Greenlet):
 
-    def __init__(self, SLEEP=SLEEP, LIVE=False):
+    def __init__(self, SLEEP=SLEEP, LIVE=False, log=sys.stdout):
         Greenlet.__init__(self)
-        self.LIVE = LIVE # Tweet if True
-        self.SLEEP = SLEEP
+        self.LIVE = LIVE # Tweet only if Live
+        self.SLEEP = SLEEP # Sleep time after each tick
+        self.log = log # File like handle for logging
+        from twitterApp import TwitterApp as App
+        self.app = App(self.log, LIVE = self.LIVE)
 
     def _run(self):
         while True:
-            runOnce(LIVE=self.LIVE)
+            try:
+                self.tick()
+            except Exception as e:
+                self.log.write('TwitterApp caught Exception: %s\n'%(str(e)))
             gevent.sleep(self.SLEEP)
+
+    def tick(self):
+        self.app.tick()
+        
