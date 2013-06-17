@@ -12,7 +12,7 @@ import imp
 test_setup.setupPaths()
 
 # Clear the database
-test_setup.clearDB()
+#test_setup.clearDB()
 
 # Run the application
 cwd = os.getcwd()

@@ -558,7 +558,7 @@ def getEscalatorStatuses(escId=None, escUnitId=None, startTime = None, endTime =
 
     # If startTime is specified, give all statuses from first operational
     # status which preceeds startTime
-    if startTime is not None and (not statuses) or (statuses[-1]['symptom_code'] != opCode):
+    if startTime is not None and ((not statuses) or (statuses[-1]['symptom_code'] != opCode)):
         firstStatusTime = startTime
         query = {'escalator_id' : escId,
                  'time' : {'$lt' : firstStatusTime}}
@@ -573,7 +573,7 @@ def getEscalatorStatuses(escId=None, escUnitId=None, startTime = None, endTime =
 
     # If endTime is specified, give all statuses after the first
     # operational status which follows endTime
-    if endTime is not None and (not statuses) or (statuses[0]['symptom_code'] != opCode):
+    if endTime is not None and ((not statuses) or (statuses[0]['symptom_code'] != opCode)):
         lastStatusTime = endTime
         query = {'escalator_id' : escId,
                  'time' : {'$gt' : lastStatusTime}}
@@ -601,7 +601,6 @@ def getEscalatorStatuses(escId=None, escUnitId=None, startTime = None, endTime =
 def summarizeStatuses(statusList, startTime, endTime):
 
     if not statusList:
-        import pdb; pdb.set_trace()
         return {}
 
     if (startTime is not None) and (endTime is not None) \
@@ -636,33 +635,45 @@ def summarizeStatuses(statusList, startTime, endTime):
 
     # The statusList may have statuses that provide context before and after the  startTime/endTime
     # If necessary, adjust the statusList to restrict statuses to the specified startTime/endTime.
-    if startTime is not None:
-        beforeStart = [(i,s) for i,s in enumerate(statusList) if s['time'] < startTime]
-        firstInd, firstStatus = beforeStart[-1] if beforeStart else (None, None)
-        # Adjust the beginning of the list, if necessary
-        if firstInd is not None:
-            statusList = statusList[firstInd:]
-            assert(statusList[0] is firstStatus)
+    beforeStart = [(i,s) for i,s in enumerate(statusList) if s['time'] < startTime]
+    firstInd, firstStatus = beforeStart[-1] if beforeStart else (None, None)
+    # Adjust the beginning of the list, if necessary
+    if firstInd is not None:
+        statusList = statusList[firstInd:]
+        assert(statusList[0] is firstStatus)
 
-    if endTime is not None:
-        afterEnd = [(i,s) for i,s in enumerate(statusList) if s['time'] >= endTime]
-        afterEndInd, afterEndStatus = afterEnd[0] if afterEnd else (None, None)
-        # Adjust the beginning of the list, if necessary
-        if afterEndInd is not None:
-            statusList = statusList[:afterEndInd]
+    afterEnd = [(i,s) for i,s in enumerate(statusList) if s['time'] >= endTime]
+    afterEndInd, afterEndStatus = afterEnd[0] if afterEnd else (None, None)
+
+    # Adjust the beginning of the list, if necessary
+    if afterEndInd is not None:
+        statusList = statusList[:afterEndInd]
 
     if not statusList:
-        import pdb; pdb.set_trace()
-        return {}
+        default_ret = { 'numBreaks' : 0,
+                        'numFixes' : 0,
+                        'numInspections' : 0,
+                        'symptomCodeToTime' : {},
+                        'symptomCodeToAbsTime' : {},
+                        'symptomCategoryToTime' : {},
+                        'symptomCategoryToAbsTime' : {},
+                        'availableTime' : 0,
+                        'availability' : 1.0,
+                        'metroOpenTime' : 0.0,
+                        'absTime' : 0.0}
+        return default_ret
 
-    if startTime:
-        statusList[0]['time'] = startTime
+   
+    # Adjust the 'time' of the first status and the end_time of the last status
 
+    statusList[0]['time'] = max(startTime, statusList[0]['time'])
+
+    firstStatus = statusList[0]
     lastStatus = statusList[-1]
-    if endTime:
+    if 'end_time' in lastStatus:
+        lastStatus['end_time'] = min(lastStatus['end_time'], endTime)
+    else:
         lastStatus['end_time'] = endTime
-    elif 'end_time' not in lastStatus:
-        lastStatus['end_time'] = lastStatus['time']
             
     for s in statusList:
         if any(s.get(k, None) is None for k in ('time', 'end_time')):
@@ -676,8 +687,11 @@ def summarizeStatuses(statusList, startTime, endTime):
     symptomCategoryToAbsTime = sg.symptomCategoryToAbsTime
 
     availTime = symptomCategoryToTime['ON']
-    totalTime = TimeRange(startTime, endTime).metroOpenTime()
-    availability = availTime/totalTime if totalTime > 0.0 else 1.0
+    timeRange = TimeRange(firstStatus['time'], lastStatus['end_time'])
+    metroOpenTime = timeRange.metroOpenTime()
+    absTime = timeRange.absTime()
+    availability = availTime/metroOpenTime if metroOpenTime > 0.0 else 1.0
+
 
 
     ret = { 'numBreaks' : numBreaks,
@@ -689,7 +703,8 @@ def summarizeStatuses(statusList, startTime, endTime):
             'symptomCategoryToAbsTime' : symptomCategoryToAbsTime,
             'availableTime' : availTime,
             'availability' : availability,
-            'metroOpenTime' : totalTime}
+            'metroOpenTime' : metroOpenTime,
+            'absTime' : absTime}
 
     return ret
 
