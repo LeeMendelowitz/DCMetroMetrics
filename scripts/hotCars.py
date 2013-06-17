@@ -187,6 +187,7 @@ def tick(db, tweetLive = False):
 #    sys.stderr.write('Forcing last tweet id: %i\n'%lastTweetId)
 
     # Generate reponse tweets for any tweets which have not yet been acknowledged
+    tweetResponses = []
     unacknowledged = list(db.hotcars_tweets.find({'ack' : False}))
     sys.stderr.write('Found %i unacknowledged tweets\n'%(len(unacknowledged)))
     for doc in unacknowledged:
@@ -238,7 +239,6 @@ def tick(db, tweetLive = False):
 
     sys.stderr.write('Have %i tweets about hot cars\n'%len(tweetData))
 
-    tweetResponses = []
     for tweet, hotCarData in tweetData:
         validTweet = tweetIsValid(tweet, hotCarData)
         if not validTweet:
