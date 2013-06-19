@@ -1,5 +1,6 @@
 %# Listing for an escalator
 %import metroTimes
+%from metroEscalatorsWeb import stationCodeToWebPath
 <html>
 
 <head>
@@ -8,19 +9,33 @@
 </head>
 
 <!-- BEGIN BODY -->
+
 <body>
-<div id="main">
+
+<div id="maincontainer">
+
+<div id="header">
+%include header
+</div>
+
+<div id="leftcolumn">
+%include left_column
+</div>
+
+<div id="contentwrapper">
     
     %#escalator data
+    <h2>Escalator {{unitId}}</h2>
     <table class="escalator_data">
-    <tr> <td>Unit Id</td><td>{{escData['unit_id']}}</td> </tr>
+    %stationWebPath = stationCodeToWebPath(escData['station_code'])
+    <tr> <td>Station Name</td><td><a href="{{stationWebPath}}">{{escData['station_name']}}</a></td></tr>
     <tr> <td>Station Code</td><td>{{escData['station_code']}}</td> </tr>
-    <tr> <td>Station Name</td><td>{{escData['station_name']}}</td></tr>
     <tr> <td>Station Description</td><td>{{escData['station_desc']}}</td></tr>
     <tr> <td>Escalator Description</td><td>{{escData['esc_desc']}}</td></tr>
     </table>
 
     %#escalator summary
+    <h2>Summary</h2>
     <table class="escalator_summary">
     <tr> <td>Num. Breaks</td><td>{{escSummary['numBreaks']}}</td> </tr>
     <tr> <td>Num. Fixes</td><td>{{escSummary['numFixes']}}</td> </tr>
@@ -30,8 +45,7 @@
     <tr> <td>Report Metro Open Time</td><td>{{metroTimes.secondsToDHM(escSummary['metroOpenTime'])}}</td></tr>
     </table>
 
-
-
+    <h2>History</h2>
     <table class="status">
     <tr>
         <th>Time</th>
@@ -57,8 +71,15 @@
     %end
     </table>
 </div>
+</div>
+
+
+<div id="footer">
+%include footer
+</div>
+
+</div> <!-- END container -->
 </body>
-<!-- END BODY -->
 
 </html>
 

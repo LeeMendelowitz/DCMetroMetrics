@@ -1,3 +1,66 @@
+body{
+margin:0;
+padding:0;
+background-color:#D0D0D0;
+}
+
+#maincontainer
+{
+font-family: Arial, Verdana;
+width:900px;
+margin:0 auto;
+background-color:black;
+}
+
+#header
+{
+    font-family: Arial, Verdana;
+    background-color:#002157;
+    padding-top:10px;
+    padding-bottom:10px;
+    height:50px;
+    width:100%;
+    color:white;
+    text-align:center;
+}
+
+#contentwrapper
+{
+float:right
+width:730px;
+margin-left:150px;
+background-color:#FBFCE6;
+padding:10px;
+}
+
+#leftcolumn
+{
+float:left;
+width:130px;
+padding:10px;
+font-family: Arial, Verdana;
+background-color:black;
+color:white;
+}
+
+#leftcolumn a:link, #leftcolumn a:visited
+{
+    color:white;
+    text-decoration:none;
+}
+
+#footer
+{
+    clear:both;
+    width:100%;
+    font-family: Arial, Verdana;
+    background-color:#D0D0D0;
+    color:black;
+    text-align:center;
+    padding: 4px 0;
+}
+
+
 tr.on
 {
 background-color:#00FF99;
@@ -23,7 +86,7 @@ tr.rehab
 background-color:#00BFFF;
 }
 
-tr
+table
 {
 font-family: Arial, Verdana;
 }
@@ -31,6 +94,7 @@ font-family: Arial, Verdana;
 table.status
 {
 border:thin solid black;
+width:700px
 }
 
 table.escalator_data
@@ -43,6 +107,11 @@ table.escalator_summary
 margin:1cm;
 }
 
+table.station_listing
+{
+border:thin solid black;
+}
+
 tr,th,td
 {
 border:1px solid black;
@@ -53,3 +122,50 @@ td
 padding:2px;
 }
 
+
+
+#redsquare
+{
+    width:14px;
+    height:14px;
+    background-color:red;
+    border:1px solid black;
+    float:left;
+    margin:1px;
+}
+#bluesquare
+{
+    width:14px;
+    height:14px;
+    background-color:blue;
+    border:1px solid black;
+    float:left;
+    margin:1px;
+}
+#yellowsquare
+{
+    width:14px;
+    height:14px;
+    background-color:yellow;
+    border:1px solid black;
+    float:left;
+    margin:1px;
+}
+#orangesquare
+{
+    width:14px;
+    height:14px;
+    background-color:orange;
+    border:1px solid black;
+    float:left;
+    margin:1px;
+}
+#greensquare
+{
+    width:14px;
+    height:14px;
+    background-color:green;
+    border:1px solid black;
+    float:left;
+    margin:1px;
+}
