@@ -12,7 +12,7 @@ import dbUtils
 import metroEscalatorsWeb
 import stations
 
-bottle.debug(True)
+#bottle.debug(True)
 
 REPO_DIR = os.environ['OPENSHIFT_REPO_DIR']
 STATIC_DIR = os.path.join(REPO_DIR, 'wsgi', 'static')
