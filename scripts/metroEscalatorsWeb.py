@@ -2,12 +2,17 @@
 import stations
 import dbUtils
 from StringIO import StringIO
+from operator import itemgetter
+from datetime import datetime
 
 
 PATHS = {'escalators' : '/escalators',
          'home' : '/',
          'stations' : '/stations',
-         'hotcars' : '/hotcars'}
+         'hotcars' : '/hotcars',
+         'nonoperationalEscalators' : '/escalators/nonoperational',
+         'rankings' : '/escalators/rankings'
+        }
 
 ###################################
 # This can convert a list of codes or upper case words
@@ -42,6 +47,7 @@ def stationCodeToWebPath(code):
    stationData = stations.codeToStationData[code]
    shortName = stationData['shortName']
    return '/stations/%s'%shortName
+
 
 ########################################
 # Generate the web path for an escalator
@@ -85,7 +91,6 @@ def escalatorList():
     codeToStationData = stations.codeToStationData
     recs = []
     systemAvailability = dbUtils.getSystemAvailability()
-    stationToAvailability = systemAvailability['stationToAvailability']
     numWorking = lambda sl: sum(1 for s in sl if s['symptomCategory']=='ON')
 
     curEscStatuses = systemAvailability['lastStatuses']
@@ -94,14 +99,104 @@ def escalatorList():
     for esc in curEscStatuses:
         unitId = esc['unit_id']
         shortUnitId = unitId[0:6]
+        stationCode = esc['station_code']
+        stationName = stations.codeToName[stationCode]
         rec = { 'unitId' : shortUnitId,
-                'stationName' : esc['station_name'],
+                'stationCode' : stationCode,
+                'stationName' : stationName,
                 'stationDesc' : esc['station_desc'],
                 'escDesc' : esc['esc_desc'],
                 'symptom' : esc['symptom'],
-                'symptomCategory' : esc['symptomCategory']
+                'symptomCategory' : esc['symptomCategory'],
+                'time' : esc['time']
               }
         escalatorListing.append(rec)
     return escalatorListing
 
+#########################################################
+# Generate a listing of escalators which are not working
+def escalatorNotOperatingList():
+    escList = escalatorList()
+    notOperating = [esc for esc in escList if esc['symptomCategory'] != 'ON']
 
+    # Sort not operating escalators by station name
+    notOperating = sorted(notOperating, key = itemgetter('stationName'))
+    return notOperating
+
+#########################################################
+def getRankings(startTime=None, endTime=None):
+
+    if endTime is None:
+        endTime = datetime.now()
+    escToSummary = dbUtils.getAllEscalatorSummaries(startTime=startTime, endTime=endTime)
+
+    # Add to the summary the percentage of Metro Open time that the escalator is broken
+    for escId, escSum in escToSummary.iteritems():
+        brokenTime= escSum['symptomCategoryToTime']['BROKEN']        
+        escSum['brokenTimePercentage'] = float(brokenTime)/escSum['metroOpenTime']
+
+    def keySort(q):
+        def key(k):
+            return escToSummary[k][q]
+        return key 
+
+    escIds = escToSummary.keys()
+    mostBreaks = sorted(escIds, key = keySort('numBreaks'), reverse=True)
+    mostInspected = sorted(escIds, key = keySort('numInspections'), reverse=True)
+    mostUnavailable = sorted(escIds, key = keySort('availability'))
+    mostBrokenTimePercentage = sorted(escIds, key = keySort('brokenTimePercentage'), reverse=True)
+
+    reportStart = startTime
+    if reportStart is None:
+        reportStart = min(s['time'] for summary in escToSummary.itervalues() \
+                              for s in summary['statuses'])
+    reportEnd = endTime
+
+    ret = { 'escToSummary' : escToSummary,
+            'mostBreaks' : mostBreaks,
+            'mostInspected' : mostInspected,
+            'mostUnavailable' : mostUnavailable,
+            'mostBrokenTimePercentage' : mostBrokenTimePercentage,
+            'reportStart' : reportStart,
+            'reportEnd' : reportEnd}
+
+    return ret
+
+#############################################################
+# Sift through the rankings returned by getRankings and prepare
+# data for HTML display
+def compileRankings(rankingDict, N=20):
+    escToSummary = rankingDict['escToSummary']
+
+    reportTime = max(s['absTime'] for s in escToSummary.itervalues())
+    mostBreaks = rankingDict['mostBreaks']
+    mostInspected = rankingDict['mostInspected']
+    mostUnavailable = rankingDict['mostUnavailable']
+    mostBrokenTimePercentage = rankingDict['mostBrokenTimePercentage']
+
+    def makeRecord(escId, key):
+        unitId = dbUtils.escIdToUnit[escId][0:6]
+        escData = dbUtils.escIdToEscData[escId]
+        escSummary = escToSummary[escId]
+        stationCode = escData['station_code']
+        stationName = stations.codeToName[stationCode]
+        rec = { 'unitId' : unitId,
+                'stationCode' : stationCode,
+                'stationName' : stationName,
+                key : escSummary[key]}
+        return rec
+
+    mostBrokenData = [makeRecord(escId, 'numBreaks') for escId in mostBreaks[:N]]
+    mostInspectedData = [makeRecord(escId, 'numInspections') for escId in mostInspected[:N]]
+    mostUnavailableData = [makeRecord(escId, 'availability') for escId in mostUnavailable[:N]]
+    mostBrokenTimePercentage = [makeRecord(escId, 'brokenTimePercentage') for escId in mostBrokenTimePercentage[:N]]
+
+    ret =  {'mostBreaks' : mostBrokenData,
+            'mostInspected' : mostInspectedData,
+            'mostUnavailable' : mostUnavailableData,
+            'mostBrokenTimePercentage' : mostBrokenTimePercentage,
+            'reportStart' : rankingDict['reportStart'],
+            'reportEnd' : rankingDict['reportEnd']
+           }
+    return ret
+    

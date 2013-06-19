@@ -25,8 +25,6 @@ escIdToEscData = None
 opCode = OPERATIONAL_CODE
 ################################
 
-
-
 ################################
 def updateGlobals(force=True):
     global db, unitToEscId, escIdToUnit, symptomToId, symptomCodeToSymptom, escIdToEscData
@@ -807,6 +805,24 @@ def summarizeStatuses(statusList, startTime, endTime):
 
     return ret
 
+
+
+############################################################################
+# Get a summary of all escalators for the specified time period
+def getAllEscalatorSummaries(startTime=None, endTime=None):
+    updateGlobals(force=False)
+    escIds = escIdToUnit.keys()
+    curTime = datetime.now()
+
+    escToSummary = {}
+    for escId in escIds:
+        statuses = getEscalatorStatuses(escId=escId, startTime = startTime, endTime = endTime)
+        et = endTime if endTime is not None else curTime
+        st = startTime if startTime is not None else min(s['time'] for s in statuses)
+        summary = summarizeStatuses(statuses, st, et)
+        summary['statuses'] = statuses
+        escToSummary[escId] = summary
+    return escToSummary
 
     
 class StatusGroup(object):

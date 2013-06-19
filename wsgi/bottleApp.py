@@ -6,10 +6,12 @@ import pymongo
 from StringIO import StringIO
 from datetime import datetime
 from operator import itemgetter
+from collections import defaultdict, Counter
 
 import hotCars
 import dbUtils
 import metroEscalatorsWeb
+import hotCarsWeb
 import stations
 
 #bottle.debug(True)
@@ -26,9 +28,8 @@ def index():
 ########################################
 @bottle.route('/hotcars')
 def allHotCars():
-    db = dbUtils.getDB()
-    hotCarDict = hotCars.getAllHotCarReports(db)
-    return bottle.template('hotCars', hotCarDict=hotCarDict)
+    hotCarData = hotCarsWeb.getHotCarData()
+    return bottle.template('hotCars', hotCarData=hotCarData)
 
 ########################################
 from bottle import static_file
@@ -38,7 +39,7 @@ def server_static(filename):
 
 ########################################
 @bottle.route('/escalators/<unitId>')
-def printEscalatorStatus(unitId):
+def escalatorStatus(unitId):
     if len(unitId) == 6:
         unitId = '%sESCALATOR'%unitId
     db = dbUtils.getDB()
@@ -47,6 +48,13 @@ def printEscalatorStatus(unitId):
         return 'No escalator found'
     statuses = dbUtils.getEscalatorStatuses(escId = escId)
     dbUtils.addStatusAttr(statuses)
+
+    curTime = datetime.now()
+    # Set the end_time of the current status to now
+    if statuses and 'end_time' not in statuses[0]:
+        statuses[0]['end_time'] = curTime
+
+
     escData = dbUtils.escIdToEscData[escId]
 
     # Summarize the escalator performance
@@ -101,8 +109,37 @@ def stationStatus(shortName):
 @bottle.route('/escalators')
 def allEscalators():
     escalatorList = metroEscalatorsWeb.escalatorList()
-    return bottle.template('escalators', escalators=escalatorList)
 
+    # Group escalators by station
+    stationToEsc = defaultdict(list)
+    for esc in escalatorList:
+        stationToEsc[esc['stationName']].append(esc)
+
+    # Sort each escalators stations in ascending order by code
+    for k,escList in stationToEsc.iteritems():
+        stationToEsc[k] = sorted(escList, key = itemgetter('unitId'))
+
+    return bottle.template('escalators', stationToEsc=stationToEsc)
+
+###############################################
+@bottle.route('/escalators/nonoperational')
+def nonoperationalEscalators():
+
+    escalatorList = metroEscalatorsWeb.escalatorNotOperatingList()
+
+    # Summarize the non-operational escalators by symptom
+    symptomCounts = Counter(esc['symptom'] for esc in escalatorList)
+
+    # Get the availability and weighted availability
+    systemAvailability = dbUtils.getSystemAvailability()
+    return bottle.template('escalatorsNonoperational', escList=escalatorList, symptomCounts=symptomCounts, systemAvailability=systemAvailability)
+
+###############################################
+@bottle.route('/escalators/rankings')
+def escalatorRankings():
+    rankingDict = metroEscalatorsWeb.getRankings()
+    compiledRankings = metroEscalatorsWeb.compileRankings(rankingDict)
+    return bottle.template('escalatorRankings', rankings=compiledRankings)
 
 ###############################################
 @bottle.route('/stations')

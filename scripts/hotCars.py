@@ -5,6 +5,7 @@ import twitterUtils
 import sys
 import re
 from datetime import datetime
+from dateutil import tz
 import time
 from collections import defaultdict
 
@@ -52,6 +53,9 @@ def getHotCarReportsForCar(db, carNum):
     db.hotcars.ensure_index([('car_number',pymongo.ASCENDING),('time', pymongo.DESCENDING)])
     cursor = db.hotcars.find(query).sort('time', pymongo.DESCENDING)
     hotCarReports = list(cursor)
+    # Convert times to local time
+    for rec in hotCarReports:
+        rec['time'] = UTCToLocalTime(rec['time'])
     return hotCarReports
 
 #########################################
@@ -63,6 +67,7 @@ def makeFullHotCarReport(db, rec):
     rec['text'] = tweetRec['text']
     tweeterRec = db.hotcars_tweeters.find_one({'_id' : tweetRec['user_id']})
     rec['handle'] = tweeterRec['handle']
+    rec['car_number'] = int(rec['car_number'])
     return rec
      
 
@@ -73,6 +78,8 @@ def getAllHotCarReports(db):
     hotCarReportDict = defaultdict(list)
     for report in cursor:
         report = makeFullHotCarReport(db, report)
+        # Convert the time stamp to local time
+        report['time'] = UTCToLocalTime(report['time'])
         hotCarReportDict[report['car_number']].append(report)
     return hotCarReportDict
 
@@ -291,6 +298,14 @@ def makeUTCDateTime(secSinceEpoch):
     dt = datetime(t.tm_year, t.tm_mon, t.tm_mday,
                   t.tm_hour, t.tm_min, t.tm_sec)
     return dt
+
+def UTCToLocalTime(utcDateTime):
+    from_zone = tz.tzutc()
+    to_zone = tz.tzlocal()
+    utcdt = utcDateTime.replace(tzinfo=from_zone)
+    localdt = utcdt.astimezone(to_zone)
+    return localdt
+
 ########################################
 def updateDBFromTweet(db, tweet, hotCarData):
 
