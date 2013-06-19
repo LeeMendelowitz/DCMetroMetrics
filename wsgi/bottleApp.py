@@ -3,10 +3,14 @@
 import os
 import bottle
 import pymongo
-import hotCars
-import dbUtils
 from StringIO import StringIO
 from datetime import datetime
+from operator import itemgetter
+
+import hotCars
+import dbUtils
+import metroEscalatorsWeb
+import stations
 
 bottle.debug(True)
 
@@ -14,28 +18,26 @@ REPO_DIR = os.environ['OPENSHIFT_REPO_DIR']
 STATIC_DIR = os.path.join(REPO_DIR, 'wsgi', 'static')
 bottle.TEMPLATE_PATH.append(os.path.join(REPO_DIR, 'wsgi', 'views'))
 
+########################################
 @bottle.route('/')
 def index():
-    bottle.redirect('/hotcars/all')
+    bottle.redirect('/stations')
 
-@bottle.route('/hotcars/all')
+########################################
+@bottle.route('/hotcars')
 def allHotCars():
-    try:
-        db = dbUtils.getDB()
-        hotCarDict = hotCars.getAllHotCarReports(db)
-        return bottle.template('allHotCars',
-                           hotCarDict=hotCarDict)
-    except Exception as e:
-        print 'Caught exception! %s\n'%(str(e))
-        raise e
+    db = dbUtils.getDB()
+    hotCarDict = hotCars.getAllHotCarReports(db)
+    return bottle.template('hotCars', hotCarDict=hotCarDict)
 
+########################################
 from bottle import static_file
 @bottle.route('/static/<filename>')
 def server_static(filename):
     return static_file(filename, root=STATIC_DIR)
 
-@bottle.route('/escalator/<unitId>')
-# Make the output slightly more human readable
+########################################
+@bottle.route('/escalators/<unitId>')
 def printEscalatorStatus(unitId):
     if len(unitId) == 6:
         unitId = '%sESCALATOR'%unitId
@@ -47,21 +49,67 @@ def printEscalatorStatus(unitId):
     dbUtils.addStatusAttr(statuses)
     escData = dbUtils.escIdToEscData[escId]
 
-
     # Summarize the escalator performance
     startTime = datetime(2000,1,1)
     escSummary = dbUtils.summarizeStatuses(statuses, startTime=startTime, endTime=datetime.now())
-    return bottle.template('statusListing', unitId = unitId[0:6], escData=escData, statuses=statuses,
+    return bottle.template('escalator', unitId = unitId[0:6], escData=escData, statuses=statuses,
                            escSummary=escSummary)
 
-@bottle.route('/DEBUG/cwd')
-def dbg_cwd():
-  return "<tt>cwd is %s</tt>" % os.getcwd()
+###############################################
+@bottle.route('/stations/<shortName>')
+def stationStatus(shortName):
 
-@bottle.route('/DEBUG/env')
-def dbg_env():
-  env_list = ['%s: %s' % (key, value)
-              for key, value in sorted(os.environ.items())]
-  return "<pre>env is\n%s</pre>" % '\n'.join(env_list)
+    # Get the station code
+    codes = [c for c,sn in stations.codeToShortName.iteritems() if sn==shortName]
+    if not codes:
+        return 'No station found'
+    stationCode = codes[0]
+
+    # Get the summary for this station over all time
+    stationSummary = dbUtils.getStationSummary(stationCode)
+
+    # Get the current overview of escalators in this station
+    stationSnapshot = dbUtils.getStationSnapshot(stationCode)
+    escUnitIds = stationSummary['escUnitIds']
+    escToSummary = stationSummary['escToSummary']
+    escToStatuses = stationSummary['escToStatuses']
+
+    # Generate the table listing of escalators
+    escalatorListing = []
+    for escUnitId in escUnitIds:
+        escSummary = escToSummary.get(escUnitId, {})
+        statuses = escToStatuses[escUnitId]
+        if not statuses:
+            continue
+        latestStatus = statuses[0]
+        escId = dbUtils.unitToEscId[escUnitId]
+        escMetaData = dbUtils.escIdToEscData[escId]
+        shortUnitId = escUnitId[0:6]
+        rec = {'unitId' : shortUnitId,
+               'stationDesc' : escMetaData['station_desc'],
+               'escDesc' : escMetaData['esc_desc'],
+               'curStatus' : latestStatus['symptom'],
+               'curSymptomCategory' : latestStatus['symptomCategory'],
+               'availability' : escSummary['availability']} 
+        escalatorListing.append(rec)
+
+    escalatorListing = sorted(escalatorListing, key = itemgetter('unitId'))
+    return bottle.template('station', stationSummary=stationSummary,
+        stationSnapshot=stationSnapshot, escalators=escalatorListing)
+
+###############################################
+@bottle.route('/escalators')
+def allEscalators():
+    escalatorList = metroEscalatorsWeb.escalatorList()
+    return bottle.template('escalators', escalators=escalatorList)
+
+
+###############################################
+@bottle.route('/stations')
+# Listing of all stations
+def stationListing():
+    stationRecs = metroEscalatorsWeb.stationList()
+    return bottle.template('stations', stationRecs=stationRecs)
+
 
 application = bottle.default_app()

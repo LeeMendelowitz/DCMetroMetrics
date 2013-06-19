@@ -99,6 +99,7 @@ def getOne(cursor):
     except StopIteration:
         return None
 
+######################################################################
 def getSome(cursor, N):
     results = []
     for res in cursor:
@@ -107,6 +108,7 @@ def getSome(cursor, N):
             break
     return results
 
+######################################################################
 def updateAppState(db, lastRunTime = None, nextDailyStatusTime = None):
     update = {}
     if lastRunTime is not None:
@@ -165,6 +167,7 @@ def addEscalator(db, curTime, unit_id, station_code, station_name, esc_desc, sta
                'symptom_code' : opCode}
         db.escalator_statuses.insert(doc)
 
+######################################################################
 def addSymptomCode(db, symptom_code, symptom_desc):
     query = {'_id' : int(symptom_code)}
     count = db.symptom_codes.find(query).count()
@@ -403,16 +406,6 @@ def processIncidents(db, curIncidents, curTime, tickDelta, log=sys.stdout):
     escIdToLastStatus.update((escId, escStatus['lastStatus']['symptom_code']) for
                               escId, escStatus in escStatuses.iteritems())
 
-    #### DEBUG #########################
-#    docToStr = lambda d: doc2Str(d)
-#    sys.stderr.write('-'*50 + '\n\n')
-#    for escId,escData in escStatusItems:
-#        lines = ['Statuses for escalator %s'%(escIdToUnit[escId])]
-#        lines.extend('%s %s'%(k, docToStr(v)) for k,v in escData.iteritems())
-#        lines.append('-----------------')
-#        sys.stderr.write('%s\n'%('\n'.join(lines)))
-#    sys.stderr.write('-'*50 + '\n\n')
-    ####################################
 
     # Determine those escalators that have changed status
     escIds = sorted(set(escIdToCurStatus.keys() + escIdToLastStatus.keys()))
@@ -435,24 +428,13 @@ def processIncidents(db, curIncidents, curTime, tickDelta, log=sys.stdout):
         changedStatusData['newStatus'] = doc
         changedStatusDict[escId] = changedStatusData
 
-        #### DEBUG
-#        sys.stderr.write('Esc Name: %s OldStatus: %s NewStatus: %s\n' % \
-#                         (escIdToUnit[escId], symptomCodeToSymptom.get(oldStatus, 'None'),
-#                                              symptomCodeToSymptom.get(newStatus, 'None'))
-#                         )
-        ####
     if docs:
         db.escalator_statuses.insert(docs)
-#        #### DEBUG
-#        sys.stderr.write('-'*50 + '\n\n')
-#        sys.stderr.write('Inserting %i statuses into escalator_statuses collection\n'%len(docs))
-#        docToStr = lambda d: doc2Str(d)
-#        for doc in docs:
-#            sys.stderr.write('%s\n'%docToStr(doc))
-#        sys.stderr.write('-'*50 + '\n\n')
-#        ####
+
     return changedStatusDict
 
+
+######################################################################
 def groupStatusesByStationCode(statuses):
     stationCodeToStatus = defaultdict(list)
     for s in statuses:
@@ -460,7 +442,7 @@ def groupStatusesByStationCode(statuses):
     return stationCodeToStatus
 
 #####################################################################
-# Determine the escalator availabilities of the system
+# Determine the current escalator availabilities of the system
 # Also compute the weighted availability and the station availability
 def getSystemAvailability():
     db = getDB()
@@ -470,7 +452,7 @@ def getSystemAvailability():
     # Compute availability
     def computeAvailability(statusList):
         if not statusList:
-            return 0.0
+            return 1.0
         N = len(statusList)
         numAvail = sum(1 for d in statusList if d['symptomCategory'] == 'ON')
         return float(numAvail)/N
@@ -478,8 +460,8 @@ def getSystemAvailability():
     def computeWeightedAvailability(statusList):
         avail = [d for d in statusList if d['symptomCategory'] == 'ON']
         unavail = [d for d in statusList if d['symptomCategory'] != 'ON']
-        availWeights = [stations.codeToData[d['station_code']]['escalatorWeight'] for d in avail]
-        unavailWeights = [stations.codeToData[d['station_code']]['escalatorWeight'] for d in unavail]
+        availWeights = [stations.codeToStationData[d['station_code']]['escalatorWeight'] for d in avail]
+        unavailWeights = [stations.codeToStationData[d['station_code']]['escalatorWeight'] for d in unavail]
         wA1 = sum(availWeights)
         wA2 = 1.0 - sum(unavailWeights)
         assert(abs(wA1 - wA2) < 1E-6)
@@ -526,6 +508,125 @@ def getSystemAvailability():
           }
 
     return ret
+
+
+#########################################################
+# Get escalator data summary for a single station
+# for a given time period.
+# This returns a dictionary with the sames keys as summarizeStatuses,
+# with additional keys:
+# - escUnitIds
+# - escToSummary
+# - escToStatuses
+def getStationSummary(stationCode, startTime = None, endTime = None):
+
+    updateGlobals(force=False)
+
+    stationData = stations.codeToStationData[stationCode]
+    allCodes = set(stationData['allCodes'])
+    escList = [d for d in escIdToEscData.itervalues() if d['station_code'] in allCodes]
+    escUnitIds = [d['unit_id'] for d in escList]
+    assert(len(escList) == stationData['numEscalators'])
+    curTime = datetime.now()
+
+    # First, compute a summary on each escalator in the station
+    escToSummary = {}
+    escToStatuses = {}
+
+    for escUnitId in escUnitIds:
+        statuses = getEscalatorStatuses(escUnitId=escUnitId, startTime = startTime, endTime=endTime)
+        escToStatuses[escUnitId] = statuses
+        if not statuses:
+            continue
+
+        # Compute a summary on these statuses.
+        # Remember statuses are sorted in descending order
+        st = startTime if startTime is not None else statuses[-1]['time']
+        et = endTime if endTime is not None else curTime
+
+        escSummary = summarizeStatuses(statuses, st, et)
+        escSummary['statuses'] = statuses
+        escToSummary[escUnitId] = escSummary
+
+    # Next, compute a summary the group of escalators as whole
+    stationSummary = mergeEscalatorSummaries(escToSummary.values())
+    stationSummary['escUnitIds'] = escUnitIds
+    stationSummary['escToSummary'] = escToSummary
+    stationSummary['escToStatuses'] = escToStatuses
+    return stationSummary
+
+
+##################################
+# Get a snapshot of the station right now
+def getStationSnapshot(stationCode):
+    updateGlobals(force=False)
+
+    stationData = stations.codeToStationData[stationCode]
+    allCodes = set(stationData['allCodes'])
+    escList = [d for d in escIdToEscData.itervalues() if d['station_code'] in allCodes]
+    escUnitIds = [d['unit_id'] for d in escList]
+    assert(len(escList) == stationData['numEscalators'])
+    curTime = datetime.now()
+
+    def getLatestStatus(escUnitId):
+        escId = unitToEscId[escUnitId]
+        status = db.escalator_statuses.find_one({'escalator_id' : escId}, sort=[('time', pymongo.DESCENDING)])
+        addStatusAttr([status])
+        return status
+        
+    escToLatest = dict((escUnitId, getLatestStatus(escUnitId)) for escUnitId in escUnitIds)
+    numWorking = sum(1 for s in escToLatest.itervalues() if s['symptomCategory']=='ON')
+    numEscalators = len(escList)
+    availability = float(numWorking)/numEscalators
+
+    ret = {'escalatorList' : escList,
+           'escUnitIds' : escUnitIds,
+           'escUnitIdToLatestStatus' : escToLatest,
+           'numEscalators' : numEscalators,
+           'numWorking' : numWorking,
+           'availability' : availability}
+
+    # Tack on the stationData to the return value
+    ret.update(stationData)
+    return ret
+
+
+
+########################################
+# Merge a list of escalator summaries produced by summarizeStatuses
+# into a single summary. This is useful for compiling
+# a summary for a single station
+def mergeEscalatorSummaries(escalatorSummaryList):
+
+    # Accumulate a list of symptom to time dictionaries
+    def accumD(timeDictList):
+        merged = defaultdict(lambda: 0.0)
+        for td in timeDictList:
+            for k,v in td.iteritems():
+                merged[k] += v
+        return merged
+
+    # Accumulate a list of numbers
+    def accum(values):
+        return sum(values)
+
+    keyAccumulators = [ ('numBreaks', accum),
+                        ('numFixes', accum),
+                        ('numInspections', accum),
+                        ('symptomCodeToTime', accumD),
+                        ('symptomCodeToAbsTime', accumD),
+                        ('symptomCategoryToTime', accumD),
+                        ('symptomCategoryToAbsTime', accumD),
+                        ('availableTime', accum),
+                        ('metroOpenTime', accum),
+                        ('absTime', accum) ]
+    merged = {}
+    for k, af in keyAccumulators:
+        val = af(d[k] for d in escalatorSummaryList)
+        merged[k] = val
+    # Compute the availability on this merged set
+    merged['availability'] = merged['availableTime']/float(merged['metroOpenTime'])
+    return merged
 
 
 #################################################
@@ -598,13 +699,13 @@ def getEscalatorStatuses(escId=None, escUnitId=None, startTime = None, endTime =
 # - numInspections
 # - time spent in each status code
 # - metro open time spent in each status code
+# startTime and endTime must be provided to properly compute the times.
 def summarizeStatuses(statusList, startTime, endTime):
 
     if not statusList:
         return {}
 
-    if (startTime is not None) and (endTime is not None) \
-       and (startTime > endTime):
+    if(startTime > endTime):
        raise RuntimeError('summarizeStatuses: bad startTime/endTime')
 
     statusList = copy.deepcopy(statusList)
@@ -691,8 +792,6 @@ def summarizeStatuses(statusList, startTime, endTime):
     metroOpenTime = timeRange.metroOpenTime()
     absTime = timeRange.absTime()
     availability = availTime/metroOpenTime if metroOpenTime > 0.0 else 1.0
-
-
 
     ret = { 'numBreaks' : numBreaks,
             'numFixes' : numFixes,

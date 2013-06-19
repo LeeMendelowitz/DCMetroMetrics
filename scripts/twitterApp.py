@@ -180,7 +180,7 @@ def dailyStats(curTime, startTime = None):
         # Retrieve data for this escalator and its station
         escData = dbUtils.escIdToEscData[escId]
         stationCode = escData['station_code']
-        stationData = stations.codeToData[stationCode]
+        stationData = stations.codeToStationData[stationCode]
 
         # Retrieve the latest statuses
         statuses = dbUtils.getEscalatorStatuses(escId = escId, startTime = startTime, endTime = endTime)
