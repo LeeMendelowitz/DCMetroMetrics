@@ -2,6 +2,7 @@ body{
 margin:0;
 padding:0;
 background-color:#D0D0D0;
+font-family: Arial, Verdana;
 }
 
 #maincontainer
@@ -14,11 +15,12 @@ background-color:black;
 
 #header
 {
-    font-family: Arial, Verdana;
+    font-family:"Courier New", Monospace;
+    font-size:48px;
     background-color:#002157;
+    height:50px;
     padding-top:10px;
     padding-bottom:10px;
-    height:50px;
     width:100%;
     color:white;
     text-align:center;
@@ -38,7 +40,6 @@ padding:10px;
 float:left;
 width:130px;
 padding:10px;
-font-family: Arial, Verdana;
 background-color:black;
 color:white;
 }
@@ -47,6 +48,17 @@ color:white;
 {
     color:white;
     text-decoration:none;
+}
+
+.nav_level1
+{
+    font-size:large;
+}
+
+.nav_level2
+{
+    margin-left:30px;
+    font-size:smaller;
 }
 
 #footer
@@ -89,6 +101,7 @@ background-color:#00BFFF;
 table
 {
 font-family: Arial, Verdana;
+border:thin solid black;
 }
 
 table.status
@@ -97,13 +110,25 @@ border:thin solid black;
 width:700px
 }
 
+.status a:link, .status a:visited
+{
+    color:black;
+}
+
 table.escalator_data
 {
+border:none;
 margin:1cm;
+}
+
+table.symptoms
+{
+border: thin solid black;
 }
 
 table.escalator_summary
 {
+border:none;
 margin:1cm;
 }
 
@@ -121,6 +146,7 @@ td
 {
 padding:2px;
 }
+
 
 
 

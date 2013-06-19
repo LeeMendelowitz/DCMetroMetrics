@@ -30,11 +30,12 @@ from hotCarApp import HotCarApp
 # Run the bottle app in a greenlet 
 class BottleApp(Greenlet):
 
-    def __init__(self):
+    def __init__(self, LIVE=False):
         Greenlet.__init__(self)
         # Load the bottleApp module
         self.bottleAppPath = os.path.join(REPO_DIR,'wsgi', 'bottleApp.py')
         self.bottleApp = imp.load_source('bottleApp', self.bottleAppPath)
+        self.LIVE=LIVE
 
     def _run(self):
         try:
@@ -42,7 +43,13 @@ class BottleApp(Greenlet):
             ip   = os.environ['OPENSHIFT_INTERNAL_IP']
             port = 8080
             bottle = self.bottleApp.application
-            bottle.run(host=ip, port=port, server='gevent')
+            if not self.LIVE:
+                # Run in debug mode
+#                bottle.debug(True)
+                bottle.run(host=ip, port=port, server='gevent', reloader=True)
+            else:
+                bottle.run(host=ip, port=port, server='gevent')
+
         except Exception as e:
             logName = os.path.join(DATA_DIR, 'bottle.log')
             fout = open(logName, 'a')
@@ -66,7 +73,7 @@ def run(LIVE=False):
    # Run the server. Note: This call blocks
    #bottle = bottleApp.application
    #bottle.run(host=ip, port=port, server='gevent')
-   bottleApp = BottleApp()
+   bottleApp = BottleApp(LIVE=LIVE)
    bottleApp.start()
 
    twitterApp.join()
