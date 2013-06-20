@@ -15,10 +15,17 @@ import hotCarsWeb
 
 # Set the path to the bottle template directory
 REPO_DIR = os.environ['OPENSHIFT_REPO_DIR']
-DATA_DIR = os.path.join(REPO_DIR, 'data')
+DATA_DIR = os.environ['OPENSHIFT_DATA_DIR']
 STATIC_DIR = os.path.join(REPO_DIR, 'wsgi', 'static')
-DYNAMIC_DIR = os.path.join(REPO_DIR, 'wsgi', 'dynamic')
+WEBPAGE_DIR = os.path.join(DATA_DIR, 'webpages')
+DYNAMIC_DIR = os.path.join(WEBPAGE_DIR, 'dynamic')
 bottle.TEMPLATE_PATH.append(os.path.join(REPO_DIR, 'wsgi', 'views'))
+
+if not os.path.exists(WEBPAGE_DIR):
+    os.mkdir(WEBPAGE_DIR)
+
+if not os.path.exists(DYNAMIC_DIR):
+    os.mkdir(DYNAMIC_DIR)
 
 ##############################
 # Make a wrapper around the bottle.template call
@@ -218,9 +225,12 @@ class WebPageGenerator(Greenlet):
             try:
                 self.tick()
             except Exception as e:
-                self.logFile.write('Page Generator caught Exception: %s\n'%str(e))
-            gevent.sleep(self.SLEEP)
+                self.logFile.write('Web Page Generator caught Exception: %s\n'%str(e))
+                import traceback
+                tb = traceback.format_exc()
+                self.logFile.write('Traceback:\n%s\n\n'%tb)
             self.logFile.close()
+            gevent.sleep(self.SLEEP)
 
     def tick(self):
         db = dbUtils.getDB()

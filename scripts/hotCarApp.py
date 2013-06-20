@@ -26,7 +26,13 @@ class HotCarApp(Greenlet):
                 self.tick()
                 gevent.sleep(self.SLEEP)
             except Exception as e:
-                sys.stderr.write('HotCarApp: Caught Exception! %s\n'%str(e))
+                import traceback
+                logFileName = os.path.join(OUTPUT_DIR, 'runHotCarApp.log')
+                logFile = open(logFileName, 'a')
+                logFile.write('HotCarApp: Caught Exception! %s\n'%str(e))
+                tb = traceback.format_exc()
+                logFile.write('Traceback:\n%s\n\n'%tb)
+                logFile.close()
 
     def tick(self):
 
@@ -52,6 +58,7 @@ class HotCarApp(Greenlet):
 
         logFile.flush()
         logFile.write('App exited with return code: %i\n\n'%ret)
+        logFile.close()
 
 def runOnce(tweetLive=False):
     # Establish connection with the database

@@ -17,8 +17,9 @@ import stations
 #bottle.debug(True)
 
 REPO_DIR = os.environ['OPENSHIFT_REPO_DIR']
+DATA_DIR = os.environ['OPENSHIFT_DATA_DIR']
 STATIC_DIR = os.path.join(REPO_DIR, 'wsgi', 'static')
-DYNAMIC_DIR = os.path.join(REPO_DIR, 'wsgi', 'dynamic')
+DYNAMIC_DIR = os.path.join(DATA_DIR, 'webpages', 'dynamic')
 bottle.TEMPLATE_PATH.append(os.path.join(REPO_DIR, 'wsgi', 'views'))
 
 ########################################
