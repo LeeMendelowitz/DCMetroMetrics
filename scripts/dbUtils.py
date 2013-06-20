@@ -426,6 +426,17 @@ def processIncidents(db, curIncidents, curTime, tickDelta, log=sys.stdout):
         changedStatusData['newStatus'] = doc
         changedStatusDict[escId] = changedStatusData
 
+        # Mark webpages for regeneration
+        update = {'$set' : {'forceUpdate':True}}
+        escData = escIdToEscData[escId]
+        stationCode = escData['station_code']
+        stationShortName = stations.codeToShortName[stationCode]
+        db.webpages.update({'class' : 'escalator', 'escalator_id' : escId}, update)
+        db.webpages.update({'class' : 'escalatorDirectory'}, update)
+        db.webpages.update({'class' : 'escalatorOutages'}, update)
+        db.webpages.update({'class' : 'stationDirectory'}, update)
+        db.webpages.update({'class' : 'station', 'station_name' : stationShortName}, update)
+
     if docs:
         db.escalator_statuses.insert(docs)
 
@@ -575,7 +586,7 @@ def getStationSnapshot(stationCode):
     escToLatest = dict((escUnitId, getLatestStatus(escUnitId)) for escUnitId in escUnitIds)
     numWorking = sum(1 for s in escToLatest.itervalues() if s['symptomCategory']=='ON')
     numEscalators = len(escList)
-    availability = float(numWorking)/numEscalators
+    availability = float(numWorking)/numEscalators if numEscalators > 0 else 0.0
 
     ret = {'escalatorList' : escList,
            'escUnitIds' : escUnitIds,
@@ -623,7 +634,9 @@ def mergeEscalatorSummaries(escalatorSummaryList):
         val = af(d[k] for d in escalatorSummaryList)
         merged[k] = val
     # Compute the availability on this merged set
-    merged['availability'] = merged['availableTime']/float(merged['metroOpenTime'])
+    openTime = float(merged['metroOpenTime'])
+    availTime = float(merged['availableTime'])
+    merged['availability'] = availTime/openTime if openTime > 0.0 else 1.0
     return merged
 
 

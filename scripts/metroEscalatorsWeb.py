@@ -10,7 +10,7 @@ PATHS = {'escalators' : '/escalators',
          'home' : '/',
          'stations' : '/stations',
          'hotcars' : '/hotcars',
-         'nonoperationalEscalators' : '/escalators/nonoperational',
+         'escalatorOutages' : '/escalators/outages',
          'rankings' : '/escalators/rankings'
         }
 

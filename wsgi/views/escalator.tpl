@@ -1,6 +1,7 @@
 %# Listing for an escalator
 %from metroEscalatorsWeb import stationCodeToWebPath
 %from metroTimes import secondsToDHM, secondsToHMS
+
     
 %#escalator data
 <h2>Escalator {{unitId}}</h2>
@@ -48,5 +49,11 @@
 </tr>
 %end
 </table>
+
+%tf = '%m/%d/%y %H:%M'
+%updateStr = curTime.strftime(tf)
+<div class=updateTime>
+<p>Page Last Updated: {{updateStr}}</p>
+</div>
 
 %rebase layout title=unitId

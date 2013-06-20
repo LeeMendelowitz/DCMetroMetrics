@@ -24,12 +24,16 @@
 %hasEntranceData = any(esc['stationDesc'] for esc in escList)
 <table class="status">
 <tr>
-    <th>Unit</th>
-    <th>Station</th>
-    % if hasEntranceData:
-    <th>Entrance</th>
-    % end
-    <th>Status</th>
+    %if hasEntranceData:
+    <th style="width:10%">Unit</th>
+    <th style="width:30%">Station</th>
+    <th style="width:30%">Entrance</th>
+    <th style="width:30%">Status</th>
+    %else:
+    <th style="width:20%">Unit</th>
+    <th style="width:50%">Station</th>
+    <th style="width:30%">Status</th>
+    %end
 </tr>
 %for esc in escList:
 %   escWebPath = escUnitIdToWebPath(esc['unitId'])
@@ -45,6 +49,11 @@
 </tr>
 %end
 </table>
+
+%tf = '%m/%d/%y %H:%M'
+%updateStr = curTime.strftime(tf)
+<div class=updateTime>
+<p>Page Last Updated: {{updateStr}}</p>
 </div>
 
 %rebase layout title='DC Metro Metrics: Nonoperational Escalators'

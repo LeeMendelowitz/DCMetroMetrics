@@ -25,6 +25,7 @@ from gevent import monkey; monkey.patch_all() # Needed for bottle
 sys.path.append(SCRIPT_DIR)
 from runTwitterApp import TwitterApp
 from hotCarApp import HotCarApp
+from webPageGenerator import WebPageGenerator
 
 #################################################
 # Run the bottle app in a greenlet 
@@ -70,6 +71,10 @@ def run(LIVE=False):
    hotCarApplication = HotCarApp(LIVE=LIVE)
    hotCarApplication.start()
 
+   # Run the web page generator
+   webPageGenerator = WebPageGenerator()
+   webPageGenerator.start()
+
    # Run the server. Note: This call blocks
    #bottle = bottleApp.application
    #bottle.run(host=ip, port=port, server='gevent')
@@ -78,6 +83,7 @@ def run(LIVE=False):
 
    twitterApp.join()
    hotCarApplication.join()
+   webPageGenerator.join()
    bottleApp.join()
 
 if __name__ == '__main__':

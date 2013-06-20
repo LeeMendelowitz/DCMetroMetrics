@@ -6,7 +6,7 @@
 
 <div class="nav_level2">
 <p><a href="{{PATHS['escalators']}}">Directory</a></p>
-<p><a href="{{PATHS['nonoperationalEscalators']}}">Nonoperational</a></p>
+<p><a href="{{PATHS['escalatorOutages']}}">Outages</a></p>
 <p><a href="{{PATHS['rankings']}}">Rankings</a></p>
 </div>
 
