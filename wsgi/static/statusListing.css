@@ -8,37 +8,56 @@ font-family: Arial, Verdana;
 #maincontainer
 {
 font-family: Arial, Verdana;
-width:900px;
+width:920px;
 margin:0 auto;
 background-color:black;
 }
 
 #header
 {
-    font-family:"Courier New", Monospace;
-    font-size:48px;
+    font-family: Monaco, Consolas, "Lucida Console", monospace;
+    font-size:72px;
+    text-shadow: 4px 2px 2px #000000;
+    color:DodgerBlue;
+    color:RoyalBlue;
+    color:DeepSkyBlue;
+    color:white;
     background-color:#002157;
-    height:50px;
+    height:100px;
     padding-top:10px;
     padding-bottom:10px;
     width:100%;
-    color:white;
     text-align:center;
+    background-image:url("/static/wmata_ceiling_banner_blue.jpg");
+    background-repeat:no-repeat;
+    background-size:920px;
+    position:relative;
+}
+
+div.headeroverlay {
+    opacity: .9;
+    background-color: black;
+    position: absolute;
+    left: 0; top: 0;
+    height:100px;
+    width:900px;
 }
 
 #contentwrapper
 {
 float:right
+font-size:12px;
 width:730px;
-margin-left:150px;
+margin-left:170px;
 background-color:#FBFCE6;
 padding:10px;
 }
 
 #leftcolumn
 {
+font-family:"Courier New", Monospace;
 float:left;
-width:130px;
+width:150px;
 padding:10px;
 background-color:black;
 color:white;
@@ -52,24 +71,34 @@ color:white;
 
 .nav_level1
 {
-    font-size:large;
+    font-size:20px;
 }
 
 .nav_level2
 {
-    margin-left:30px;
-    font-size:smaller;
+    margin-left:15px;
+    font-size:16px;
 }
 
 #footer
 {
     clear:both;
     width:100%;
-    font-family: Arial, Verdana;
+    font-family:"Courier New", Monospace;
     background-color:#D0D0D0;
     color:black;
     text-align:center;
     padding: 4px 0;
+}
+
+#updateTime
+{
+    float:right;
+    clear:both;
+    padding=5px;
+    color:black
+    font-size:small;
+    text-align:right;
 }
 
 
@@ -100,8 +129,8 @@ background-color:#00BFFF;
 
 table
 {
-font-family: Arial, Verdana;
 border:thin solid black;
+font-size:16px;
 }
 
 table.status
@@ -135,6 +164,7 @@ margin:1cm;
 table.station_listing
 {
 border:thin solid black;
+width:700px;
 }
 
 tr,th,td

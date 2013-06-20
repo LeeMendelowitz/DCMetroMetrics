@@ -61,4 +61,10 @@
 </div>
 %end
 
+%tf = '%m/%d/%y %H:%M'
+%updateStr = curTime.strftime(tf)
+<div class=updateTime>
+<p>Page Last Updated: {{updateStr}}</p>
+</div>
+
 %rebase layout title='DC Metro Metrics: All Escalators'

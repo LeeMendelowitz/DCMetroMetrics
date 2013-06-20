@@ -261,7 +261,6 @@ def tick(db, tweetLive = False):
             if response is not None:
                 tweetResponses.append((tweet.id, response))
 
-
     # Update the app state
     maxTweetId = max([t.id for t in filteredTweets]) if filteredTweets else 0
     maxTweetId = max(maxTweetId, lastTweetId)
@@ -269,6 +268,7 @@ def tick(db, tweetLive = False):
     query = {'_id' : 1}
     db.hotcars_appstate.find_and_modify(query=query, update=update, upsert=True)
 
+    # Tweet Responses
     for tweetId, response in tweetResponses:
         if response is None:
             continue
@@ -352,6 +352,9 @@ def updateDBFromTweet(db, tweet, hotCarData):
         db.hotcars.insert(doc)
     else:
         sys.stderr.write('Not updating hotcars collection with tweet %i. Entry already exists!\n'%tweet.id)
+
+    # Trigger regeneration of the hot car webpage
+    db.webpages.find_and_modify({'class' : 'hotcars'}, {'$set' : {'forceUpdate' : True}})
 
     return updated
 
