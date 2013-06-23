@@ -67,7 +67,7 @@ def getEscalatorIncidents(log=sys.stdout):
         escIncidents = getELESIncidents()['incidents']
         escIncidents = [i for i in escIncidents if i.isEscalator()]
     except WMATA_API_ERROR as e:
-        log('Caught WMATA API Error: %s\n'%str(e))
+        log.write('Caught WMATA API Error: %s\n'%str(e))
     return escIncidents
 
 
