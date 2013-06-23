@@ -39,7 +39,7 @@ class TwitterApp(Greenlet):
                 logFile = open(self.logFileName, 'a')
                 logFile.write('TwitterApp caught Exception: %s\n'%(str(e)))
                 tb = traceback.format_exc()
-                self.logFile.write('Traceback:\n%s\n\n'%tb)
+                logFile.write('Traceback:\n%s\n\n'%tb)
                 logFile.close()
             gevent.sleep(self.SLEEP)
 
