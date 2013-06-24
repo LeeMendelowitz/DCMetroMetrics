@@ -13,6 +13,10 @@ import dbUtils
 
 ME = 'MetroHotCars'.upper()
 
+# Words which are not allowed in tweets which mention
+# MetroHotCars
+mentions_forbidden_words = set(w.upper() for w in ['cold', 'cool'])
+
 ##########################
 def initAppState(db, curTime):
     if db.hotcars_appstate.count() == 0:
@@ -526,9 +530,14 @@ def getMentions(curTime):
     T = getTwitterAPI() 
     mentions = T.GetMentions(include_entities=True, since_id=lastTweetId)
 
+    def hasForbiddenWord(t):
+        text = t.text.upper()
+        count = sum(1 for w in mentions_forbidden_words if w in text)
+        return count > 0
+
+    mentions = [t for t in mentions if not hasForbiddenWord(t)]
+
     # Update the appstate
     update = {'lastMentionsCheckTime' : curTime}
     db.hotcars_appstate.update({'_id' : 1}, {'$set' : update})
     return mentions
-
-
