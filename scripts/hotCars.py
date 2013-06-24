@@ -271,9 +271,9 @@ def tick(db, tweetLive = False, log=sys.stderr):
     # Update the app state
     maxTweetId = max([t.id for t in filteredTweets]) if filteredTweets else 0
     maxTweetId = max(maxTweetId, lastTweetId)
-    update = {'_id' : 1, 'lastRunTime': curTime, 'lastTweetId' : maxTweetId}
+    update = {'$set' : {'lastRunTime': curTime, 'lastTweetId' : maxTweetId}}
     query = {'_id' : 1}
-    db.hotcars_appstate.find_and_modify(query=query, update=update, upsert=True)
+    db.hotcars_appstate.update(query, update, upsert=True)
 
     # Tweet Responses
     for tweetId, response in tweetResponses:
