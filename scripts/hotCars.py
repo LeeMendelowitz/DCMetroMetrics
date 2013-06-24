@@ -4,11 +4,14 @@ from twitter import TwitterError
 import twitterUtils
 import sys
 import re
-from datetime import datetime
+from datetime import datetime, timedelta
 from dateutil import tz
 import time
 from collections import defaultdict
+import dbUtils
 
+
+ME = 'MetroHotCars'.upper()
 
 ##########################
 def initAppState(db, curTime):
@@ -22,7 +25,7 @@ def initAppState(db, curTime):
         initTweetersDB(db)
 
 ##########################
-def initTweetersDB(db):
+def initTweetersDB(db, log=sys.stderr):
 
     # initialize the database of tweeters
     hotcarTweetIds = db.hotcars.distinct('tweet_id')
@@ -31,7 +34,7 @@ def initTweetersDB(db):
         rec = next(db.hotcars_tweets.find({'_id': tweetId}))
         tweeterId = rec['user_id']
         tweeterIds.append(tweeterId)
-    sys.stderr.write('Looking up %i tweetIds\n'%len(tweeterIds))
+    log.write('Looking up %i tweetIds\n'%len(tweeterIds))
 
     T = getTwitterAPI()
     numAdded = 0
@@ -43,7 +46,7 @@ def initTweetersDB(db):
         if db.hotcars_tweeters.find({'_id' : twitterId}).count() == 0:
             db.hotcars_tweeters.insert(doc)
             numAdded += 1
-    sys.stderr.write('Added %i docs to hotcars_tweeters collection\n'%numAdded)
+    log.write('Added %i docs to hotcars_tweeters collection\n'%numAdded)
 
 #########################################
 # Get all hot car reports for a given car
@@ -56,6 +59,8 @@ def getHotCarReportsForCar(db, carNum):
     # Convert times to local time
     for rec in hotCarReports:
         rec['time'] = UTCToLocalTime(rec['time'])
+        rec['tweet_id'] = int(rec['tweet_id'])
+        rec['user_id'] = int(rec['user_id'])
     return hotCarReports
 
 #########################################
@@ -68,6 +73,8 @@ def makeFullHotCarReport(db, rec):
     tweeterRec = db.hotcars_tweeters.find_one({'_id' : tweetRec['user_id']})
     rec['handle'] = tweeterRec['handle']
     rec['car_number'] = int(rec['car_number'])
+    rec['tweet_id'] = int(rec['tweet_id'])
+    rec['user_id'] = int(rec['user_id'])
     return rec
      
 
@@ -82,7 +89,6 @@ def getAllHotCarReports(db):
         report['time'] = UTCToLocalTime(report['time'])
         hotCarReportDict[report['car_number']].append(report)
     return hotCarReportDict
-
 
 ##########################
 # Preprocess tweet text by padding 4 digit numbers with spaces,
@@ -109,6 +115,8 @@ def preprocessText(tweetText):
     # Remove reference to 1000, 2000, ..., 6000 Series
     tweetText = re.sub('[1-6]000 SERIES', '', tweetText)
     return tweetText
+
+
 
 ###########################
 # Get 4 digit numbers
@@ -145,14 +153,13 @@ def getTwitterAPI():
 # Return a list of unique tweets from a list of tweets
 def uniqueTweets(tweetList):    
     seen = set()
-    unique = []
-    for t in tweetList:
-        if t.id not in seen:
-            seen.add(t.id)
-            unique.append(t)
+    unique = [t for t in tweetList if not (t.id in seen or seen.add(t.id))]
     return unique
 
-def getManuallyTaggedTweets(db):
+############################################
+# Get tweets which have been manually tagged as hot
+# car reports. These tweets are in the hotcars_manual_tweets collection
+def getManuallyTaggedTweets(db, log=sys.stderr):
     if db.hotcars_manual_tweets.count() == 0:
         return []
     docs = list(db.hotcars_manual_tweets.find())
@@ -161,20 +168,20 @@ def getManuallyTaggedTweets(db):
     for tid in tweetIds:
         T = getTwitterAPI()
         try:
-            tweet = T.GetStatus(tid)
+            tweet = T.GetStatus(tid, include_entities=True)
             tweets.append(tweet)
-            sys.stderr.write('Got manual weet %i! Removing from hotcars_manual_tweets\n'%tid)
+            log.write('Got manual weet %i! Removing from hotcars_manual_tweets\n'%tid)
             db.hotcars_manual_tweets.remove({'_id' : tid})
         except TwitterError as e:
-            sys.stderr.write('Caught TwitterError when trying to get manually tagged tweet %i: %s\n'%(tid, str(e)))
+            log.write('Caught TwitterError when trying to get manually tagged tweet %i: %s\n'%(tid, str(e)))
     return tweets
 
 #######################################
-def tick(db, tweetLive = False):
+def tick(db, tweetLive = False, log=sys.stderr):
     curTime = datetime.now()
-    sys.stderr.write('Running HotCar Tick. %s\n'%(str(curTime)))
-    sys.stderr.write('Tweeting Live: %s\n'%str(tweetLive))
-    sys.stderr.flush()             
+    log.write('Running HotCar Tick. %s\n'%(str(curTime)))
+    log.write('Tweeting Live: %s\n'%str(tweetLive))
+    log.flush()             
     initAppState(db, curTime)
     appState = next(db.hotcars_appstate.find({'_id' : 1}))
     lastTweetId = appState.get('lastTweetId', 0)
@@ -189,20 +196,20 @@ def tick(db, tweetLive = False):
 #        doc = next(db.hotcars_tweets.find(sort=sortParams))
 #        lastTweetId = doc['_id']
 #
-    sys.stderr.write('last tweet id: %i\n'%lastTweetId)
+    log.write('last tweet id: %i\n'%lastTweetId)
 #    lastTweetId = 0
-#    sys.stderr.write('Forcing last tweet id: %i\n'%lastTweetId)
+#    log.write('Forcing last tweet id: %i\n'%lastTweetId)
 
     # Generate reponse tweets for any tweets which have not yet been acknowledged
     tweetResponses = []
     unacknowledged = list(db.hotcars_tweets.find({'ack' : False}))
-    sys.stderr.write('Found %i unacknowledged tweets\n'%(len(unacknowledged)))
+    log.write('Found %i unacknowledged tweets\n'%(len(unacknowledged)))
     for doc in unacknowledged:
         tweetText = doc['text']
         user_id = doc['user_id']
         tweeterDoc = db.hotcars_tweeters.find_one({'_id': user_id})
         if tweeterDoc is None:
-            sys.stderr.write('Warning: Could not acknowledge unacknowledged tweet %i because user %s could not be found\n'%(doc['_id'], user_id))
+            log.write('Warning: Could not acknowledge unacknowledged tweet %i because user %s could not be found\n'%(doc['_id'], user_id))
             continue
         response = genResponseTweet(tweeterDoc['handle'], getHotCarData(tweetText))
         if response is not None:
@@ -212,15 +219,14 @@ def tick(db, tweetLive = False):
     queries = ['wmata hotcar', 'wmata hot car', 'wmata hotcars', 'wmata hot cars']
     tweets = []
     for q in queries:
-        res = T.GetSearch(q, count=100, since_id = lastTweetId, result_type='recent')
+        res = T.GetSearch(q, count=100, since_id = lastTweetId, result_type='recent', include_entities=True)
         tweets.extend(t for t in res)
 
     # Get tweets which have been manually curated
     tweets.extend(getManuallyTaggedTweets(db))
-
+    tweets.extend(getMentions(curTime=curTime))
     tweets = uniqueTweets(tweets)
-
-    sys.stderr.write('Twitter search returned %i unique tweets\n'%len(tweets))
+    log.write('Twitter search returned %i unique tweets\n'%len(tweets))
 
     def filterPass(t):
 
@@ -229,8 +235,7 @@ def tick(db, tweetLive = False):
             return False
 
         # Ignore tweets from self
-        me = 'MetroHotCars'
-        if t.user.screen_name.upper() == me.upper():
+        if t.user.screen_name.upper() == ME.upper():
             return False
 
         return True
@@ -239,12 +244,14 @@ def tick(db, tweetLive = False):
     tweetIds = set(t.id for t in filteredTweets)
     assert(len(tweetIds) == len(filteredTweets))
 
-    sys.stderr.write('Filtered to %i tweets after removing re-/self-tweets\n'%len(filteredTweets))
+    log.write('Filtered to %i tweets after removing re-/self-tweets\n'%len(filteredTweets))
 
     tweetData = [(t,getHotCarData(t.text)) for t in filteredTweets]
     tweetData = [(t,hcd) for t,hcd in tweetData if tweetIsValid(t, hcd)]
+    tweetData = filterDuplicates(tweetData)
 
-    sys.stderr.write('Have %i tweets about hot cars\n'%len(tweetData))
+    log.write('Filtered to %i tweets after removing invalid and duplicate reports\n'%len(tweetData))
+    log.write('Have %i tweets about hot cars\n'%len(tweetData))
 
     for tweet, hotCarData in tweetData:
         validTweet = tweetIsValid(tweet, hotCarData)
@@ -272,7 +279,7 @@ def tick(db, tweetLive = False):
     for tweetId, response in tweetResponses:
         if response is None:
             continue
-        sys.stderr.write('Response for Tweet %i: %s\n'%(tweetId, response))
+        log.write('Response for Tweet %i: %s\n'%(tweetId, response))
         if tweetLive:
             try:
                 T.PostUpdate(response, in_reply_to_status_id = tweetId)
@@ -282,7 +289,7 @@ def tick(db, tweetLive = False):
                 update = {'$set' : {'ack' : True}}
                 db.hotcars_tweets.find_and_modify(query=query, update=update)
             except TwitterError as e:
-                sys.stderr.write('Caught TwitterError!: %s'%str(e))
+                log.write('Caught TwitterError!: %s'%str(e))
 
 ########################################
 # Get hot car data from a tweet
@@ -293,12 +300,17 @@ def getHotCarData(text):
     return {'cars' : carNums,
             'colors' : colors }
 
+##################################################
+# Get the UTC time of the tweet, from sec since epoch
+# in localtime. The epoch is midnight 1/1/1970 in UTC.
 def makeUTCDateTime(secSinceEpoch):
     t = time.gmtime(secSinceEpoch)
     dt = datetime(t.tm_year, t.tm_mon, t.tm_mday,
                   t.tm_hour, t.tm_min, t.tm_sec)
     return dt
 
+##################################################
+# Convert UTC datetime to local datetime
 def UTCToLocalTime(utcDateTime):
     from_zone = tz.tzutc()
     to_zone = tz.tzlocal()
@@ -307,16 +319,16 @@ def UTCToLocalTime(utcDateTime):
     return localdt
 
 ########################################
-def updateDBFromTweet(db, tweet, hotCarData):
+def updateDBFromTweet(db, tweet, hotCarData, log=sys.stderr):
 
-    sys.stderr.write('hotcars_tweets has %i docs\n'%(db.hotcars_tweets.count()))
-    sys.stderr.write('Updating hotcar_tweets collection with tweet %i\n'%tweet.id)
+    log.write('hotcars_tweets has %i docs\n'%(db.hotcars_tweets.count()))
+    log.write('Updating hotcar_tweets collection with tweet %i\n'%tweet.id)
     tweetText = tweet.text.encode('utf-8', errors='ignore')
 
     # Check if this is a duplicate, and abort if so.
     count = db.hotcars_tweets.find({'_id' : tweet.id}).count()
     if count > 0:
-        sys.stderr.write('No update made. Tweet %i is a duplicate.\n'%tweet.id)
+        log.write('No update made. Tweet %i is a duplicate.\n'%tweet.id)
         updated = False
         return updated
 
@@ -335,9 +347,8 @@ def updateDBFromTweet(db, tweet, hotCarData):
     query = {'_id': tweet.user.id}
     db.hotcars_tweeters.find_and_modify(query=query, update=update, upsert=True)
 
-
     # Update hotcars collection
-    sys.stderr.write('hotcars has %i docs\n'%(db.hotcars.count()))
+    log.write('hotcars has %i docs\n'%(db.hotcars.count()))
     carNums = hotCarData['cars']
     colors = hotCarData['colors']
     carNum = int(carNums[0])
@@ -348,10 +359,10 @@ def updateDBFromTweet(db, tweet, hotCarData):
            'time' : makeUTCDateTime(tweet.created_at_in_seconds)}
     count = db.hotcars.find({'tweet_id' : tweet.id}).count()
     if count == 0:
-        sys.stderr.write('Updating hotcars collection with tweet %i\n'%tweet.id)
+        log.write('Updating hotcars collection with tweet %i\n'%tweet.id)
         db.hotcars.insert(doc)
     else:
-        sys.stderr.write('Not updating hotcars collection with tweet %i. Entry already exists!\n'%tweet.id)
+        log.write('Not updating hotcars collection with tweet %i. Entry already exists!\n'%tweet.id)
 
     # Trigger regeneration of the hot car webpage
     db.webpages.find_and_modify({'class' : 'hotcars'}, {'$set' : {'forceUpdate' : True}})
@@ -414,6 +425,71 @@ def tweetIsValid(tweet, hotCarData):
     # The tweet is good!
     return True
 
+
+#########################################
+# Remove tweets which are duplicate reports.
+# A tweet is a duplicate report if:
+#
+# 1. It mentions another user
+# who previously reported the same hot car within the last
+# 30 days.
+#
+# 2. The same user reported the same hot car within the last
+# 30 days.
+#
+# tweetData: List of (tweet, hotCarData) tuples
+def filterDuplicates(tweetData, log=sys.stderr):
+
+    # Build a dictionary from car number to the reporting users/times
+    db = dbUtils.getDB()
+    hotCarReportDict = getAllHotCarReports(db)
+
+    # Add the current batch of tweets to the hotCarReportDic
+    for tweet, hotCarData in tweetData:
+        cars = hotCarData['cars']
+        assert(len(cars)==1)
+        carNumber = cars[0]
+        data = {'car_number' : carNumber,
+                'time' : datetime.fromtimestamp(tweet.created_at_in_seconds),
+                'tweet_id' : tweet.id,
+                'user_id' : tweet.user.id
+               }                
+        hotCarReportDict[carNumber].append(data)
+
+    filteredTweetData = []
+    for tweet, hotCarData in tweetData:
+        tweetTime = datetime.fromtimestamp(tweet.created_at_in_seconds)
+        timeCutoff = tweetTime - timedelta(days=30)
+        user_id = tweet.user.id
+        screen_name = tweet.user.screen_name
+        tweet_id = tweet.id
+        assert(len(cars)==1)
+        carNumber = hotCarData['cars'][0]
+        otherReports = [d for d in hotCarReportDict[carNumber] if d['tweet_id'] != tweet_id and
+                                                                  d['time'] > timeCutoff]
+
+        # Check if this car was already reported by the user within 30 days
+        prevSelfReports = sum(1 for d in otherReports if d['user_id'] == user_id)
+        
+        # Check if this car was already reported by another user mentioned in this tweet
+        mentionUserIds = set(u.id for u in tweet.user_mentions)
+        if tweet.in_reply_to_user_id is not None:
+            mentionUserIds.add(tweet.in_reply_to_user_id)
+
+        otherUserReports = sum(1 for d in otherReports if (d['user_id'] in mentionUserIds)
+                                                          and (d['time'] < tweetTime))
+        if (prevSelfReports > 0):
+            log.write('Skipping Tweet %i by %s on car %i because there is a previous self-report' \
+                      ' in last 30 days\n'%(tweet_id, carNumber, screen_name))
+            continue
+        if (otherUserReports > 0):
+            log.write('Skipping Tweet %i by %s on car %i because it mentions another report ' \
+                      ' from last 30 days\n'%(tweet_id, carNumber, screen_name))
+            continue
+        filteredTweetData.append((tweet, hotCarData))
+
+    return filteredTweetData
+
 ########################################
 # Generate reponse tweet
 def genResponseTweet(toScreenName, hotCarData):
@@ -432,3 +508,31 @@ def genResponseTweet(toScreenName, hotCarData):
     else:
         msg = '@wmata Car {car} is a #wmata #hotcar HT @{user}'.format(car=car, user=user)
     return msg
+
+#######################################
+# Get tweets which mention MetroHotCars
+# since this is rate limited to once per minute,
+# only do this once per 90 sec
+def getMentions(curTime):
+    db = dbUtils.getDB()
+    appState = next(db.hotcars_appstate.find({'_id' : 1}))
+    lastMentionsCheckTime = appState.get('lastMentionsCheckTime', None)
+    lastTweetId = appState.get('lastTweetId', 0)
+    doCheck = False
+
+    if (lastMentionsCheckTime is None) or \
+       (curTime - lastMentionsCheckTime) > timedelta(seconds=90.0):
+       doCheck = True
+
+    if not doCheck:
+        return []
+    
+    T = getTwitterAPI() 
+    mentions = T.GetMentions(include_entities=True, since_id=lastTweetId)
+
+    # Update the appstate
+    update = {'lastMentionsCheckTime' : curTime}
+    db.hotcars_appstate.update({'_id' : 1}, {'$set' : update})
+    return mentions
+
+
