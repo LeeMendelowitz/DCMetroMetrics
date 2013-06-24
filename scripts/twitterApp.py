@@ -50,24 +50,12 @@ def initDB(db, curTime):
         assert(len(escData) == NUM_ESCALATORS)
         dbUtils.initializeEscalators(db, escData, curTime)
 
-#    appState = db.escalator_appstate.find_one()
-#    if appState is None:
-#        appState = {'_id' : 1, 
-#                    'lastRunTime' : curTime}
-#        db.escalator_appstate.insert(appState)
-#    else:
-#        if 'lastRunTime' not in appState:
-#            appState = {'_id' : 1, 
-#                        'lastRunTime' : curTime}
-#            db.escalator_appstate.insert(appState)
-
+#############################################
+# Get escalator incidents
 def getEscalatorIncidents(log=sys.stdout):
-    escIncidents = []
-    try:
-        escIncidents = getELESIncidents()['incidents']
-        escIncidents = [i for i in escIncidents if i.isEscalator()]
-    except WMATA_API_ERROR as e:
-        log.write('Caught WMATA API Error: %s\n'%str(e))
+    escIncidents = getELESIncidents()['incidents'] # This will throw an exception
+                                                   # if the request fails
+    escIncidents = [i for i in escIncidents if i.isEscalator()]
     return escIncidents
 
 
