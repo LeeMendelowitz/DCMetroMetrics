@@ -122,7 +122,7 @@ def preprocessText(tweetText):
 # Get 4 digit numbers
 def getCarNums(text):
     nums = re.findall('\d+', text)
-    validNums = list(set(s for s in nums if len(s)==4))
+    validNums = [int(n) for n in set(s for s in nums if len(s)==4)]
     return validNums
 
 #######################################
@@ -212,8 +212,7 @@ def tick(db, tweetLive = False, log=sys.stderr):
             log.write('Warning: Could not acknowledge unacknowledged tweet %i because user %s could not be found\n'%(doc['_id'], user_id))
             continue
         response = genResponseTweet(tweeterDoc['handle'], getHotCarData(tweetText))
-        if response is not None:
-            tweetResponses.append((doc['_id'], response))
+        tweetResponses.append((doc['_id'], response))
 
     # Get the latest tweets about WMATA hotcars
     queries = ['wmata hotcar', 'wmata hot car', 'wmata hotcars', 'wmata hot cars']
@@ -265,8 +264,7 @@ def tick(db, tweetLive = False, log=sys.stderr):
         if updated:
             user = tweet.user.screen_name
             response = genResponseTweet(user, hotCarData)
-            if response is not None:
-                tweetResponses.append((tweet.id, response))
+            tweetResponses.append((tweet.id, response))
 
     # Update the app state
     maxTweetId = max([t.id for t in filteredTweets]) if filteredTweets else 0
@@ -310,12 +308,13 @@ def makeUTCDateTime(secSinceEpoch):
     return dt
 
 ##################################################
-# Convert UTC datetime to local datetime
+# Convert UTC datetime to local datetime.
+# This will return a naive localtime, without tzinfo attached
 def UTCToLocalTime(utcDateTime):
     from_zone = tz.tzutc()
     to_zone = tz.tzlocal()
     utcdt = utcDateTime.replace(tzinfo=from_zone)
-    localdt = utcdt.astimezone(to_zone)
+    localdt = utcdt.astimezone(to_zone).replace(tzinfo=None)
     return localdt
 
 ########################################
@@ -480,11 +479,11 @@ def filterDuplicates(tweetData, log=sys.stderr):
                                                           and (d['time'] < tweetTime))
         if (prevSelfReports > 0):
             log.write('Skipping Tweet %i by %s on car %i because there is a previous self-report' \
-                      ' in last 30 days\n'%(tweet_id, carNumber, screen_name))
+                      ' in last 30 days\n'%(tweet_id, screen_name, carNumber))
             continue
         if (otherUserReports > 0):
             log.write('Skipping Tweet %i by %s on car %i because it mentions another report ' \
-                      ' from last 30 days\n'%(tweet_id, carNumber, screen_name))
+                      ' from last 30 days\n'%(tweet_id, screen_name, carNumber))
             continue
         filteredTweetData.append((tweet, hotCarData))
 
@@ -495,9 +494,6 @@ def filterDuplicates(tweetData, log=sys.stderr):
 def genResponseTweet(toScreenName, hotCarData):
     carNums = hotCarData['cars']
     colors = hotCarData['colors']
-    tweetValid = len(carNums)==1 and carNums[0][0] in '123456'
-    if not tweetValid:
-        return None
 
     normalize = lambda s: s[0].upper() + s[1:].lower()
     user = toScreenName
