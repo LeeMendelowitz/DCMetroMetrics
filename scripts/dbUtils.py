@@ -450,6 +450,12 @@ def groupStatusesByStationCode(statuses):
         stationCodeToStatus[s['station_code']].append(s)
     return stationCodeToStatus
 
+def groupStatusesByEscalator(statuses):
+    escIdToStatus = defaultdict(list)
+    for s in statuses:
+        escIdToStatus[s['escalator_id']].append(s)
+    return escIdToStatus
+
 #####################################################################
 # Determine the current escalator availabilities of the system
 # Also compute the weighted availability and the station availability

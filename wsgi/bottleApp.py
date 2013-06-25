@@ -8,8 +8,6 @@ from datetime import datetime
 from operator import itemgetter
 from collections import defaultdict, Counter
 
-import hotCars
-import dbUtils
 import metroEscalatorsWeb
 import hotCarsWeb
 import stations
