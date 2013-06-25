@@ -17,7 +17,7 @@ SCRIPT_DIR = os.path.join(REPO_DIR, 'scripts')
 class HotCarApp(RestartingGreenlet):
 
     def __init__(self, LIVE=False):
-        RestartingGreenlet.__init__(self, LIVE=False)
+        RestartingGreenlet.__init__(self, LIVE=LIVE)
         self.SLEEP = 40 # Run every 10 seconds
         self.LIVE = LIVE
 
@@ -36,7 +36,6 @@ class HotCarApp(RestartingGreenlet):
                 logFile.write('Traceback:\n%s\n\n'%tb)
                 logFile.close()
             gevent.sleep(self.SLEEP)
-            raise RuntimeError('Hot car sabatoge!')
 
     def tick(self):
 
