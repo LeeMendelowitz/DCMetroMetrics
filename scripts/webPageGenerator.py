@@ -1,8 +1,9 @@
 # Greenlet to run the generation
 # of web pages in the background.
 import os
+import sys
 from datetime import datetime, timedelta
-from gevent import Greenlet
+from restartingGreenlet import RestartingGreenlet
 import gevent
 import bottle
 from operator import itemgetter
@@ -211,10 +212,10 @@ def writeContent(filename, content):
         fout.write(content)
 ##################################################################
 
-class WebPageGenerator(Greenlet):
+class WebPageGenerator(RestartingGreenlet):
 
     def __init__(self, SLEEP=10):
-        Greenlet.__init__(self)
+        RestartingGreenlet.__init__(self, SLEEP=SLEEP)
         self.SLEEP = SLEEP
         self.logFileName = os.path.join(DATA_DIR, 'webPageGenerator.log')
         self.logFile = None
@@ -233,6 +234,7 @@ class WebPageGenerator(Greenlet):
             gevent.sleep(self.SLEEP)
 
     def tick(self):
+
         db = dbUtils.getDB()
         initDB() # Add any missing documents to the database
        

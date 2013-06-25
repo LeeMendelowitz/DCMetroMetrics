@@ -4,6 +4,7 @@ import subprocess
 from datetime import datetime
 import gevent
 from gevent import Greenlet
+from restartingGreenlet import RestartingGreenlet
 from twitterApp import TwitterApp as App
 
 
@@ -22,10 +23,10 @@ SLEEP = 30
 
 ##########################################
 # Run the Twitter App as a Greenlet.
-class TwitterApp(Greenlet):
+class TwitterApp(RestartingGreenlet):
 
     def __init__(self, SLEEP=SLEEP, LIVE=False):
-        Greenlet.__init__(self)
+        RestartingGreenlet.__init__(self, SLEEP=SLEEP, LIVE=LIVE)
         self.LIVE = LIVE # Tweet only if Live
         self.SLEEP = SLEEP # Sleep time after each tick
         self.logFileName = os.path.join(DATA_DIR, 'runTwitterApp.log')

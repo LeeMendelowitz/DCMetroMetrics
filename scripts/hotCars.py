@@ -18,7 +18,7 @@ ME = 'MetroHotCars'.upper()
 mentions_forbidden_words = set(w.upper() for w in ['cold', 'cool'])
 
 ##########################
-def initAppState(db, curTime):
+def initAppState(db, curTime, log=sys.stdout):
     if db.hotcars_appstate.count() == 0:
         doc = {'_id' : 1,
                'lastRunTime' : curTime,
@@ -26,10 +26,10 @@ def initAppState(db, curTime):
         db.hotcars_appstate.insert(doc)
 
     if db.hotcars_tweeters.count() == 0:
-        initTweetersDB(db)
+        initTweetersDB(db, log=log)
 
 ##########################
-def initTweetersDB(db, log=sys.stderr):
+def initTweetersDB(db, log=sys.stdout):
 
     # initialize the database of tweeters
     hotcarTweetIds = db.hotcars.distinct('tweet_id')
@@ -186,23 +186,13 @@ def tick(db, tweetLive = False, log=sys.stderr):
     log.write('Running HotCar Tick. %s\n'%(str(curTime)))
     log.write('Tweeting Live: %s\n'%str(tweetLive))
     log.flush()             
-    initAppState(db, curTime)
+    initAppState(db, curTime, log=log)
     appState = next(db.hotcars_appstate.find({'_id' : 1}))
     lastTweetId = appState.get('lastTweetId', 0)
 
     T = getTwitterAPI()
 
-    # Determine the last hot car tweet we saw, so we can search for
-    # tweets that have occurred since
-#    lastTweetId = 0
-#    if db.hotcars_tweets.count() > 0:
-#        sortParams = [('_id', pymongo.DESCENDING)]
-#        doc = next(db.hotcars_tweets.find(sort=sortParams))
-#        lastTweetId = doc['_id']
-#
     log.write('last tweet id: %i\n'%lastTweetId)
-#    lastTweetId = 0
-#    log.write('Forcing last tweet id: %i\n'%lastTweetId)
 
     # Generate reponse tweets for any tweets which have not yet been acknowledged
     tweetResponses = []
@@ -225,8 +215,12 @@ def tick(db, tweetLive = False, log=sys.stderr):
         res = T.GetSearch(q, count=100, since_id = lastTweetId, result_type='recent', include_entities=True)
         tweets.extend(t for t in res)
 
+    # Find the max tweet id seen through twitter search
+    maxTweetId = max([t.id for t in tweets]) if tweets else 0
+    maxTweetId = max(maxTweetId, lastTweetId)
+
     # Get tweets which have been manually curated
-    tweets.extend(getManuallyTaggedTweets(db))
+    tweets.extend(getManuallyTaggedTweets(db, log=log))
     tweets.extend(getMentions(curTime=curTime))
     tweets = uniqueTweets(tweets)
     log.write('Twitter search returned %i unique tweets\n'%len(tweets))
@@ -251,7 +245,7 @@ def tick(db, tweetLive = False, log=sys.stderr):
 
     tweetData = [(t,getHotCarData(t.text)) for t in filteredTweets]
     tweetData = [(t,hcd) for t,hcd in tweetData if tweetIsValid(t, hcd)]
-    tweetData = filterDuplicates(tweetData)
+    tweetData = filterDuplicates(tweetData, log=log)
 
     log.write('Filtered to %i tweets after removing invalid and duplicate reports\n'%len(tweetData))
     log.write('Have %i tweets about hot cars\n'%len(tweetData))
@@ -261,7 +255,7 @@ def tick(db, tweetLive = False, log=sys.stderr):
         if not validTweet:
             continue
 
-        updated = updateDBFromTweet(db, tweet, hotCarData)
+        updated = updateDBFromTweet(db, tweet, hotCarData, log=log)
 
         # If we updated the database with data on this tweet,
         # generate a response tweet
@@ -271,8 +265,6 @@ def tick(db, tweetLive = False, log=sys.stderr):
             tweetResponses.append((tweet.id, response))
 
     # Update the app state
-    maxTweetId = max([t.id for t in filteredTweets]) if filteredTweets else 0
-    maxTweetId = max(maxTweetId, lastTweetId)
     update = {'$set' : {'lastRunTime': curTime, 'lastTweetId' : maxTweetId}}
     query = {'_id' : 1}
     db.hotcars_appstate.update(query, update, upsert=True)
@@ -289,7 +281,7 @@ def tick(db, tweetLive = False, log=sys.stderr):
                 # Update the acknowledgement status of the tweet
                 query = {'_id' : tweetId}
                 update = {'$set' : {'ack' : True}}
-                db.hotcars_tweets.find_and_modify(query=query, update=update)
+                db.hotcars_tweets.update(query, update)
             except TwitterError as e:
                 log.write('Caught TwitterError!: %s'%str(e))
 
@@ -348,7 +340,7 @@ def updateDBFromTweet(db, tweet, hotCarData, log=sys.stderr):
     update = {'_id' : tweet.user.id,
            'handle' : tweet.user.screen_name}
     query = {'_id': tweet.user.id}
-    db.hotcars_tweeters.find_and_modify(query=query, update=update, upsert=True)
+    db.hotcars_tweeters.update(query, update, upsert=True)
 
     # Update hotcars collection
     log.write('hotcars has %i docs\n'%(db.hotcars.count()))
@@ -368,7 +360,7 @@ def updateDBFromTweet(db, tweet, hotCarData, log=sys.stderr):
         log.write('Not updating hotcars collection with tweet %i. Entry already exists!\n'%tweet.id)
 
     # Trigger regeneration of the hot car webpage
-    db.webpages.find_and_modify({'class' : 'hotcars'}, {'$set' : {'forceUpdate' : True}})
+    db.webpages.update({'class' : 'hotcars'}, {'$set' : {'forceUpdate' : True}})
 
     return updated
 
@@ -517,7 +509,7 @@ def getMentions(curTime):
     db = dbUtils.getDB()
     appState = next(db.hotcars_appstate.find({'_id' : 1}))
     lastMentionsCheckTime = appState.get('lastMentionsCheckTime', None)
-    lastTweetId = appState.get('lastTweetId', 0)
+    lastMentionsTweetId = appState.get('lastMentionsTweetId', 0)
     doCheck = False
 
     if (lastMentionsCheckTime is None) or \
@@ -528,7 +520,7 @@ def getMentions(curTime):
         return []
     
     T = getTwitterAPI() 
-    mentions = T.GetMentions(include_entities=True, since_id=lastTweetId)
+    mentions = T.GetMentions(include_entities=True, since_id=lastMentionsTweetId)
 
     def hasForbiddenWord(t):
         text = t.text.upper()
@@ -536,8 +528,10 @@ def getMentions(curTime):
         return count > 0
 
     mentions = [t for t in mentions if not hasForbiddenWord(t)]
+    maxMentionsTweetId = max(t.id for t in mentions) if mentions else 0
+    maxMentionsTweetId = max(maxMentionsTweetId, lastMentionsTweetId)
 
     # Update the appstate
-    update = {'lastMentionsCheckTime' : curTime}
+    update = {'lastMentionsCheckTime' : curTime, 'lastMentionsTweetId' : maxMentionsTweetId}
     db.hotcars_appstate.update({'_id' : 1}, {'$set' : update})
     return mentions

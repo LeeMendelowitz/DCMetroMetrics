@@ -20,3 +20,7 @@ REPO_DIR = os.environ['OPENSHIFT_REPO_DIR']
 appPath = os.path.join(REPO_DIR, 'app.py')
 appModule = imp.load_source('app', appPath)
 appModule.run(LIVE=False)
+#appModule.hotCarTest()
+#H = appModule.HotCarApp(LIVE=False)
+#H.start()
+#H.join()
