@@ -2,6 +2,8 @@
 %import metroEscalatorsWeb
 %from metroEscalatorsWeb import lineToColoredSquares, escUnitIdToWebPath, stationCodeToWebPath
 
+<script type="text/javascript" src="https://www.google.com/jsapi"></script>
+
 <h2>Escalator Outages</h2>
 
 <h3>Summary</h3>
@@ -11,6 +13,7 @@
 </table>
 <h3>Symptom Counts</h3>
 
+<div id='symptomTable'>
 <table class="symptoms">
 %totalCount = sum(symptomCounts.itervalues())
 %for i,(symptom,count) in enumerate(symptomCounts.most_common()):
@@ -18,6 +21,10 @@
 %end
 <tr><td><b>TOTAL</b></td><td><b>{{'%i'%totalCount}}</b></td></tr>
 </table>
+</div>
+
+<div id="tableChartDiv"></div>
+<div id="pieChartDiv"></div>
 
 
 <h3>Outages</h3>
@@ -55,5 +62,7 @@
 <div class=updateTime>
 <p>Page Last Updated: {{updateStr}}</p>
 </div>
+
+%include symptom_chart dt=dtSymptoms
 
 %rebase layout title='DC Metro Metrics: Nonoperational Escalators'
