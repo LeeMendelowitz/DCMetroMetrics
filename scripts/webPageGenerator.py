@@ -156,16 +156,26 @@ def genEscalatorRankings(doc):
     filename = 'escalatorRankings.html'
     writeContent(filename, content)
 
-#########
+#####################################################
+# Generate the escalator outages page.
+# Doc is the record for this page in the db.webpages collection.
 def genEscalatorOutages(doc):
     escalatorList = metroEscalatorsWeb.escalatorNotOperatingList()
 
     # Summarize the non-operational escalators by symptom
     symptomCounts = Counter(esc['symptom'] for esc in escalatorList)
 
+    # Generate the data for the Google Chart pi chart
+    import gviz_api
+
+    schema = [('symptom', 'string', 'Outage Symptom' ), ('count', 'number', 'Count')]
+    data = symptomCounts.items()
+
+    dtSymptoms = gviz_api.DataTable(schema, data=data)
+
     # Get the availability and weighted availability
     systemAvailability = dbUtils.getSystemAvailability()
-    content = makePage('escalatorOutages', escList=escalatorList, symptomCounts=symptomCounts, systemAvailability=systemAvailability)
+    content = makePage('escalatorOutages', escList=escalatorList, symptomCounts=symptomCounts, systemAvailability=systemAvailability, dtSymptoms=dtSymptoms)
     filename = 'escalatorOutages.html'
     writeContent(filename, content)
 
