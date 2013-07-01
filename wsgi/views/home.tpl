@@ -2,7 +2,7 @@
 
 <p>DC Metro Metrics is a project dedicated to collecting and sharing publicly available data related to the DC Metrorail system.<p>
 
-This website compiles data which is not availability anywhere else, including:
+This website compiles data which is not available anywhere else, including:
 <ul>
 <li>A <a href="/escalators/directory">directory</a> of all 588 escalators in the DC Metrorail system</li>
 <li>Performance history for each escalator in the system.</li>
