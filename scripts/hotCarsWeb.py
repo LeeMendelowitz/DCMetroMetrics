@@ -15,7 +15,7 @@ def recToLinkHtml(rec, text=None):
         text = handle
     tweetId = int(rec['tweet_id'])
     url = makeTwitterUrl(handle, tweetId)
-    s = '<a href="{url}">{text}</a>'
+    s = '<a href="{url}" target="_blank">{text}</a>'
     return s.format(url=url, text=text)
 
 def formatTimeStr(dt):
@@ -29,7 +29,7 @@ def tweetLinks(records):
 
 def twitterHandleLink(handle):
     link = 'http://twitter.com/%s'%handle
-    output = '<a href={link}>{text}</a>'.format(link=link, text=handle)
+    output = '<a href={link} target="_blank">{text}</a>'.format(link=link, text=handle)
     return output
 
 def makeColorString(records):

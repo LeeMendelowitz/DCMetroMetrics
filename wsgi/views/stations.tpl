@@ -4,7 +4,9 @@
 
 
 <h2>Stations</h2>
+<div id="stationsTableChartDiv"></div>
 
+<div id="stationTableManual">
 <table class="station_listing">
 <tr>
     <th>Station Name</th>
@@ -31,11 +33,15 @@
 </tr>
 %end
 </table>
+</div>
 
 %tf = '%m/%d/%y %H:%M'
 %updateStr = curTime.strftime(tf)
 <div class=updateTime>
 <p>Page Last Updated: {{updateStr}}</p>
 </div>
+
+<script type="text/javascript" src="https://www.google.com/jsapi"></script>
+%include stations_js dtStations=dtStations
 
 %rebase layout title='DC Metro Metrics: Stations'

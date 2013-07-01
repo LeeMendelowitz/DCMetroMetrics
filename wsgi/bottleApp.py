@@ -23,7 +23,8 @@ bottle.TEMPLATE_PATH.append(os.path.join(REPO_DIR, 'wsgi', 'views'))
 ########################################
 @bottle.route('/')
 def index():
-    bottle.redirect('/stations')
+    filename = 'home.html'
+    return static_file(filename, root=DYNAMIC_DIR)
 
 ########################################
 @bottle.route('/hotcars')
@@ -50,12 +51,13 @@ def stationStatus(shortName):
     return static_file(filename, root=DYNAMIC_DIR)
 
 ###############################################
-@bottle.route('/escalators')
+@bottle.route('/escalators/directory')
 def allEscalators():
     filename = 'escalators.html'
     return static_file(filename, root=DYNAMIC_DIR)
 
 ###############################################
+@bottle.route('/escalators')
 @bottle.route('/escalators/outages')
 def escalatorOutages():
     filename = 'escalatorOutages.html'

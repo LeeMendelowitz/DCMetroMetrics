@@ -11,6 +11,7 @@ import copy
 from escalatorUtils import symptomToCategory, OPERATIONAL_CODE
 import stations
 from metroTimes import TimeRange
+import gevent
 
 invDict = lambda d: dict((v,k) for k,v in d.iteritems())
 
@@ -835,6 +836,7 @@ def getAllEscalatorSummaries(startTime=None, endTime=None):
 
     escToSummary = {}
     for escId in escIds:
+        gevent.sleep(0.0)
         statuses = getEscalatorStatuses(escId=escId, startTime = startTime, endTime = endTime)
         et = endTime if endTime is not None else curTime
         st = startTime if startTime is not None else min(s['time'] for s in statuses)
