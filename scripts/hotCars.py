@@ -4,10 +4,11 @@ from twitter import TwitterError
 import twitterUtils
 import sys
 import re
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 from dateutil import tz
 import time
 from collections import defaultdict
+from operator import itemgetter
 import dbUtils
 
 
@@ -535,3 +536,40 @@ def getMentions(curTime):
     update = {'lastMentionsCheckTime' : curTime, 'lastMentionsTweetId' : maxMentionsTweetId}
     db.hotcars_appstate.update({'_id' : 1}, {'$set' : update})
     return mentions
+
+#Count the number of weekdays betweet datetimes t1 and t2
+def countWeekdays(t1, t2):
+    d1 = date(t1.year, t1.month, t1.day)
+    d2 = date(t2.year, t2.month, t2.day)
+    dt = d2 - d1
+    numDays = (d2 - d1).days
+    dateGen = (d1 + timedelta(days=i) for i in xrange(numDays+1))
+    numWeekdays = sum(1 for d in dateGen if d.weekday() < 5)
+    return numWeekdays
+
+def summarizeReports(reports):
+    numReports = len(reports)
+    reports = sorted(reports, key = itemgetter('time'))
+    firstReport = reports[0]
+    firstReportTime = firstReport['time']
+    lastReport = reports[-1]
+    lastReportTime = lastReport['time']
+
+    # Get the number of days between the first and last report
+    timeDelta = (lastReportTime - firstReportTime)
+    secondsPerDay = 3600.0*24
+    numDays = timeDelta.total_seconds()/secondsPerDay
+    numWeekDays = countWeekdays(firstReportTime, lastReportTime)
+    dayDelta = timeDelta.days
+    reportsPerDay = numReports/float(numDays)
+    reportsPerWeekday = numReports/float(numWeekDays)
+    res = {'numReports' : numReports,
+           'reportsPerDay' : reportsPerDay,
+           'reportsPerWeekday' : reportsPerWeekday}
+    return res
+
+
+
+
+
+
