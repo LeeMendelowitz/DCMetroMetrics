@@ -17,11 +17,11 @@
         <td>{{summary['numReports']}}</td>
     </tr>
     <tr>
-        <td>Num. Reports per Day</td>
+        <td>Avg. reports per day</td>
         <td>{{'%.1f'%summary['reportsPerDay']}}</td>
     </tr>
     <tr>
-        <td>Num. Reports per Weekday</td>
+        <td>Avg. reports per weekday</td>
         <td>{{'%.1f'%summary['reportsPerWeekday']}}</td>
     </tr>
 </table>
