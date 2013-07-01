@@ -6,12 +6,36 @@
 <script type="text/javascript">
 
 var data_json = {{!dt.ToJSon()}};
+var outageDataJson = {{!dtOutages.ToJSon()}};
+
+// Set the property for an entire datatable row, cell by cell
+var setRowProperty = function(dt, rowNum, property)
+{
+    var numCols = dt.getNumberOfColumns();
+    for(var i=0; i<numCols; i++)
+    {
+        dt.setProperties(rowNum, i, property);
+    }
+    return true;
+};
 
 var PlotHandler = function()
 {
     var self = this;
+
     this.dataTable = new google.visualization.DataTable(data_json);
     this.dataTable.sort([{column: 1, desc: true}]);
+
+    this.outageTable = new google.visualization.DataTable(outageDataJson);
+
+    // Add classNames by row to the outageTable
+    %for i, className in enumerate(dtOutagesRowClasses):
+    setRowProperty(this.outageTable, {{i}}, {className: '{{className}}'});
+    %#setRowProperty(this.outageTable, {{i}}, {style: 'background-color: blue;'});
+    %#setRowProperty(this.outageTable, {{i}}, {className: 'blue'});
+    %end
+
+    this.outageTable.sort([{column: 1, desc: false}]);
 
     // Compute the total symptom count
     var keys = [{column:0, modifier:function(val){ return 1;}, type:'number'}]; // Group all rows together
@@ -20,6 +44,7 @@ var PlotHandler = function()
 
     this.pieChart = new google.visualization.PieChart(document.getElementById('pieChartDiv'));
     this.tableChart = new google.visualization.Table(document.getElementById('tableChartDiv'));
+    this.outageTableChart = new google.visualization.Table(document.getElementById('outageTableDiv'));
 //    this.tableChartAsc = new google.visualization.Table(document.getElementById('tableChartDivAsc'));
  //   this.tableChartDesc = new google.visualization.Table(document.getElementById('tableChartDivDesc'));
 
@@ -34,6 +59,24 @@ var PlotHandler = function()
 
         // Instantiate and draw our chart, passing in some options.
         self.pieChart.draw(self.dataTable, options);
+    };
+
+    this.drawOutageTable = function() {
+
+        // Override default stylings
+        var cssOpts = {tableRow: 'none',
+                       selectedTableRow: 'none',
+                       hoverTableRow: 'none'};
+
+        var options = { allowHtml: true,
+                        alternatingRowStyle: false,
+                        cssClassNames: cssOpts,
+                        sortAscending: true,
+                        sortColumn: 1}
+
+        // Instantiate and draw our chart, passing in some options.
+        //self.outageTableChart.draw(self.outageTable, options);
+        self.outageTableChart.draw(self.outageTable, options);
     };
 
     // Define a sort handler to keep the Total row in the
@@ -89,9 +132,11 @@ var PlotHandler = function()
     this.drawAll = function()
     {
         // Clear the manual html table
-        document.getElementById('symptomTable').innerHTML = "";
+        document.getElementById('symptomTableManual').innerHTML = "";
+        document.getElementById('outageTableManual').innerHTML = "";
         self.drawPieChart();
         self.drawTableChart();
+        self.drawOutageTable();
     };
     return true;
 };

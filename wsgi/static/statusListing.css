@@ -109,38 +109,14 @@ color:white;
 }
 
 
-tr.on
-{
-background-color:#00FF99;
-}
 
-tr.off
-{
-background-color:#C0C0C0;
-}
-
-tr.broken
-{
-background-color:#FF4A4A;
-}
-
-tr.inspection
-{
-background-color:#FFCC33;
-}
-
-tr.rehab
-{
-background-color:#00BFFF;
-}
-
-table.status
+table.statusTable
 {
 border:thin solid black;
 width:700px
 }
 
-.status a:link, .status a:visited
+.statusTable a:link, .statusTable a:visited
 {
     color:black;
 }
@@ -171,6 +147,7 @@ width:700px;
 tr,th,td
 {
 border:1px solid black;
+border:1px solid #D1D1E0;
 }
 
 tr.totalRow, td.totalRow
@@ -178,10 +155,10 @@ tr.totalRow, td.totalRow
 border-top: 1px solid black;
 }
 
-td
+/*td
 {
 padding:2px;
-}
+}*/
 
 
 
@@ -230,4 +207,30 @@ padding:2px;
     border:1px solid black;
     float:left;
     margin:1px;
+}
+
+.on
+{
+background-color:#00FF99;
+}
+
+.off
+{
+background-color:#C0C0C0;
+}
+
+.broken
+{
+background-color:#FF6666;
+}
+
+.inspection
+{
+background-color:#FFCC33;
+background-color:#FFFF66;
+}
+
+.rehab
+{
+background-color:#00BFFF;
 }

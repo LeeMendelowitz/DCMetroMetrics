@@ -55,6 +55,21 @@ def stationCodeToWebPath(code):
 def escUnitIdToWebPath(unitId):
    return '/escalators/%s'%unitId
 
+########################################
+# Make a link to the station
+def makeStationLink(code):
+   webPath = stationCodeToWebPath(code) 
+   stationData = stations.codeToStationData[code]
+   stationName = stationData['name']
+   html = '<a href="{path}">{name}</a>'.format(path=webPath, name=stationName)
+   return html
+
+########################################
+# Make a link to the escalator
+def makeEscalatorLink(unitId):
+   webPath = escUnitIdToWebPath(unitId)
+   html = '<a href="{path}">{name}</a>'.format(path=webPath, name=unitId)
+   return html
 
 ########################################
 # Generate the data for the listing of

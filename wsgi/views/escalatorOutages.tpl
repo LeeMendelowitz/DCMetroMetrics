@@ -13,7 +13,7 @@
 </table>
 <h3>Symptom Counts</h3>
 
-<div id='symptomTable'>
+<div id='symptomTableManual'>
 <table class="symptoms">
 %totalCount = sum(symptomCounts.itervalues())
 %for i,(symptom,count) in enumerate(symptomCounts.most_common()):
@@ -28,7 +28,12 @@
 
 
 <h3>Outages</h3>
+
+<div class="statusTable">
+<div id="outageTableDiv"></div>
+
 %hasEntranceData = any(esc['stationDesc'] for esc in escList)
+<div id="outageTableManual">
 <table class="status">
 <tr>
     %if hasEntranceData:
@@ -43,11 +48,9 @@
     %end
 </tr>
 %for esc in escList:
-%   escWebPath = escUnitIdToWebPath(esc['unitId'])
-%   stationWebPath = stationCodeToWebPath(esc['stationCode'])
 <tr class={{esc['symptomCategory'].lower()}}>
-    <td><a href="{{escWebPath}}">{{esc['unitId']}}</a></td>
-    <td><a href="{{stationWebPath}}">{{esc['stationName']}}</a></td>
+    <td>{{!esc['unitIdHtml']}}</a></td>
+    <td>{{!esc['stationNameHtml']}}</a></td>
     % if hasEntranceData:
     <td>{{esc['stationDesc']}}</td>
     % end
@@ -56,6 +59,8 @@
 </tr>
 %end
 </table>
+</div>
+</div>
 
 %tf = '%m/%d/%y %H:%M'
 %updateStr = curTime.strftime(tf)
@@ -63,6 +68,7 @@
 <p>Page Last Updated: {{updateStr}}</p>
 </div>
 
-%include symptom_chart dt=dtSymptoms
+%include escalatorOutages_js.tpl dt=dtSymptoms, dtOutages=dtOutages, dtOutagesRowClasses=dtOutagesRowClasses
+
 
 %rebase layout title='DC Metro Metrics: Nonoperational Escalators'

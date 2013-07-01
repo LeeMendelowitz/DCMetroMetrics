@@ -13,6 +13,7 @@ import dbUtils
 import stations
 import metroEscalatorsWeb
 import hotCarsWeb
+import hotCars
 
 # Set the path to the bottle template directory
 REPO_DIR = os.environ['OPENSHIFT_REPO_DIR']
@@ -168,14 +169,32 @@ def genEscalatorOutages(doc):
     # Generate the data for the Google Chart pi chart
     import gviz_api
 
+    # Get data for the Outage Categories summary
     schema = [('symptom', 'string', 'Outage Symptom' ), ('count', 'number', 'Count')]
     data = symptomCounts.items()
-
     dtSymptoms = gviz_api.DataTable(schema, data=data)
+
+    # Convert the unitId and stationName into html links
+    for d in escalatorList:
+        d['unitIdHtml'] = metroEscalatorsWeb.makeEscalatorLink(d['unitId'])
+        d['stationNameHtml'] = metroEscalatorsWeb.makeStationLink(d['stationCode'])
+    escalatorList
+
+    # Get data for the Escalator Outage table
+    schema = [('escId', 'string', 'Escalator'),
+              ('station', 'string', 'Station'),
+              ('entrance', 'string', 'Entrance'),
+              ('escDesc', 'string', 'Description'),
+              ('status', 'string', 'Status')]
+    schemaKeys = ['unitIdHtml', 'stationNameHtml', 'stationDesc', 'escDesc', 'symptom']
+    outageTableData = [[d[k] for k in schemaKeys] for d in escalatorList]
+    dtOutages = gviz_api.DataTable(schema, data=outageTableData)
+    dtOutagesRowClasses = [d['symptomCategory'].lower() for d in escalatorList]
+
 
     # Get the availability and weighted availability
     systemAvailability = dbUtils.getSystemAvailability()
-    content = makePage('escalatorOutages', escList=escalatorList, symptomCounts=symptomCounts, systemAvailability=systemAvailability, dtSymptoms=dtSymptoms)
+    content = makePage('escalatorOutages', escList=escalatorList, symptomCounts=symptomCounts, systemAvailability=systemAvailability, dtSymptoms=dtSymptoms, dtOutages=dtOutages, dtOutagesRowClasses=dtOutagesRowClasses)
     filename = 'escalatorOutages.html'
     writeContent(filename, content)
 
@@ -206,7 +225,12 @@ def genStationDirectory(doc):
 #########
 def genHotCars(doc):
     hotCarData = hotCarsWeb.getHotCarData()
-    content = makePage('hotCars', hotCarData=hotCarData)
+    dtHotCars = hotCarsWeb.hotCarGoogleTable(hotCarData)
+    dtHotCarsByUser = hotCarsWeb.hotCarByUserGoogleTable()
+    allReports = [r for d in hotCarData.itervalues() for r in d['reports']]
+    summary = hotCars.summarizeReports(allReports)
+    numReports = sum(d['numReports'] for d in hotCarData.itervalues())
+    content = makePage('hotCars', summary=summary, hotCarData=hotCarData, dtHotCars = dtHotCars, dtHotCarsByUser=dtHotCarsByUser)
     filename = 'hotcars.html'
     writeContent(filename, content)
 
