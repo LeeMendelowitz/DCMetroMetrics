@@ -39,6 +39,12 @@ background-color:black;
     position:relative;
 }
 
+#header a:link, #header a:visited
+{
+    color:white;
+    text-decoration:none;
+}
+
 div.headeroverlay {
     opacity: .9;
     background-color: black;

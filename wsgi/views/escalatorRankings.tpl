@@ -24,13 +24,14 @@
 </div>
   
 <div>
-<h3>Most Breaks</h3>
-<p>The greatest number of breaks during the report time range.</p>
+<h3>Most Outages (by count)</h3>
+<p>The greatest number of unexpected outages during the report time range.
+This does not count outages due to inspections or intentional shutdowns.</p>
 <table>
 <tr>
     <th>Escalator</th>
     <th>Station</th>
-    <th>Num. Breaks</th>
+    <th>Num. Outages</th>
 </tr>
 %for rec in mostBreaks:
 %   escalatorWebPath=escUnitIdToWebPath(rec['unitId'])
@@ -45,15 +46,16 @@
 </div>
 
 <div>
-<h3>Most Broken</h3>
+<h3>Most Outages (by time)</h3>
 <p>The fraction of time
-that Metrorail is open for which the escalator is in a broken state.
-Examples of broken states include CALLBACK/REPAIR, MAJOR REPAIR, etc.</p>
+that Metrorail is open for which the escalator is unavailable due to
+an unexpected outage.
+This does not include inspections or intentional shutdowns.</p>
 <table>
 <tr>
     <th>Escalator</th>
     <th>Station</th>
-    <th>Broken Time Percentage</th>
+    <th>Outage Time Percentage</th>
 </tr>
 %for rec in mostBrokenTimePercentage:
 %   escalatorWebPath=escUnitIdToWebPath(rec['unitId'])

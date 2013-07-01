@@ -4,9 +4,10 @@ import dbUtils
 from StringIO import StringIO
 from operator import itemgetter
 from datetime import datetime
+import gviz_api
 
 
-PATHS = {'escalators' : '/escalators',
+PATHS = {'escalators' : '/escalators/directory',
          'home' : '/',
          'stations' : '/stations',
          'hotcars' : '/hotcars',
@@ -97,7 +98,25 @@ def stationList():
                 'numWorking' : stationToNumWorking[code],
                 'availability' : stationToAvailability[code]}
         recs.append(rec)
-    return recs 
+
+    # Create a google DataTable with this information
+    schema = [('name', 'string', 'Name'),
+              ('codes', 'string', 'Code'),
+              ('lines', 'string', 'Lines'),
+              ('numEsc', 'number', 'Num. Escalators'),
+              ('availability', 'number', 'Availability')]
+    rows = []
+    for rec in recs:
+        stationCode = rec['codes'][0]
+        codeStr = ', '.join(rec['codes'])
+        row = [makeStationLink(stationCode),
+               codeStr,
+               lineToColoredSquares(rec['lines']),
+               rec['numEscalators'],
+               100.0*rec['availability']]
+        rows.append(row)
+    dtStations = gviz_api.DataTable(schema, rows)
+    return (recs, dtStations)
 
 ##########################################
 # Generate the listing of all escalators

@@ -42,6 +42,10 @@ def initDB():
     db = dbUtils.getDB()
 
     queries = []
+
+    # The home page
+    queries.append({'class' : 'home'})
+
     # All escalators get a page.
     escIds = dbUtils.escIdToUnit.keys()
     for escId in escIds:
@@ -63,6 +67,7 @@ def initDB():
 
     # The non-operational listing gets a page
     queries.append({'class' : 'escalatorOutages'})
+
 
     # The hotcars page
     queries.append({'class' : 'hotcars'})
@@ -157,6 +162,12 @@ def genEscalatorRankings(doc):
     filename = 'escalatorRankings.html'
     writeContent(filename, content)
 
+#########
+def genHomePage(doc):
+    content = makePage('home')
+    filename = 'home.html'
+    writeContent(filename, content)
+
 #####################################################
 # Generate the escalator outages page.
 # Doc is the record for this page in the db.webpages collection.
@@ -217,8 +228,8 @@ def genEscalatorDirectory(doc):
 
 #########
 def genStationDirectory(doc):
-    stationRecs = metroEscalatorsWeb.stationList()
-    content = makePage('stations', stationRecs=stationRecs)
+    stationRecs, dtStations = metroEscalatorsWeb.stationList()
+    content = makePage('stations', stationRecs=stationRecs, dtStations = dtStations)
     filename = 'stations.html'
     writeContent(filename, content)
 
@@ -295,10 +306,12 @@ class WebPageGenerator(RestartingGreenlet):
               'escalatorOutages' : genEscalatorOutages,
               'stationDirectory' : genStationDirectory,
               'station' : genStationPage,
-              'hotcars' : genHotCars
+              'hotcars' : genHotCars,
+              'home' : genHomePage
             }
         
         for doc in docs:
+           gevent.sleep(0.0)
            # Get the webpage generator based on the doc's class
            pageGenerator = classToPageGenerator.get(doc['class'], None)
            if pageGenerator is None:
@@ -315,3 +328,4 @@ class WebPageGenerator(RestartingGreenlet):
            newDoc['lastUpdateTime'] = datetime.now()
            newDoc['forceUpdate'] = False
            db.webpages.update({'_id' : doc['_id']}, newDoc)
+
