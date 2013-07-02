@@ -10,7 +10,7 @@ setup(name='MetroEscalators', version='1.0',
       #  Uncomment one or more lines below in the install_requires section
       #  for the specific client drivers/modules your application needs.
       install_requires=[
-                           'setuptools==0.6c11'
+                           'setuptools==0.6c11',
                            'greenlet',
                            'gevent',
                            'requests',
