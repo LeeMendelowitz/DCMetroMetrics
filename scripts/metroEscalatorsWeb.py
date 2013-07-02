@@ -68,6 +68,7 @@ def makeStationLink(code):
 ########################################
 # Make a link to the escalator
 def makeEscalatorLink(unitId):
+   unitId = unitId[0:6]
    webPath = escUnitIdToWebPath(unitId)
    html = '<a href="{path}">{name}</a>'.format(path=webPath, name=unitId)
    return html
@@ -233,4 +234,33 @@ def compileRankings(rankingDict, N=20):
             'reportEnd' : rankingDict['reportEnd']
            }
     return ret
+   
+
+#########################################
+# Make a Google Table of escalator rankings
+def escalatorRankingsTable():
+    rankingD = getRankings()
+    escToSummary = rankingD['escToSummary']
+
+    schema = [('unitId', 'string','Escalator'),
+              ('station', 'string', 'Station'),
+              ('outages', 'number', 'Outages'),
+              ('inspections', 'number', 'Inspections'),
+              ('availability', 'number','Availability'),
+              ('broken', 'number', 'Broken Time')]
     
+    rows = []
+    for escId, summaryD in escToSummary.iteritems():
+        escData = dbUtils.escIdToEscData[escId]
+        stationCode = escData['station_code']
+        escLink = makeEscalatorLink(escData['unit_id'])
+        row = [escLink, makeStationLink(stationCode),
+               summaryD['numBreaks'],
+               summaryD['numInspections'],
+               100.0*summaryD['availability'],
+               100.0*summaryD['brokenTimePercentage']]
+        rows.append(row)
+
+    dtEscStats = gviz_api.DataTable(schema, rows)
+    return dtEscStats
+          

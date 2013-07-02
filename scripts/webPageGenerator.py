@@ -162,6 +162,13 @@ def genEscalatorRankings(doc):
     filename = 'escalatorRankings.html'
     writeContent(filename, content)
 
+###################################
+def genEscalatorStatTable(doc):
+    dtRankings = metroEscalatorsWeb.escalatorRankingsTable()
+    content = makePage('escalatorRankingsTable', dtRankings=dtRankings)
+    filename = 'escalatorRankingsTable.html'
+    writeContent(filename, content)
+
 #########
 def genHomePage(doc):
     content = makePage('home')

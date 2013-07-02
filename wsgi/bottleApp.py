@@ -69,6 +69,11 @@ def escalatorRankings():
     filename = 'escalatorRankings.html'
     return static_file(filename, root=DYNAMIC_DIR)
 
+@bottle.route('/escalators/rankingsTable')
+def escalatorRankingsTable():
+    filename = 'escalatorRankingsTable.html'
+    return static_file(filename, root=DYNAMIC_DIR)
+
 ###############################################
 @bottle.route('/stations')
 # Listing of all stations
