@@ -9,12 +9,15 @@ setup(name='MetroEscalators', version='1.0',
       url='http://www.python.org/sigs/distutils-sig/',
       #  Uncomment one or more lines below in the install_requires section
       #  for the specific client drivers/modules your application needs.
-      install_requires=['greenlet', 'gevent',
+      install_requires=[
+                           'setuptools==0.6c11'
+                           'greenlet',
+                           'gevent',
                            'requests',
                         #  'MySQL-python',
                         #  'psycopg2',
                            'python-dateutil==1.5',
-                           'tweepy',
+                        #  'tweepy',
                            'oauth2',
                            'pymongo',
                            'simplejson',
