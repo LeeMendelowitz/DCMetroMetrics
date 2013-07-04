@@ -881,7 +881,7 @@ class StatusGroup(object):
         self.symptomCategoryToAbsTime = None
         self.symptomCodeToTime = None
         self.symptomCodeToAbsTime = None
-        self.setTimes()
+        self._setTimes()
 
 
     ############################
@@ -976,7 +976,7 @@ class StatusGroup(object):
         return symptomCodeToTime
 
     ############################
-    def setTimes(self):
+    def _setTimes(self):
         self.symptomCodeToTimeRanges = defaultdict(list)
         self.symptomCategoryToTimeRanges = defaultdict(list)
         for s in self.statuses:

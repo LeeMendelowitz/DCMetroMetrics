@@ -16,6 +16,7 @@ from escalatorRequest import getELESIncidents, WMATA_API_ERROR
 from utils import *
 from keys import MetroEscalatorKeys
 from escalatorUtils import symptomToCategory, OPERATIONAL_CODE
+import metroEscalatorsWeb
 
 
 TWEET_LEN = 140
@@ -326,7 +327,12 @@ def generateTweets(db, changedStatusDict):
         if not msg2:
             return msg1
         newmsg = '%s %s'%(msg1, msg2)
-        return newmsg if len(newmsg) <= TWEET_LEN else msg
+        return newmsg if len(newmsg) <= TWEET_LEN else msg1
+
+    def extendTweetUrl(msg1, url):
+        newL = len(msg1) + 23 # 22 for url, plus space
+        newmsg = '%s %s'%(msg1, url)
+        return newmsg if newL <= TWEET_LEN else msg1
 
     def getSymptomCodeCategory(code):
         symptom = symptomCodeToSymptom[code]
@@ -347,6 +353,7 @@ def generateTweets(db, changedStatusDict):
         escData = dbUtils.getEsc(db, escid)
         stationCode = escData['station_code']
         station = stations.codeToShortName[stationCode]
+        escUrl = metroEscalatorsWeb.escUnitIdToAbsWebPath(unit)
 
         tweetMsg = ''
 
@@ -397,10 +404,11 @@ def generateTweets(db, changedStatusDict):
         # Tack on availability data
         sAvail = availabilityData['stationToAvailability'][stationCode]
         aStr =  'A=%.1f%%'%(100.0*availabilityData['availability'])
-        wAStr = 'wA=%.1f%%'%(100.0*availabilityData['weightedAvailability'])
+        #wAStr = 'wA=%.1f%%'%(100.0*availabilityData['weightedAvailability'])
         sAstr = 'sA=%.1f%%'%(100.0*sAvail)
         tweetMsg = extendTweet(tweetMsg, aStr)
-        tweetMsg = extendTweet(tweetMsg, '%s %s'%(wAStr, sAstr))
+        tweetMsg = extendTweet(tweetMsg, '%s'%(sAstr))
+        tweetMsg = extendTweetUrl(tweetMsg, escUrl)
         tweetMsgs.append(tweetMsg)
     return tweetMsgs
 

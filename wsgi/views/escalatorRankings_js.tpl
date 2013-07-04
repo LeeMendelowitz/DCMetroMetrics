@@ -1,11 +1,12 @@
 %#Generate javascript for the symptom table
 <script type="text/javascript">
-  google.load('visualization', '1', {packages: ['corechart', 'table']});
+  google.load('visualization', '1', {packages: ['corechart', 'table', 'annotatedtimeline']});
 </script>
 
 <script type="text/javascript">
 
 var escalatorRankingsJson = {{!dtRankings.ToJSon()}};
+var dailyCountsJson = {{!dtDailyCounts.ToJSon()}};
 
 // Set the property for an entire datatable row, cell by cell
 var setRowProperty = function(dt, rowNum, property)
@@ -28,13 +29,16 @@ var PlotHandler = function()
     formatter.format(this.rankingsDT, 4);
     formatter.format(this.rankingsDT, 5);
 
+    this.dailyCountsDT = new google.visualization.DataTable(dailyCountsJson);
+
     this.rankingsTableChart = new google.visualization.Table(document.getElementById('escalatorRankingsTableChartDiv'));
+    this.dailyTrendsChart = new google.visualization.AnnotatedTimeLine(document.getElementById('trendsPlotDiv'));
 
     this.drawRankingsTable = function() {
 
         var options = { allowHtml: true,
-                        sortAscending: true,
-                        sortColumn: 1,
+                        sortAscending: false,
+                        sortColumn: 2,
                         showRowNumber: true,
                         page: 'enable',
                         pageSize: 25}
@@ -43,11 +47,18 @@ var PlotHandler = function()
         self.rankingsTableChart.draw(self.rankingsDT, options);
     };
 
+    this.drawDailyTrends = function() {
+        var options = { displayAnnotations : true};
+        self.dailyTrendsChart.draw(self.dailyCountsDT, options);
+    };
 
     this.drawAll = function()
     {
-        self.drawRankingsTable()
+        document.getElementById('escalatorRankingsTableManual').innerHTML = "";
+        self.drawRankingsTable();
+        self.drawDailyTrends();
     };
+
     return true;
 };
 
