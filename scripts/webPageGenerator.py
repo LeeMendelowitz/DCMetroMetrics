@@ -68,7 +68,6 @@ def initDB():
     # The non-operational listing gets a page
     queries.append({'class' : 'escalatorOutages'})
 
-
     # The hotcars page
     queries.append({'class' : 'hotcars'})
 
@@ -155,7 +154,7 @@ def genStationPage(doc):
     writeContent(filename, content)
 
 #########
-def genEscalatorRankings(doc):
+def genEscalatorRankings_Old(doc):
     rankingDict = metroEscalatorsWeb.getRankings()
     compiledRankings = metroEscalatorsWeb.compileRankings(rankingDict)
     content = makePage('escalatorRankings', rankings=compiledRankings)
@@ -163,10 +162,11 @@ def genEscalatorRankings(doc):
     writeContent(filename, content)
 
 ###################################
-def genEscalatorStatTable(doc):
+def genEscalatorRankings(doc):
     dtRankings = metroEscalatorsWeb.escalatorRankingsTable()
-    content = makePage('escalatorRankingsTable', dtRankings=dtRankings)
-    filename = 'escalatorRankingsTable.html'
+    dtDailyCounts = metroEscalatorsWeb.makeBreakInspectionTable()
+    content = makePage('escalatorRankings', dtRankings=dtRankings, dtDailyCounts=dtDailyCounts)
+    filename = 'escalatorRankings.html'
     writeContent(filename, content)
 
 #########

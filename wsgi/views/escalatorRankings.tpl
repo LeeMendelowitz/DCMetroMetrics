@@ -1,123 +1,27 @@
 %# Get rankings for escalators
-%from metroEscalatorsWeb import stationCodeToWebPath, escUnitIdToWebPath
-%import metroTimes
 
-%# Number to include in each report
-%N=20
-%
-%#Unpack the keys for the rankings
-%mostBreaks = rankings['mostBreaks']
-%mostInspected = rankings['mostInspected']
-%mostUnavailable = rankings['mostUnavailable']
-%mostBrokenTimePercentage = rankings['mostBrokenTimePercentage']
 
 <h2>Escalator Rankings</h2>
-<div>
-<table>
-%timefmt = '%a, %m/%d/%y %H:%M'
-%reportRangeSec = (rankings['reportEnd'] - rankings['reportStart']).total_seconds()
-%reportRangeStr = metroTimes.secondsToDHM(reportRangeSec)
-<tr><td>Report Start Time</td><td>{{rankings['reportStart'].strftime(timefmt)}}</td></tr>
-<tr><td>Report End Time</td><td>{{rankings['reportEnd'].strftime(timefmt)}}</td></tr>
-<tr><td>Report Time Range</td><td>{{reportRangeStr}}</td></tr>
-</table>
-</div>
-  
-<div>
-<h3>Most Outages (by count)</h3>
-<p>The greatest number of unexpected outages during the report time range.
-This does not count outages due to inspections or intentional shutdowns.</p>
-<table>
-<tr>
-    <th>Escalator</th>
-    <th>Station</th>
-    <th>Num. Outages</th>
-</tr>
-%for rec in mostBreaks:
-%   escalatorWebPath=escUnitIdToWebPath(rec['unitId'])
-%   stationWebPath=stationCodeToWebPath(rec['stationCode'])
-<tr>
-    <td><a href="{{escalatorWebPath}}">{{rec['unitId']}}</a></td>
-    <td><a href="{{stationWebPath}}">{{rec['stationName']}}</a></td>
-    <td>{{str(rec['numBreaks'])}}</td>
-</tr>
-%end
-</table>
-</div>
 
-<div>
-<h3>Most Outages (by time)</h3>
-<p>The fraction of time
-that Metrorail is open for which the escalator is unavailable due to
-an unexpected outage.
-This does not include inspections or intentional shutdowns.</p>
-<table>
-<tr>
-    <th>Escalator</th>
-    <th>Station</th>
-    <th>Outage Time Percentage</th>
-</tr>
-%for rec in mostBrokenTimePercentage:
-%   escalatorWebPath=escUnitIdToWebPath(rec['unitId'])
-%   stationWebPath=stationCodeToWebPath(rec['stationCode'])
-<tr>
-    <td><a href="{{escalatorWebPath}}">{{rec['unitId']}}</a></td>
-    <td><a href="{{stationWebPath}}">{{rec['stationName']}}</a></td>
-    <td>{{'%.2f%%'%(100.0*rec['brokenTimePercentage'])}}</td>
-</tr>
-%end
-</table>
+<p>Sort columns by clicking on the header.</p>
+<div id='escalatorRankingsTableManual'>
+%# Disabling due to incorrect escaping of <a> tags in text fields
+%#{{!dtRankings.ToHtml()}}
 </div>
+<div id='escalatorRankingsTableChartDiv'></div>
 
-<div>
-<h3>Most Inspected</h3>
-<p>The escalators with the greatest number of inspections during the report time range.</p>
-<table>
-<tr>
-    <th>Escalator</th>
-    <th>Station</th>
-    <th>Num. Inspections</th>
-</tr>
-%for rec in mostInspected:
-%   escalatorWebPath=escUnitIdToWebPath(rec['unitId'])
-%   stationWebPath=stationCodeToWebPath(rec['stationCode'])
-<tr>
-    <td><a href="{{escalatorWebPath}}">{{rec['unitId']}}</a></td>
-    <td><a href="{{stationWebPath}}">{{rec['stationName']}}</a></td>
-    <td>{{str(rec['numInspections'])}}</td>
-</tr>
-%end
-</table>
-</div>
-
-<div>
-<h3>Most Unavailabile</h3>
-<p>The escalators with the lowest availability
-during the report time range. Availability is the 
-percentage of time that Metrorail is open that the 
-escalator is operating.</p>
-<table>
-<tr>
-    <th>Escalator</th>
-    <th>Station</th>
-    <th>Availability</th>
-</tr>
-%for rec in mostUnavailable:
-%   escalatorWebPath=escUnitIdToWebPath(rec['unitId'])
-%   stationWebPath=stationCodeToWebPath(rec['stationCode'])
-<tr>
-    <td><a href="{{escalatorWebPath}}">{{rec['unitId']}}</a></td>
-    <td><a href="{{stationWebPath}}">{{rec['stationName']}}</a></td>
-    <td>{{'%.2f%%'%(100.0*rec['availability'])}}</td>
-</tr>
-%end
-</table>
-</div>
+<h2>Trends</h2>
+<div id='trendsPlotDiv' style="width:700px; height:300px;"></div>
+<p>Note: "Data outages" refer to times when escalator data was not 
+collected due to technical difficulties, resulting in low counts.</p>
 
 %tf = '%m/%d/%y %H:%M'
 %updateStr = curTime.strftime(tf)
 <div class=updateTime>
 <p>Page Last Updated: {{updateStr}}</p>
 </div>
+
+<script type="text/javascript" src="https://www.google.com/jsapi"></script>
+%include escalatorRankings_js dtRankings=dtRankings, dtDailyCounts=dtDailyCounts
 
 %rebase layout title='DC Metro Metrics: Escalator Rankings'

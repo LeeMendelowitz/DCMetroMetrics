@@ -1,11 +1,13 @@
 # Functions for the MetroEscalators website
 import stations
 import dbUtils
+from dbUtils import StatusGroup
 from StringIO import StringIO
 from operator import itemgetter
-from datetime import datetime
+from datetime import datetime, date, timedelta
+from collections import defaultdict
 import gviz_api
-
+import gevent
 
 PATHS = {'escalators' : '/escalators/directory',
          'home' : '/',
@@ -54,7 +56,12 @@ def stationCodeToWebPath(code):
 # Generate the web path for an escalator
 # from its code
 def escUnitIdToWebPath(unitId):
+   unitId = unitId[0:6]
    return '/escalators/%s'%unitId
+
+def escUnitIdToAbsWebPath(unitId):
+    pfx = 'http://www.dcmetrometrics.com%s'%(escUnitIdToWebPath(unitId))
+    return pfx
 
 ########################################
 # Make a link to the station
@@ -244,7 +251,7 @@ def escalatorRankingsTable():
 
     schema = [('unitId', 'string','Escalator'),
               ('station', 'string', 'Station'),
-              ('outages', 'number', 'Outages'),
+              ('breaks', 'number', 'Breaks'),
               ('inspections', 'number', 'Inspections'),
               ('availability', 'number','Availability'),
               ('broken', 'number', 'Broken Time')]
@@ -263,4 +270,90 @@ def escalatorRankingsTable():
 
     dtEscStats = gviz_api.DataTable(schema, rows)
     return dtEscStats
+
+#########################################
+# Make a plot of break counts and inspection counts
+# per day
+def makeBreakInspectionTable():
+    escIds = dbUtils.escIdToUnit.keys()
+    escToStatuses = {}
+    getEscalatorStatuses = dbUtils.getEscalatorStatuses
+    for escId in escIds:
+        gevent.sleep(0.0)
+        statuses = getEscalatorStatuses(escId=escId)[::-1] # Put in ascending order
+        statusGroup = StatusGroup(statuses)
+        breaks = statusGroup.breakStatuses()
+        inspections = statusGroup.inspectionStatuses()
+        d = {'breaks' : breaks,
+             'inspections' : inspections}
+        escToStatuses[escId] = d
+    allBreaks = [b for d in escToStatuses.itervalues() for b in d['breaks']]
+    allInspections = [i for d in escToStatuses.itervalues() for i in d['inspections']]
+    allStatuses = allBreaks + allInspections
+    
+    # Group statuses by date 
+    dayToInspections = defaultdict(list)
+    dayToBreaks = defaultdict(list)
+    minTime = min(s['time'] for s in allStatuses)
+    firstDay = minTime.date()
+    today = date.today()
+
+    for b in allBreaks:
+        day = b['time'].date()
+        dayToBreaks[day].append(b)
+    for i in allInspections:
+        day = i['time'].date()
+        dayToInspections[day].append(i)
+
+    numDays = (today - firstDay).days
+    days = [firstDay + timedelta(days=i) for i in range(numDays+1)]
+    numBreaks = [len(dayToBreaks.get(day, [])) for day in days]
+    numInspections = [len(dayToInspections.get(day, [])) for day in days]
+
+    dayToOutages = getDataOutages()
+    def makeOutageStr(d):
+        outage = dayToOutages.get(d, None)
+        if not outage:
+            return None
+        hours = int(outage/3600.0 + 0.5)
+        return '%i hours'%hours
+
+    outageLongAnnotations = [makeOutageStr(d) for d in days]
+    outageShortAnnotations = ['Data Outage' if a is not None else None for a in outageLongAnnotations]
+
+
+    schema = [('day', 'date', 'Day'),
+              ('breaks', 'number','Breaks'),
+              ('shortAnnotation', 'string', 'ShortAnnotation'),
+              ('longAnnotation', 'string', 'LongAnnotation'),
+              ('inspections', 'number','Inpsections'),
+              #('shortAnnotation', 'string', 'ShortAnnotation'),
+              #('longAnnotation', 'string','LongAnnotattion')
+              ]
+    sa = outageShortAnnotations
+    la = outageLongAnnotations
+    rows = zip(days, numBreaks, sa, la, numInspections) 
+    dtBreakInspectionCounts = gviz_api.DataTable(schema, rows)
+    return dtBreakInspectionCounts
+
+
+###################################
+# Find data outages 
+# Just report the largest outage for a given day
+def getDataOutages():
+    db = dbUtils.getDB()
+    allStat = list(db.escalator_statuses.find())
+    T = 60*60
+    delayed = [s for s in allStat if s['tickDelta'] >= T]
+
+    dayToDelayed = defaultdict(list)
+    for d in delayed:
+        dayToDelayed[d['time'].date()].append(d)
+
+    dayToOutage = {}
+    for day,delayed in dayToDelayed.iteritems():
+        maxDelay = max(d['tickDelta'] for d in delayed)
+        dayToOutage[day] = maxDelay
+    return dayToOutage
+
           

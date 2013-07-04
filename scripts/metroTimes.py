@@ -3,6 +3,7 @@
 ##################################################
 
 from datetime import time, date, datetime, timedelta
+combine = datetime.combine
 
 # Sunday: Opens at 7 AM
 # Monday - Friday: Opens at 5 AM
@@ -17,88 +18,85 @@ wdToOpenOffset = [5, 5, 5, 5, 5, 7, 7]
 # index 0 is monday
 wdToCloseOffset = [24, 24, 24, 24, 27, 27, 24]
 
-################################################
+wdToOpenHours = [closeHour - openHour for openHour, closeHour in zip(wdToOpenOffset, wdToCloseOffset)]
+
+def dateToOpen(d):
+    wd = d.weekday()
+    offset = wdToOpenOffset[wd]
+    dt = combine(date=d,time=time()) + timedelta(hours = offset)
+    return dt
+
+def dateToClose(d):
+    wd = d.weekday()
+    offset = wdToCloseOffset[wd]
+    dt = combine(date=d,time=time()) + timedelta(hours = offset)
+    return dt
+
+def dateToOpenHours(d):
+    wd = d.weekday()
+    return timedelta(hours=wdToOpenHours[wd])
+
+#######################################################
 # Get the next time Metro opens after the time provided
 def getNextOpenTime(t):
     today = t.date()
-
-    def dateToOpen(d):
-        wd = d.weekday()
-        offset = wdToOpenOffset[wd]
-        dt = datetime.combine(date=d,time=time()) + timedelta(hours = offset)
-        return dt
-
-    today = t.date()
-
-    # Compute a few openeing times around today
-    dayOffsets = range(-2,2)
-    openingTimes = [dateToOpen(today+timedelta(days=offset)) for offset in dayOffsets]
-
-    for ot in openingTimes:
-        if ot > t:
-            return ot
+    o = dateToOpen(today)
+    # Try today's opening time
+    if o > t:
+        return o
+    # Try tomorrow's opening time
+    o = dateToOpen(today + timedelta(days=1))
+    if o > t:
+        return o
     raise RuntimeError('Something wrong in getNextOpenTime')
 
-################################################
-# Get the last time Metro opened before the time provided
+#########################################################
+# Get the last time Metro opened (less than or equal to the current time)
 def getLastOpenTime(t):
     today = t.date()
-
-    def dateToOpen(d):
-        wd = d.weekday()
-        offset = wdToOpenOffset[wd]
-        dt = datetime.combine(date=d,time=time()) + timedelta(hours = offset)
-        return dt
-
-    today = t.date()
-
-    # Compute a few openeing times around today
-    dayOffsets = range(-2,2)
-    openingTimes = [dateToOpen(today+timedelta(days=offset)) for offset in dayOffsets]
-
-    for ot in openingTimes[::-1]:
-        if ot <= t:
-            return ot
+    o = dateToOpen(today)
+    # Try today's opening time
+    if o <= t:
+        return o
+    # Try yesterday's opening time
+    o = dateToOpen(today + timedelta(days=-1))
+    if o <= t:
+        return o
     raise RuntimeError('Something wrong in getLastOpenTime')
 
 ################################################
+# Get the next close time (greater than the current time)
 def getNextCloseTime(t):
-
-    def dateToClose(d):
-        wd = d.weekday()
-        offset = wdToCloseOffset[wd]
-        dt = datetime.combine(date=d,time=time()) + timedelta(hours = offset)
-        return dt
-
     today = t.date()
-
-    # Compute a few closing times around today
-    dayOffsets = range(-1,2)
-    closingTimes = [dateToClose(today+timedelta(days=offset)) for offset in dayOffsets]
-
-    for ct in closingTimes:
-        if ct > t:
-            return ct
+    # Try yesterday's closing time (which may be today)
+    c = dateToClose(today+timedelta(days=-1))
+    if c > t:
+        return c
+    # Try today's closing time
+    c = dateToClose(today)
+    if c > t:
+        return c
     raise RuntimeError('Something wrong in getNextCloseTime')
 
 ################################################
+# Get the last close time (less than or equal to current time)
+# Note: The less than or equal is critical to the MetroIsOpen function
 def getLastCloseTime(t):
-
-    def dateToClose(d):
-        wd = d.weekday()
-        offset = wdToCloseOffset[wd]
-        dt = datetime.combine(date=d,time=time()) + timedelta(hours = offset)
-        return dt
-
     today = t.date()
 
     # Compute a few closing times around today
-    dayOffsets = range(-2,2)
-    closingTimes = [dateToClose(today+timedelta(days=offset)) for offset in dayOffsets]
+    # This is tricky:
+    # If it is 2 AM Saturday, the last close time was Thursday's closing at 12 AM Friday.
+    # If it is 4 AM Saturday, the last close time was Friday's closing at 3 AM Saturday.
 
-    for ct in closingTimes[::-1]:
-        if ct <= t:
-            return ct
+    # Try yesterday's closing time (which may be today)
+    c = dateToClose(today + timedelta(days=-1))
+    if c <= t:
+        return c
+    # Try yester-yesterday's closing time
+    c = dateToClose(today + timedelta(days=-2))
+    if c <= t:
+        return c
     raise RuntimeError('Something wrong in getLastCloseTime')
 
 ################################################
@@ -120,19 +118,50 @@ class TimeRange(object):
     # Get the amount of seconds in time range for which
     # Metrorail was open
     def metroOpenTime(self):
-        t = self.start
+        start = self.start
+        end = self.end
+        t = start
         secOpen = 0.0
-        while t < self.end:
+        while t < end:
             ts = getNextOpenTime(t) if not metroIsOpen(t) else t
             te = getNextCloseTime(ts)
             assert(te > ts)
-            if ts > self.end:
+            if ts > end:
                 break
-            te = min(te, self.end)
+            te = min(te, end)
             assert(te > ts)
             secOpen += (te - ts).total_seconds()
             t = te
         return secOpen
+
+#    def metroOpenTime2(self):
+#        start = self.start
+#        end = self.end
+#        d1 = start.date()
+#        d2 = end.date()
+#        openTimeBeforeStart = getLastOpenTime(start)
+#        openTimeBeforeEnd = getLastOpenTime(end)
+#        numDays = (d1-d2).days
+#
+#        isFullDay = lambda d: (dateToOpen(d) >= start) and (dateToClose(d) <= end)
+#
+#        # Collect the full days in between the start and end time
+#        dateGen = (d1 + timedelta(days=delta) for delta in xrange(numDays+1))
+#        fullDay = (d for d in dategen if isFullday(d))
+#
+#        # Count the hours from the full days (as a timedelta instance)
+#        fullDayHours = sum((dateToOpenHours(d) for d in fullDay), timedelta(hours=0))
+#
+#        # Compute hours for the first day
+#        firstDayTime = None
+#        if not isFullDay(d1):
+#            day1start = start if metroIsOpen(start) else getNextStartTime(start)
+#            day1end = min(getNextCloseTime(day1start), end)
+#            firstDayTime = day1end - day1start if day1end > day1start else timedelta(0.0)
+#
+#        # Compute hours for the last day
+#        lastDayIsDifferent = (d1 != d2) and (openTimeBeforeStart != openTimeBeforeEnd)
+#        if (d2 > d1) and not is 
 
 def secondsToDHM(seconds):
     secondsPerDay = 24 * 3600
