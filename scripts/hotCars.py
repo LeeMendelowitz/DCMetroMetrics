@@ -7,7 +7,7 @@ import re
 from datetime import datetime, timedelta, date
 from dateutil import tz
 import time
-from collections import defaultdict
+from collections import defaultdict, Counter
 from operator import itemgetter
 import dbUtils
 
@@ -17,6 +17,10 @@ ME = 'MetroHotCars'.upper()
 # Words which are not allowed in tweets which mention
 # MetroHotCars
 mentions_forbidden_words = set(w.upper() for w in ['cold', 'cool'])
+
+def getHotCarUrl(carNum):
+    url = 'http://www.dcmetrometrics.com/hotcars/{carNum}'.format(carNum=carNum)
+    return url
 
 ##########################
 def initAppState(db, curTime, log=sys.stdout):
@@ -56,8 +60,7 @@ def initTweetersDB(db, log=sys.stdout):
 #########################################
 # Get all hot car reports for a given car
 def getHotCarReportsForCar(db, carNum):
-    carNumStr = str(carNum)
-    query = {'car_number' : carNumStr}
+    query = {'car_number' : carNum}
     db.hotcars.ensure_index([('car_number',pymongo.ASCENDING),('time', pymongo.DESCENDING)])
     cursor = db.hotcars.find(query).sort('time', pymongo.DESCENDING)
     hotCarReports = list(cursor)
@@ -65,7 +68,6 @@ def getHotCarReportsForCar(db, carNum):
     for rec in hotCarReports:
         rec['time'] = UTCToLocalTime(rec['time'])
         rec['tweet_id'] = int(rec['tweet_id'])
-        rec['user_id'] = int(rec['user_id'])
     return hotCarReports
 
 #########################################
@@ -500,6 +502,17 @@ def genResponseTweet(toScreenName, hotCarData):
         msg = '@wmata {color} line car {car} is a #wmata #hotcar HT @{user}'.format(color=color, car=car, user=user)
     else:
         msg = '@wmata Car {car} is a #wmata #hotcar HT @{user}'.format(car=car, user=user)
+
+    # Add information about the number of reports for this hot car.
+    db = dbUtils.getDB()
+    numReports = db.hotcars.find({'car_number' : int(car)}).count()
+    carUrl = getHotCarUrl(car)
+    msg2 = ''
+    if numReports > 1:
+        msg2 = 'Car reported {0} times. {1}'.format(numReports, carUrl)
+    elif numReports == 1:
+        msg2 = 'Car reported {0} time. {1}'.format(numReports, carUrl)
+    msg = msg + '. %s'%msg2
     return msg
 
 #######################################
@@ -555,6 +568,20 @@ def summarizeReports(reports):
     lastReport = reports[-1]
     lastReportTime = lastReport['time']
 
+    # Count the number of unique reporters
+    db = dbUtils.getDB()
+    tweetData = [db.hotcars_tweets.find_one({'_id' : r['tweet_id']}) for r in reports]
+    users = set(t['user_id'] for t in tweetData)
+
+    carNumbers = set(r['car_number'] for r in reports)
+    numCars = len(carNumbers)
+
+    # Color to Num Reports
+    colorToCount = Counter(r['color'] for r in reports)
+
+    # Series to Count
+    seriesToCount = Counter(str(r['car_number'])[0] for r in reports)
+
     # Get the number of days between the first and last report
     timeDelta = (lastReportTime - firstReportTime)
     secondsPerDay = 3600.0*24
@@ -564,12 +591,10 @@ def summarizeReports(reports):
     reportsPerDay = numReports/float(numDays)
     reportsPerWeekday = numReports/float(numWeekDays)
     res = {'numReports' : numReports,
+           'numCars' : numCars,
            'reportsPerDay' : reportsPerDay,
-           'reportsPerWeekday' : reportsPerWeekday}
+           'reportsPerWeekday' : reportsPerWeekday,
+           'numReporters' : len(users),
+           'colorToCount' : colorToCount,
+           'seriesToCount' : seriesToCount}
     return res
-
-
-
-
-
-

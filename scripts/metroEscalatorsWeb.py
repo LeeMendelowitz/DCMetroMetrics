@@ -36,8 +36,11 @@ def lineToColoredSquares(lineCodes):
     s = StringIO()
     colors = [wordToColor[lc] for lc in lineCodes]
     s.write('<div class="color_squares">')
-    for color in colors:
-        s.write('<div id="%ssquare"></div>'%(color))
+    if colors:
+        for color in colors:
+            s.write('<div id="%ssquare"></div>'%(color))
+    else:
+        s.write('N/A')
     outS = s.getvalue()
     s.write('</div>')
     s.close()

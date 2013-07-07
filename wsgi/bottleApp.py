@@ -33,6 +33,12 @@ def hotCars():
     return static_file(filename, root=DYNAMIC_DIR)
 
 ########################################
+@bottle.route('/hotcars/<carNum>')
+def hotCar(carNum):
+    filename = 'hotcar_%s.html'%carNum
+    return static_file(filename, root=DYNAMIC_DIR)
+
+########################################
 from bottle import static_file
 @bottle.route('/static/<filename>')
 def server_static(filename):

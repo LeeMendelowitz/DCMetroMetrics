@@ -1,11 +1,14 @@
 %# BASIC LAYOUT
+<!DOCTYPE html>
 
 <html>
 
 <head>
     <link rel="stylesheet" type="text/css" href="/static/statusListing.css">
     <title>{{title or 'DC Metro Metrics'}}</title>
+    <meta name="description" content="Sharing public and crowdsourced data related to the Washington DC Metrorail system, including data on escalator outages, escalator historical performance, and #wmata #hotcar's.">
 
+    <script src="https://platform.twitter.com/widgets.js"></script>
     <script>
       (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
       (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
