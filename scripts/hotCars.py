@@ -364,6 +364,7 @@ def updateDBFromTweet(db, tweet, hotCarData, log=sys.stderr):
 
     # Trigger regeneration of the hot car webpage
     db.webpages.update({'class' : 'hotcars'}, {'$set' : {'forceUpdate' : True}})
+    db.webpages.update({'class' : 'hotcar', 'car_number' : carNum}, {'$set' : {'forceUpdate' : True}})
 
     return updated
 
