@@ -6,7 +6,7 @@
 %from operator import itemgetter
 
 <a id="top"></a>
-<h2>Hot Cars</h2>
+<h2>HotCars</h2>
 
 <p>Report a hot car on Twitter by tweeting a single 4-digit car number, the line color, and the hashtags #wmata #hotcar.
 </p>
