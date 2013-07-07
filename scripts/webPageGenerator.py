@@ -71,6 +71,11 @@ def initDB():
     # The hotcars page
     queries.append({'class' : 'hotcars'})
 
+    # The page for each hotcars
+    hotCarNums = db.hotcars.distinct('car_number')
+    for carNum in hotCarNums:
+        queries.append({'class' : 'hotcar', 'car_number' : carNum})
+
     # Update the database if a document does not exist
     for q in queries:
         insert = dict(q)
@@ -108,6 +113,7 @@ def genEscalatorPage(doc):
     content = makePage('escalator', unitId = escUnitShort, escData=escData, statuses=statuses, escSummary=escSummary)
     filename = 'escalator_%s.html'%(escUnitShort)
     writeContent(filename, content)
+
 
 
 #########
@@ -242,14 +248,43 @@ def genStationDirectory(doc):
 
 #########
 def genHotCars(doc):
-    hotCarData = hotCarsWeb.getHotCarData()
+
+    hotCarData = hotCarsWeb.getAllHotCarData()
     dtHotCars = hotCarsWeb.hotCarGoogleTable(hotCarData)
     dtHotCarsByUser = hotCarsWeb.hotCarByUserGoogleTable()
     allReports = [r for d in hotCarData.itervalues() for r in d['reports']]
     summary = hotCars.summarizeReports(allReports)
+    dtHotCarsBySeries = hotCarsWeb.makeCarSeriesGoogleTable(summary['seriesToCount'])
+    dtHotCarsByColorCustom = hotCarsWeb.makeColorCountsGoogleTableCustom(summary['colorToCount'])
+    dtHotCarsByColor = hotCarsWeb.makeColorCountsGoogleTable(summary['colorToCount'])
+    dtHotCarsTimeSeries = hotCarsWeb.makeReportTimeSeries()
     numReports = sum(d['numReports'] for d in hotCarData.itervalues())
-    content = makePage('hotCars', summary=summary, hotCarData=hotCarData, dtHotCars = dtHotCars, dtHotCarsByUser=dtHotCarsByUser)
+
+    kwargs = { 'summary' : summary,
+               'hotCarData' : hotCarData,
+               'dtHotCars' : dtHotCars,
+               'dtHotCarsByUser' : dtHotCarsByUser,
+               'dtHotCarsBySeries' : dtHotCarsBySeries,
+               'dtHotCarsByColor' : dtHotCarsByColor,
+               'dtHotCarsByColorCustom' : dtHotCarsByColorCustom,
+               'dtHotCarsTimeSeries' : dtHotCarsTimeSeries
+             }
+
+    #content = makePage('hotCars', summary=summary, hotCarData=hotCarData, dtHotCars = dtHotCars, dtHotCarsByUser=dtHotCarsByUser, dtHotCarsBySeries = dtHotCarsBySeries, dtHotCarsByColor = dtHotCarsByColor, dtHotCarsByColorCustom=dtHotCarsByColorCustom)
+    content = makePage('hotCars', **kwargs)
     filename = 'hotcars.html'
+    writeContent(filename, content)
+
+def genHotCarPage(doc):
+    carNum = doc['car_number']
+    data = hotCarsWeb.getHotCarData(carNum)
+    reports = data['reports']
+    colors = data['colors']
+    numReports = data['numReports']
+    lastReportTime = max(r['time'] for r in data['reports'])
+    lastReportTimeStr = hotCarsWeb.formatTimeStr(lastReportTime)
+    content = makePage('hotCar', carNum=carNum, numReports=numReports, lastReportTimeStr=lastReportTimeStr, reports=reports, colors=colors)
+    filename = 'hotcar_%i.html'%carNum
     writeContent(filename, content)
 
 ########################################
@@ -261,7 +296,7 @@ def writeContent(filename, content):
         os.mkdir(destDir)
     outFile = os.path.join(destDir, filename)
     with open(outFile, 'w') as fout:
-        fout.write(content)
+        fout.write(content.encode(encoding='utf-8', errors='ignore'))
 ##################################################################
 
 class WebPageGenerator(RestartingGreenlet):
@@ -314,6 +349,7 @@ class WebPageGenerator(RestartingGreenlet):
               'stationDirectory' : genStationDirectory,
               'station' : genStationPage,
               'hotcars' : genHotCars,
+              'hotcar' : genHotCarPage,
               'home' : genHomePage
             }
         
@@ -325,7 +361,7 @@ class WebPageGenerator(RestartingGreenlet):
                raise RuntimeError('No page generator for webpage with class %s'%doc['class'])
 
            #Generate the webpage
-           tf = '%m/%d/%y %H:%M'
+           tf = '%m/%d/%y %I:%M %p'
            timeStamp = datetime.now().strftime(tf)
            self.logFile.write("%s: Updating webpage: %s\n"%(timeStamp,str(doc)))
            pageGenerator(doc)
@@ -335,4 +371,3 @@ class WebPageGenerator(RestartingGreenlet):
            newDoc['lastUpdateTime'] = datetime.now()
            newDoc['forceUpdate'] = False
            db.webpages.update({'_id' : doc['_id']}, newDoc)
-

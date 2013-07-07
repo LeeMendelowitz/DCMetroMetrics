@@ -1,9 +1,11 @@
 import hotCars
 import dbUtils
 from operator import itemgetter
-from collections import defaultdict
+from collections import defaultdict, Counter
 import gviz_api
 import metroEscalatorsWeb
+from twitter import TwitterError
+from datetime import datetime, date, timedelta
 
 def makeTwitterUrl(handle, statusId):
     s = 'https://www.twitter.com/{handle}/status/{statusId:d}'
@@ -18,8 +20,13 @@ def recToLinkHtml(rec, text=None):
     s = '<a href="{url}" target="_blank">{text}</a>'
     return s.format(url=url, text=text)
 
+def makeHotCarLink(carNum):
+    path = '/hotcars/%i'%carNum
+    s = '<a href="{path}">{num}</a>'.format(path=path, num=carNum)
+    return s
+
 def formatTimeStr(dt):
-    tf = '%m/%d/%y %H:%M'
+    tf = '%m/%d/%y %I:%M %p'
     return dt.strftime(tf)
 
 def tweetLinks(records):
@@ -39,7 +46,7 @@ def makeColorString(records):
     colorStr = ', '.join(colors)
     return colorStr
 
-def getHotCarData():
+def getAllHotCarData():
     db = dbUtils.getDB()
 
     # Car number to reports
@@ -68,7 +75,7 @@ def getHotCarData():
 
 def hotCarGoogleTable(hotCarData):
     # Make a DataTable with this data
-    schema = [('carNum', 'number', 'Car'),
+    schema = [('carNum', 'string', 'Car'),
               ('line', 'string', 'Line'),
               ('numReports', 'number', 'Num. Reports'),
               ('lastReportTime', 'datetime', 'Last Report Time'),
@@ -77,7 +84,7 @@ def hotCarGoogleTable(hotCarData):
     rowData = []
     for d in hotCarData.itervalues():
         lastReport = d['lastReport']
-        row = [d['carNum'],
+        row = [makeHotCarLink(d['carNum']),
                metroEscalatorsWeb.lineToColoredSquares(d['colors']),
                len(d['reports']),
                d['lastReportTime'],
@@ -137,3 +144,117 @@ def hotCarByUserGoogleTable():
         rowData.append(row)
     dtHotCarsByUser = gviz_api.DataTable(schema, rowData)
     return dtHotCarsByUser
+
+# Get web page data for a single hot car
+def getHotCarData(carNum):
+
+    db = dbUtils.getDB()
+
+    # Get all hot car reports for this car num
+    reports = hotCars.getHotCarReportsForCar(db, carNum)
+
+    # Get the tweet embedding html. Cache the html if it does not exist
+    for report in reports:
+        tweetId = int(report['tweet_id'])
+        tweetData = db.hotcars_tweets.find_one(tweetId)
+        embed_html = ''
+        if 'embed_html' not in tweetData:
+            T = hotCars.getTwitterAPI()
+            try:
+                embedding = T.GetStatusOembed(tweetId, hide_thread=False, omit_script=True, align='left')
+                embed_html = embedding['html']
+                db.hotcars_tweets.update({'_id' : tweetId}, {'$set' : {'embed_html' : embed_html}})
+            except TwitterError as e:
+                msg = 'Tweet Id: %i'%tweetId +\
+                      '\nCaught Twitter error: %s'%(str(e))
+                print msg
+
+                # If the tweet does not exist, add a field saying so
+                code = e.args[0][0].get('code', 0)
+                if code == 34:
+                    db.hotcars_tweets.update({'_id' : tweetId}, {'$set' : {'exists' : False}})
+        else:
+            embed_html = tweetData['embed_html']
+        report['embed_html'] = embed_html
+
+    numReports = len(reports)
+    colors = [r['color'] for r in reports]
+    colors = list(set(c for c in colors if c != 'NONE'))
+    reports = sorted(reports, key = itemgetter('time'), reverse=True)
+    tweetHtmls = [t['embed_html'] for t in reports]
+
+    ret = { 'numReports' : numReports,
+            'colors' : colors,
+            'tweetHtmls' : tweetHtmls,
+            'reports' : reports}
+    return ret
+
+#############################
+def makeCarSeriesGoogleTable(seriesToCount):
+    series = [str(i) for i in range(1,7)]
+
+    schema = [('Series', 'string', 'Series'),
+              ('Count', 'number', 'Count')]
+    rowData = [(s+'000', seriesToCount.get(s,0)) for s in series]
+    dtSeriesCount = gviz_api.DataTable(schema, rowData)
+    return dtSeriesCount
+
+#############################
+def makeColorCountsGoogleTable(colorToCount):
+    schema = [('Color', 'string', 'Color'),
+              ('Count', 'number', 'Count')]
+    colors = ['BLUE' ,'GREEN', 'ORANGE', 'RED', 'YELLOW', 'N/A']
+    colorToCount = dict(colorToCount)
+    colorToCount['N/A'] = colorToCount.get('NONE',0)
+    del colorToCount['NONE']
+    rowData = [(c, colorToCount[c]) for c in colors]
+    dtLineCount = gviz_api.DataTable(schema, rowData)
+    return dtLineCount
+
+#############################
+# We use a hack to make each bar it's own color
+def makeColorCountsGoogleTableCustom(colorToCount):
+    #BLUE, GREEN, ORANGE, RED, YELLOW, NONE
+    schema = [('Color', 'string', 'Color'),
+              ('CountBlue', 'number', 'CountBlue'),
+              ('CountGreen', 'number', 'CountGreen'),
+              ('CountOrange', 'number', 'CountOrange'),
+              ('CountRed', 'number', 'CountRed'),
+              ('CountYellow', 'number', 'CountYellow'),
+              ('CountNone', 'number', 'CountNone'),
+              ]
+    colors = ['BLUE' ,'GREEN', 'ORANGE', 'RED', 'YELLOW', 'N/A']
+    colorToOffset = dict((k,i+1) for i,k in enumerate(colors))
+    def makeRowVec(color, value):
+        numFields = len(colors) + 1
+        data = [0] * numFields
+        data[0] = color
+        data[colorToOffset[color]] = value
+        return data
+
+    colorToCount = dict(colorToCount)
+    colorToCount['N/A'] = colorToCount.get('NONE',0)
+    del colorToCount['NONE']
+    rowData = [makeRowVec(c, colorToCount[c]) for c in colors]
+    dtLineCount = gviz_api.DataTable(schema, rowData)
+    return dtLineCount
+
+###############################
+# Get number of reports per day
+def makeReportTimeSeries():
+    db = dbUtils.getDB()
+    hotCarDict = hotCars.getAllHotCarReports(db)
+    reports = [r for rl in hotCarDict.itervalues() for r in rl]
+    reportDates = [r['time'].date() for r in reports]
+    dateCounts = Counter(reportDates)
+
+    firstDate = min(reportDates)
+    today = date.today()
+    numDays = (today-firstDate).days + 1
+    days = [firstDate + timedelta(days=i) for i in range(numDays)]
+
+    schema = [('date', 'date', 'date'),
+              ('count', 'number', 'count')]
+    rowData = [(d, dateCounts.get(d,0)) for d in days]
+    dtDateCounts = gviz_api.DataTable(schema, rowData)
+    return dtDateCounts
