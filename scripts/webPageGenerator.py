@@ -71,6 +71,9 @@ def initDB():
     # The hotcars page
     queries.append({'class' : 'hotcars'})
 
+    # The glossary
+    queries.append({'class' : 'glossary'})
+
     # The page for each hotcars
     hotCarNums = db.hotcars.distinct('car_number')
     for carNum in hotCarNums:
@@ -163,7 +166,9 @@ def genStationPage(doc):
 def genEscalatorRankings_Old(doc):
     rankingDict = metroEscalatorsWeb.getRankings()
     compiledRankings = metroEscalatorsWeb.compileRankings(rankingDict)
-    content = makePage('escalatorRankings', rankings=compiledRankings)
+    stationCodeToSummary = metroEscalatorsWeb.getStationSummaries()
+    dtStationRankings = metroEscalatorsWeb.makeStationRankingGoogleTable(stationCodeToSummary)
+    content = makePage('escalatorRankings', rankings=compiledRankings, dtStationRankings=dtStationRankings)
     filename = 'escalatorRankings.html'
     writeContent(filename, content)
 
@@ -171,7 +176,9 @@ def genEscalatorRankings_Old(doc):
 def genEscalatorRankings(doc):
     dtRankings = metroEscalatorsWeb.escalatorRankingsTable()
     dtDailyCounts = metroEscalatorsWeb.makeBreakInspectionTable()
-    content = makePage('escalatorRankings', dtRankings=dtRankings, dtDailyCounts=dtDailyCounts)
+    stationCodeToSummary = metroEscalatorsWeb.getStationSummaries()
+    dtStationRankings = metroEscalatorsWeb.makeStationRankingGoogleTable(stationCodeToSummary)
+    content = makePage('escalatorRankings', dtRankings=dtRankings, dtDailyCounts=dtDailyCounts, dtStationRankings=dtStationRankings)
     filename = 'escalatorRankings.html'
     writeContent(filename, content)
 
@@ -275,6 +282,11 @@ def genHotCars(doc):
     filename = 'hotcars.html'
     writeContent(filename, content)
 
+def genGlossaryPage(doc):
+    content = makePage('glossary')
+    filename = 'glossary.html'
+    writeContent(filename, content)
+
 def genHotCarPage(doc):
     carNum = doc['car_number']
     data = hotCarsWeb.getHotCarData(carNum)
@@ -350,6 +362,7 @@ class WebPageGenerator(RestartingGreenlet):
               'station' : genStationPage,
               'hotcars' : genHotCars,
               'hotcar' : genHotCarPage,
+              'glossary' : genGlossaryPage,
               'home' : genHomePage
             }
         

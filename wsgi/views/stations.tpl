@@ -44,4 +44,4 @@
 <script type="text/javascript" src="https://www.google.com/jsapi"></script>
 %include stations_js dtStations=dtStations
 
-%rebase layout title='DC Metro Metrics: Stations'
+%rebase layout title='DC Metro Metrics: Stations', description=''

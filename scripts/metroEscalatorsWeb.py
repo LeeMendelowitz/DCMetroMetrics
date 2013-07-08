@@ -359,4 +359,53 @@ def getDataOutages():
         dayToOutage[day] = maxDelay
     return dayToOutage
 
-          
+#####################################
+def getStationSummaries():
+    nameToStationCodes = stations.nameToCodes
+    codeToStationData = stations.codeToStationData
+    stationCodes = [codes[0] for codes in nameToStationCodes.itervalues()]
+
+    # Only include stations with escalator
+    stationCodes = [c for c in stationCodes if codeToStationData[c]['numEscalators'] > 0]
+
+    stationCodeToSummary = {}
+
+    for sc in stationCodes:
+        summary = dbUtils.getStationSummary(sc)
+        stationData = codeToStationData[sc]
+        stationName = stationData['name']
+        summary['stationName'] = stationName
+
+        # Compute the broken time percentage
+        brokenTime = summary['symptomCategoryToTime'].get('BROKEN', 0.0)
+        metroOpenTime = summary['metroOpenTime']
+        brokenTimePercentage = brokenTime/metroOpenTime if metroOpenTime > 0 else 0.0
+        summary['brokenTimePercentage'] = brokenTimePercentage
+
+        stationCodeToSummary[sc] = summary
+    return stationCodeToSummary 
+
+####################################
+def makeStationRankingGoogleTable(stationCodeToSummary):
+
+    schema = [('station', 'string', 'Station'),
+              ('Num. Escalators', 'number', 'Num. Escalators'),
+              ('Breaks', 'number', 'Breaks'),
+              ('Inspections', 'number', 'Inspections'),
+              ('Avg. Availability', 'number', 'Avg. Availability'),
+              ('Broken Time', 'number', 'Broken Time')]
+
+
+    rows = []
+    for sc, data in stationCodeToSummary.iteritems():
+        station = data['stationName']
+        numEsc = len(data['escUnitIds'])
+        row = [makeStationLink(sc),
+               numEsc,
+               data['numBreaks'],
+               data['numInspections'],
+               100.0*data['availability'],
+               100.0*data['brokenTimePercentage']]
+        rows.append(row)
+    dtStationRankings = gviz_api.DataTable(schema, rows)
+    return dtStationRankings 

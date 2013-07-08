@@ -71,4 +71,4 @@
 %include escalatorOutages_js.tpl dt=dtSymptoms, dtOutages=dtOutages, dtOutagesRowClasses=dtOutagesRowClasses
 
 
-%rebase layout title='DC Metro Metrics: Nonoperational Escalators'
+%rebase layout title='DC Metro Metrics: Nonoperational Escalators', description=''

@@ -58,4 +58,4 @@
 <p>Page Last Updated: {{updateStr}}</p>
 </div>
 
-%rebase layout title=stationSnapshot['name']
+%rebase layout title=stationSnapshot['name'], description=''

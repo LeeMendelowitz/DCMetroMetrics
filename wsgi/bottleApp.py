@@ -87,4 +87,10 @@ def stationListing():
     filename = 'stations.html'
     return static_file(filename, root=DYNAMIC_DIR)
 
+########################################
+@bottle.route('/glossary')
+def glossary():
+    filename = 'glossary.html'
+    return static_file(filename, root=DYNAMIC_DIR)
+
 application = bottle.default_app()

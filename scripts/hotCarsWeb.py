@@ -216,12 +216,12 @@ def makeColorCountsGoogleTable(colorToCount):
 def makeColorCountsGoogleTableCustom(colorToCount):
     #BLUE, GREEN, ORANGE, RED, YELLOW, NONE
     schema = [('Color', 'string', 'Color'),
-              ('CountBlue', 'number', 'CountBlue'),
-              ('CountGreen', 'number', 'CountGreen'),
-              ('CountOrange', 'number', 'CountOrange'),
-              ('CountRed', 'number', 'CountRed'),
-              ('CountYellow', 'number', 'CountYellow'),
-              ('CountNone', 'number', 'CountNone'),
+              ('CountBlue', 'number', 'Count'),
+              ('CountGreen', 'number', 'Count'),
+              ('CountOrange', 'number', 'Count'),
+              ('CountRed', 'number', 'Count'),
+              ('CountYellow', 'number', 'Count'),
+              ('CountNone', 'number', 'Count'),
               ]
     colors = ['BLUE' ,'GREEN', 'ORANGE', 'RED', 'YELLOW', 'N/A']
     colorToOffset = dict((k,i+1) for i,k in enumerate(colors))
