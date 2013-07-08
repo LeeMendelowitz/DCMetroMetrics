@@ -1,12 +1,14 @@
 %# BASIC LAYOUT
 <!DOCTYPE html>
 
+%description_default = "Sharing public and crowdsourced data related to the Washington DC Metrorail system, including data on escalator outages, escalator historical performance, and #wmata #hotcar's."
+
 <html>
 
 <head>
     <link rel="stylesheet" type="text/css" href="/static/statusListing.css">
     <title>{{title or 'DC Metro Metrics'}}</title>
-    <meta name="description" content="Sharing public and crowdsourced data related to the Washington DC Metrorail system, including data on escalator outages, escalator historical performance, and #wmata #hotcar's.">
+    <meta name="description" content="{{description or description_default}}">
 
     <script src="https://platform.twitter.com/widgets.js"></script>
     <script>

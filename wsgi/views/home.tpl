@@ -19,4 +19,4 @@ please contact me at <a href="mailto:info@dcmetrometrics.com" target="_blank">in
 
 <div style="height:100px;"></div>
 
-%rebase layout title=''
+%rebase layout title='', description=''

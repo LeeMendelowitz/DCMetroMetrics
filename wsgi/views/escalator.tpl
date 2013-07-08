@@ -2,7 +2,9 @@
 %from metroEscalatorsWeb import stationCodeToWebPath
 %from metroTimes import secondsToDHM, secondsToHMS
 
-    
+
+%description = "DC Metro Escalator {0} at {1} station, {2} {3}. Escalator performance history, and more."
+%description = description.format(unitId, escData['station_name'], escData['station_desc'], escData['esc_desc'])
 %#escalator data
 <h2>Escalator {{unitId}}</h2>
 <table class="escalator_data">
@@ -56,4 +58,4 @@
 <p>Page Last Updated: {{updateStr}}</p>
 </div>
 
-%rebase layout title=unitId
+%rebase layout title=unitId, description=description

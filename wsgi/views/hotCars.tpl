@@ -5,6 +5,8 @@
 %from hotCarsWeb import tweetLinks, formatTimeStr, recToLinkHtml, makeHotCarLink
 %from operator import itemgetter
 
+%description="Compilation of crowdsourced reports of #wmata #hotcar's in the WMATA Metrorail system"
+
 <a id="top"></a>
 <h2>HotCars</h2>
 
@@ -104,4 +106,4 @@
 <script type="text/javascript" src="https://www.google.com/jsapi"></script>
 %include hotCars_js dtHotCars=dtHotCars, dtHotCarsByUser=dtHotCarsByUser, dtHotCarsBySeries=dtHotCarsBySeries, dtHotCarsByColor=dtHotCarsByColor, dtHotCarsByColorCustom=dtHotCarsByColorCustom, dtHotCarsTimeSeries=dtHotCarsTimeSeries
 
-%rebase layout title='DC Metro Metrics: HotCars'
+%rebase layout title='DC Metro Metrics: HotCars', description=description

@@ -2,6 +2,8 @@
 %from hotCarsWeb import formatTimeStr
 %from metroEscalatorsWeb import lineToColoredSquares
 
+%description = "Reports for #wmata #hotcar {0} of the WMATA Metrorail System.".format(carNum)
+
 <h2>HotCar {{carNum}}</h2>
 
 <h3>Summary</h3>
@@ -31,4 +33,4 @@
 <p>Page Last Updated: {{updateStr}}</p>
 </div>
 
-%rebase layout title='Hot Car %i'%carNum
+%rebase layout title='Hot Car %i'%carNum, description=description

@@ -67,4 +67,4 @@
 <p>Page Last Updated: {{updateStr}}</p>
 </div>
 
-%rebase layout title='DC Metro Metrics: All Escalators'
+%rebase layout title='DC Metro Metrics: All Escalators', description=''
