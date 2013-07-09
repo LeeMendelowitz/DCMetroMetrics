@@ -8,13 +8,15 @@ from datetime import datetime, date, timedelta
 from collections import defaultdict
 import gviz_api
 import gevent
+from metroTimes import UTCToLocalTime, utcnow
 
 PATHS = {'escalators' : '/escalators/directory',
          'home' : '/',
          'stations' : '/stations',
          'hotcars' : '/hotcars',
          'escalatorOutages' : '/escalators/outages',
-         'rankings' : '/escalators/rankings'
+         'rankings' : '/escalators/rankings',
+         'data' : '/data'
         }
 
 ###################################
@@ -153,7 +155,7 @@ def escalatorList():
                 'escDesc' : esc['esc_desc'],
                 'symptom' : esc['symptom'],
                 'symptomCategory' : esc['symptomCategory'],
-                'time' : esc['time']
+                'time' : UTCToLocalTime(esc['time'])
               }
         escalatorListing.append(rec)
     return escalatorListing
@@ -172,7 +174,7 @@ def escalatorNotOperatingList():
 def getRankings(startTime=None, endTime=None):
 
     if endTime is None:
-        endTime = datetime.now()
+        endTime = utcnow()
     escToSummary = dbUtils.getAllEscalatorSummaries(startTime=startTime, endTime=endTime)
 
     # Add to the summary the percentage of Metro Open time that the escalator is broken
@@ -293,6 +295,10 @@ def makeBreakInspectionTable():
     allBreaks = [b for d in escToStatuses.itervalues() for b in d['breaks']]
     allInspections = [i for d in escToStatuses.itervalues() for i in d['inspections']]
     allStatuses = allBreaks + allInspections
+
+    # Convert all status times to local time
+    for s in allStatuses:
+        s['time'] = UTCToLocalTime(s['time'])
     
     # Group statuses by date 
     dayToInspections = defaultdict(list)

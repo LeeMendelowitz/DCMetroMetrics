@@ -10,7 +10,7 @@ import copy
 
 from escalatorUtils import symptomToCategory, OPERATIONAL_CODE
 import stations
-from metroTimes import TimeRange
+from metroTimes import TimeRange, utcnow, isNaive, toUtc, tzutc
 import gevent
 
 invDict = lambda d: dict((v,k) for k,v in d.iteritems())
@@ -34,9 +34,8 @@ def updateGlobals(force=True):
         db = getDB()
 
         # Add the operational code
-        db.symptom_codes.find_and_modify({'_id' : OPERATIONAL_CODE},
-                                         update = {'_id' : OPERATIONAL_CODE,
-                                                   'symptom_desc' : 'OPERATIONAL'},
+        db.symptom_codes.update({'_id' : OPERATIONAL_CODE},
+                                        {'$set' : {'symptom_desc' : 'OPERATIONAL'} },
                                          upsert=True)
 
         unitToEscId = getUnitToId(db)
@@ -99,13 +98,22 @@ def getOne(cursor):
         return None
 
 ######################################################################
-def getSome(cursor, N):
-    results = []
-    for res in cursor:
-        results.append(res)
-        if len(res) == N:
+# Get at most N items from the cursor. Return a generator over the N items.
+def _getSome(cursor, N):
+    for i, item in enumerate(cursor):
+        if i >= N:
             break
-    return results
+        yield item
+
+# Get at most N items from the cursor. Return a list of items
+def getSome(cursor, N):
+    return [item for item in _getSome(cursor, N)]
+
+#######################################################################
+def getFirstStatusSince(statusList, time):
+    statusList = sorted(statusList, key = itemgetter('time')) # in time ascending
+    myRecs = (rec for rec in statusList if rec['time'] > time)
+    return getOne(myRecs)
 
 ######################################################################
 def updateAppState(db, lastRunTime = None, nextDailyStatusTime = None):
@@ -161,7 +169,7 @@ def addEscalator(db, curTime, unit_id, station_code, station_name, esc_desc, sta
         symptomToId = getSymptomToId(db)
         opCode = symptomToId['OPERATIONAL']
         doc = {'escalator_id' : escId,
-               'time' : curTime - timedelta(milliseconds=1),
+               'time' : curTime - timedelta(seconds=1),
                'tickDelta' : 0,
                'symptom_code' : opCode}
         db.escalator_statuses.insert(doc)
@@ -209,19 +217,14 @@ def getLatestStatuses(db):
 
     db.escalator_statuses.ensure_index([('escalator_id', pymongo.ASCENDING),
                                         ('time', pymongo.DESCENDING)])
-    getTime = lambda d: d.get('time', None) if d is not None else None
-        
     escToStatuses = {}
 
     for esc_id in esc_ids:
-
         # Find latest 1000 statuses for this escalator
         sort_params = [('time', pymongo.DESCENDING)]
-        cursor = db.escalator_statuses.find({'escalator_id' : esc_id}, sort=sort_params)
-        latest = getSome(cursor, 1000) # Latest status updates for this escalator
-
-
-        keyStatuses = getKeyStatuses(latest)
+        statuses = getEscalatorStatuses(esc_id)
+        keyStatuses = getKeyStatuses(statuses)
+        keyStatuses['statuses'] = statuses
         escToStatuses[esc_id] = keyStatuses
 
     return escToStatuses
@@ -246,6 +249,8 @@ def addStatusAttr(statusList):
     if not statusList:
         return
 
+    _checkAllTimesNotNaive(statusList)
+
     # Check that these statuses concern a single escalator
     escids = set(s['escalator_id'] for s in statusList)
     if not len(escids)==1:
@@ -259,6 +264,7 @@ def addStatusAttr(statusList):
 
     lastTime = None
     lastIndex = len(statusList)-1
+    escDataKeys = ['unit_id', 'station_name', 'station_desc', 'station_code', 'esc_desc']
     for i, d in enumerate(statusList):
         # Add end_time
         if i != lastIndex:
@@ -270,7 +276,6 @@ def addStatusAttr(statusList):
         d['symptom'] = symp
         d['symptomCategory'] = symptomToCategory[symp]
         # Add escalator data fields 
-        escDataKeys = ['unit_id', 'station_name', 'station_desc', 'station_code', 'esc_desc']
         d.update((k, escData[k]) for k in escDataKeys)
         lastTime = d['time']
 
@@ -284,10 +289,12 @@ def addStatusAttr(statusList):
 # Note: If there is a transition between broken states, such as :
 # ... OPERATIONAL -> CALLBACK/REPAIR -> MINOR REPAIR -> OPERATIONAL,
 # then the lastBreak status is that of the CALLBACK/REPAIR, since it is the
-# first broken status of the stretch of brokeness.
+# first broken status in the stretch of brokeness.
 def getKeyStatuses(statuses):
 
     updateGlobals(force=False)
+
+    _checkAllTimesNotNaive(statuses)
 
     # Check that these statuses concern a single escalator
     escids = set(s['escalator_id'] for s in statuses)
@@ -309,11 +316,6 @@ def getKeyStatuses(statuses):
     opTimes = [rec['time'] for rec in ops]
     breaks = [rec for rec in statuses if rec['symptomCategory'] == 'BROKEN']
     breakTimes = [rec['time'] for rec in breaks]
-
-    def getFirstStatusSince(statusList, time):
-        statusList = sorted(statusList, key = itemgetter('time')) # in time ascending
-        myRecs = (rec for rec in statusList if rec['time'] > time)
-        return getOne(myRecs)
 
     breakTimeToFix = {}
     opTimeToNextBreak = {}
@@ -376,6 +378,9 @@ def doc2Str(doc):
 def processIncidents(db, curIncidents, curTime, tickDelta, log=sys.stdout):
 
     updateGlobals(force=False)
+
+    if isNaive(curTime):
+        raise RuntimeError('curTime cannot be naive datetime')
 
     log = log.write
     log('dbUtils.processIncidents: Processing %i incidents\n'%len(curIncidents))
@@ -443,15 +448,16 @@ def processIncidents(db, curIncidents, curTime, tickDelta, log=sys.stdout):
 
     return changedStatusDict
 
-
 ######################################################################
 def groupStatusesByStationCode(statuses):
+    _checkAllTimesNotNaive(statuses)
     stationCodeToStatus = defaultdict(list)
     for s in statuses:
         stationCodeToStatus[s['station_code']].append(s)
     return stationCodeToStatus
 
 def groupStatusesByEscalator(statuses):
+    _checkAllTimesNotNaive(statuses)
     escIdToStatus = defaultdict(list)
     for s in statuses:
         escIdToStatus[s['escalator_id']].append(s)
@@ -525,7 +531,6 @@ def getSystemAvailability():
 
     return ret
 
-
 #########################################################
 # Get escalator data summary for a single station
 # for a given time period.
@@ -538,12 +543,18 @@ def getStationSummary(stationCode, startTime = None, endTime = None):
 
     updateGlobals(force=False)
 
+    # Convert startTime and endTime to utcTimeZone, if necessary
+    if startTime is not None:
+        startTime = toUtc(startTime)
+    if endTime is not None:
+        endTime = toUtc(endTime)
+
     stationData = stations.codeToStationData[stationCode]
     allCodes = set(stationData['allCodes'])
     escList = [d for d in escIdToEscData.itervalues() if d['station_code'] in allCodes]
     escUnitIds = [d['unit_id'] for d in escList]
     assert(len(escList) == stationData['numEscalators'])
-    curTime = datetime.now()
+    curTime = utcnow()
 
     # First, compute a summary on each escalator in the station
     escToSummary = {}
@@ -582,11 +593,12 @@ def getStationSnapshot(stationCode):
     escList = [d for d in escIdToEscData.itervalues() if d['station_code'] in allCodes]
     escUnitIds = [d['unit_id'] for d in escList]
     assert(len(escList) == stationData['numEscalators'])
-    curTime = datetime.now()
+    curTime = utcnow()
 
     def getLatestStatus(escUnitId):
         escId = unitToEscId[escUnitId]
         status = db.escalator_statuses.find_one({'escalator_id' : escId}, sort=[('time', pymongo.DESCENDING)])
+        status['time'] = status['time'].replace(tzinfo=tzutc)
         addStatusAttr([status])
         return status
         
@@ -656,6 +668,12 @@ def mergeEscalatorSummaries(escalatorSummaryList):
 # order to provide context.
 def getEscalatorStatuses(escId=None, escUnitId=None, startTime = None, endTime = None):
 
+    # Convert startTime and endTime to utcTimeZone, if necessary
+    if startTime is not None:
+        startTime = toUtc(startTime)
+    if endTime is not None:
+        endTime = toUtc(endTime)
+
     if escId is None:
         if escUnitId is None:
             raise RuntimeError('getEscalatorDetails: escId or escUnitId must be provided.')
@@ -673,7 +691,6 @@ def getEscalatorStatuses(escId=None, escUnitId=None, startTime = None, endTime =
         query['time'] = timeQuery
     cursor = db.escalator_statuses.find(query, sort=sort_params)
     statuses = list(cursor)
-    addStatusAttr(statuses)
 
     # If startTime is specified, give all statuses from first operational
     # status which preceeds startTime
@@ -706,7 +723,10 @@ def getEscalatorStatuses(escId=None, escUnitId=None, startTime = None, endTime =
         # Following are in ascending order. Reverse the order to make it descending.
         following = following[::-1]
         statuses = following + statuses
-    
+
+    # Add tzinfo to all status
+    for status in statuses:
+        status['time'] = status['time'].replace(tzinfo=tzutc)
     addStatusAttr(statuses)
     return statuses
 
@@ -719,6 +739,14 @@ def getEscalatorStatuses(escId=None, escUnitId=None, startTime = None, endTime =
 # - metro open time spent in each status code
 # startTime and endTime must be provided to properly compute the times.
 def summarizeStatuses(statusList, startTime, endTime):
+
+    _checkAllTimesNotNaive(statusList)
+
+    # Convert startTime and endTime to utcTimeZone, if necessary
+    if startTime is not None:
+        startTime = toUtc(startTime)
+    if endTime is not None:
+        endTime = toUtc(endTime)
 
     if not statusList:
         return {}
@@ -831,8 +859,15 @@ def summarizeStatuses(statusList, startTime, endTime):
 # Get a summary of all escalators for the specified time period
 def getAllEscalatorSummaries(startTime=None, endTime=None):
     updateGlobals(force=False)
+
+    # Convert startTime and endTime to utcTimeZone, if necessary
+    if startTime is not None:
+        startTime = toUtc(startTime)
+    if endTime is not None:
+        endTime = toUtc(endTime)
+
     escIds = escIdToUnit.keys()
-    curTime = datetime.now()
+    curTime = utcnow()
 
     escToSummary = {}
     for escId in escIds:
@@ -845,13 +880,13 @@ def getAllEscalatorSummaries(startTime=None, endTime=None):
         escToSummary[escId] = summary
     return escToSummary
 
-    
 class StatusGroup(object):
     """
     Helper class to summarize a time series of statuses for a single escalator.
     """
     def __init__(self, statuses):
 
+        _checkAllTimesNotNaive(statuses)
         self.statuses = statuses
 
         if not self.statuses:
@@ -990,3 +1025,12 @@ class StatusGroup(object):
         self.symptomCategoryToAbsTime = self.getAbsTimeAllocation()
         self.symptomCodeToTime = self.getSymptomTimeAllocation()
         self.symptomCodeToAbsTime = self.getSymptomAbsTimeAllocation()
+
+def _checkAllTimesNotNaive(statusList):
+    for s in statusList:
+        if isNaive(s['time']):
+            raise RuntimeError('Times cannot be naive')
+        if 'end_time' in s and isNaive(s['end_time']):
+            raise RuntimeError('Times cannot be naive')
+
+updateGlobals()

@@ -12,6 +12,7 @@
 
 <p><a href="{{PATHS['stations']}}">Stations</a></p>
 <p><a href="{{PATHS['hotcars']}}">HotCars</a></p>
+<p><a href="{{PATHS['data']}}">Data</a></p>
 <p><a href="mailto:info@dcmetrometrics.com" target="_blank">Contact</a></p>
 
 <p>

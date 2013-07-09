@@ -6,10 +6,13 @@ import sys
 import re
 from datetime import datetime, timedelta, date
 from dateutil import tz
+from dateutil.tz import tzlocal
 import time
 from collections import defaultdict, Counter
 from operator import itemgetter
 import dbUtils
+
+from metroTimes import utcnow, toLocalTime, UTCToLocalTime
 
 
 ME = 'MetroHotCars'.upper()
@@ -110,7 +113,7 @@ def preprocessText(tweetText):
     words = [w for w in words if (w[0] != '@') or (w == '@WMATA')]
     tweetText = ' '.join(words)
 
-    # Replace alphanumerica characters with spaces
+    # Replace non-alphanumeric characters with spaces
     tweetText = re.sub('[^a-zA-Z0-9\s]',' ', tweetText)
 
     # Separate numbers embedded in words
@@ -123,8 +126,6 @@ def preprocessText(tweetText):
     tweetText = re.sub('[1-6]000 SERIES', '', tweetText)
     return tweetText
 
-
-
 ###########################
 # Get 4 digit numbers
 def getCarNums(text):
@@ -134,16 +135,21 @@ def getCarNums(text):
 
 #######################################
 # Get colors mentioned from a tweet
+# Note: the tweet text is preprocessed by removing hashtags
+# and making all text uppercase.
 def getColors(text):
-    colorToWords = { 'RED' : ['RD', 'RL'],
-                     'BLUE' : ['BL'],
-                     'GREEN' : ['GR', 'GL'],
-                     'YELLOW' : ['YL'],
-                     'ORANGE' : ['OL'],
+    colorToWords = { 'RED' : ['RD', 'RL', 'REDLINE'],
+                     'BLUE' : ['BL', 'BLUELINE'],
+                     'GREEN' : ['GR', 'GL', 'GREENLINE'],
+                     'YELLOW' : ['YL', 'YELLOWLINE'],
+                     'ORANGE' : ['OL', 'ORANGELINE'],
                      #'SILVER' : ['SL']
                    }
-    for c in colorToWords:
-        colorToWords[c].append(c)
+
+    for c, colorWordList in colorToWords.iteritems():
+        colorWordList.append(c) # Add the color itself to the word list
+        colorToWords[c] = colorWordList
+
     wordToColor = dict((w,k) for k,wlist in colorToWords.iteritems() for w in wlist)
     colors = (wordToColor.get(w, None) for w in text.split())
     colors = [c for c in colors if c is not None]
@@ -185,8 +191,9 @@ def getManuallyTaggedTweets(db, log=sys.stderr):
 
 #######################################
 def tick(db, tweetLive = False, log=sys.stderr):
-    curTime = datetime.now()
-    log.write('Running HotCar Tick. %s\n'%(str(curTime)))
+    curTime = utcnow()
+    curTimeLocal = toLocalTime(curTime)
+    log.write('Running HotCar Tick. %s\n'%(str(curTimeLocal)))
     log.write('Tweeting Live: %s\n'%str(tweetLive))
     log.flush()             
     initAppState(db, curTime, log=log)
@@ -305,16 +312,6 @@ def makeUTCDateTime(secSinceEpoch):
     dt = datetime(t.tm_year, t.tm_mon, t.tm_mday,
                   t.tm_hour, t.tm_min, t.tm_sec)
     return dt
-
-##################################################
-# Convert UTC datetime to local datetime.
-# This will return a naive localtime, without tzinfo attached
-def UTCToLocalTime(utcDateTime):
-    from_zone = tz.tzutc()
-    to_zone = tz.tzlocal()
-    utcdt = utcDateTime.replace(tzinfo=from_zone)
-    localdt = utcdt.astimezone(to_zone).replace(tzinfo=None)
-    return localdt
 
 ########################################
 def updateDBFromTweet(db, tweet, hotCarData, log=sys.stderr):
@@ -524,6 +521,8 @@ def getMentions(curTime):
     db = dbUtils.getDB()
     appState = next(db.hotcars_appstate.find({'_id' : 1}))
     lastMentionsCheckTime = appState.get('lastMentionsCheckTime', None)
+    if lastMentionsCheckTime is not None:
+        lastMentionsCheckTime = lastMentionsCheckTime.replace(tzinfo=tzlocal())
     lastMentionsTweetId = appState.get('lastMentionsTweetId', 0)
     doCheck = False
 
