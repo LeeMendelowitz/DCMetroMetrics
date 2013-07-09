@@ -17,6 +17,6 @@ please contact me at <a href="mailto:info@dcmetrometrics.com" target="_blank">in
 
 <p>Thanks for visiting!</p>
 
-<div style="height:100px;"></div>
+<div style="height:200px;"></div>
 
 %rebase layout title='', description=''
