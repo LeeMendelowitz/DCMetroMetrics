@@ -3,6 +3,7 @@ import os
 import sys
 from time import sleep
 from datetime import datetime, date, time, timedelta
+from metroTimes import utcnow, tzutc, metroIsOpen
 
 # Custom modules
 import stations
@@ -17,7 +18,6 @@ from utils import *
 from keys import MetroEscalatorKeys
 from escalatorUtils import symptomToCategory, OPERATIONAL_CODE
 import metroEscalatorsWeb
-
 
 TWEET_LEN = 140
 
@@ -81,7 +81,7 @@ class TwitterApp(object):
 
     def tick(self):
 
-        curTime = datetime.now()
+        curTime = utcnow()
         db = dbUtils.getDB()
         initDB(db, curTime)
 
@@ -98,7 +98,8 @@ class TwitterApp(object):
 
         # Get the app state to determine the tick delta
         appState = db.escalator_appstate.find_one()
-        tickDelta = (curTime - appState['lastRunTime']).total_seconds() \
+        lastRunTime = appState['lastRunTime'].replace(tzinfo=tzutc)
+        tickDelta = (curTime - lastRunTime).total_seconds() \
                     if appState is not None else 0.0
 
         # Determine escalators which changed status
@@ -128,13 +129,15 @@ class TwitterApp(object):
 
         # Update the app state
         update = {'$set':  {'lastRunTime' : curTime} }
-        db.escalator_appstate.find_and_modify({'_id' : 1}, update, upsert = True)
+        db.escalator_appstate.update({'_id' : 1}, update, upsert = True)
 
     def runDailyStats(self, db, curTime):
         appState = db.escalator_appstate.find_one()
         lastStatsTime = None
         if appState is not None:
             lastStatsTime = appState.get('lastDailyStatsTime', None)
+            if lastStatsTime:
+                lastStatsTime = lastStatsTime.replace(tzinfo=tzutc)
         lastRanDay = lastStatsTime.weekday() if lastStatsTime else None
 
         # Send the daily stats at 8 AM
@@ -150,7 +153,7 @@ class TwitterApp(object):
             storeTweets(db, [dailyStatsMsg])
 
         update = {'$set' : {'lastDailyStatsTime' : curTime}}
-        db.escalator_appstate.find_and_modify({'_id' : 1}, update, upsert = True)
+        db.escalator_appstate.update({'_id' : 1}, update, upsert = True)
 
 
 #######################################
@@ -198,13 +201,12 @@ def dailyStats(curTime, startTime = None):
 
     return msg
                
-            
 #####################################
 # Store outgoing tweets in the tweet outbox
 def storeTweets(db, tweetMsgs):
     if not tweetMsgs:
         return
-    curTime = datetime.now()
+    curTime = utcnow()
     docs = [{'msg' : m, 'sent' : False, 'time': curTime} for m in tweetMsgs]
     db.escalator_tweet_outbox.insert(docs)
 
@@ -214,7 +216,7 @@ def storeTweets(db, tweetMsgs):
 def sendTweets(db, twitterApi, tweetLive=False, log = sys.stdout):
 
     # Purge the outbox of any stale tweets which have not been sent in last hour
-    curTime = datetime.now()
+    curTime = utcnow()
     staleTime = curTime - timedelta(hours=1)
     log.write('Before removing stale tweets, outbox size %i\n'%db.escalator_tweet_outbox.count())
     db.escalator_tweet_outbox.remove({'time' : {'$lt' : staleTime}})
@@ -245,25 +247,6 @@ def main():
     log = sys.stdout
     app = TwitterApp(log, LIVE=LIVE)
     app.tick()
-
-###################################################
-# Return true if Metro is open at the given time
-def metroIsOpen(dt):
-    curTime = time(hour=dt.hour, minute=dt.minute, second = dt.second)
-    curDay = dt.weekday()
-    if curDay in (0, 1, 2, 3, 4):
-        # Monday thru Thursday, Friday
-        openTime = time(hour=5)
-        isOpen = (curTime >= openTime) 
-    elif curDay in (5,6):
-        # Saturday, Sunday
-        amCloseTime = time(hour=3)
-        amOpenTime = time(hour=7)
-        isOpen = (curTime <= amCloseTime) or (curTime >= amOpenTime)
-    else:
-        raise RuntimeError('Code should not get here!')
-    return isOpen
-
 
 ####################################################
 # Convert seconds to a time string

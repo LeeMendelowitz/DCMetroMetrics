@@ -12,12 +12,14 @@ import metroEscalatorsWeb
 import hotCarsWeb
 import stations
 
+from bottle import static_file
 #bottle.debug(True)
 
 REPO_DIR = os.environ['OPENSHIFT_REPO_DIR']
 DATA_DIR = os.environ['OPENSHIFT_DATA_DIR']
 STATIC_DIR = os.path.join(REPO_DIR, 'wsgi', 'static')
 DYNAMIC_DIR = os.path.join(DATA_DIR, 'webpages', 'dynamic')
+SHARED_DATA_DIR = os.path.join(DATA_DIR, 'data_shared')
 bottle.TEMPLATE_PATH.append(os.path.join(REPO_DIR, 'wsgi', 'views'))
 
 ########################################
@@ -39,10 +41,21 @@ def hotCar(carNum):
     return static_file(filename, root=DYNAMIC_DIR)
 
 ########################################
-from bottle import static_file
 @bottle.route('/static/<filename>')
 def server_static(filename):
     return static_file(filename, root=STATIC_DIR)
+
+
+########################################
+@bottle.route('/data')
+def data():
+    filename = 'data.html'
+    return static_file(filename, root=DYNAMIC_DIR)
+
+#########################################
+@bottle.route('/data/<filename>')
+def serve_data(filename):
+    return static_file(filename, root=SHARED_DATA_DIR, download=True)
 
 ########################################
 @bottle.route('/escalators/<unitId>')

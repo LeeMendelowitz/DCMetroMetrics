@@ -1,4 +1,5 @@
 %# Get rankings for escalators
+%from metroTimes import toLocalTime
 
 %description = 'Performance rankings of escalators in the WMATA Metrorail system.'
 
@@ -39,8 +40,8 @@ of escalator breaks and inspections.</p>
 collected due to technical difficulties, resulting in low counts.</p>
 
 
-%tf = '%m/%d/%y %H:%M'
-%updateStr = curTime.strftime(tf)
+%tf = '%m/%d/%y %I:%M %p'
+%updateStr = toLocalTime(curTime).strftime(tf)
 <div class=updateTime>
 <p>Page Last Updated: {{updateStr}}</p>
 </div>

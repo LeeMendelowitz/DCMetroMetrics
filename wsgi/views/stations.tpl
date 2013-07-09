@@ -1,6 +1,7 @@
 %# Listing of all stations
 %from operator import itemgetter
 %import metroEscalatorsWeb
+%from metroTimes import toLocalTime
 
 
 <h2>Stations</h2>
@@ -35,8 +36,8 @@
 </table>
 </div>
 
-%tf = '%m/%d/%y %H:%M'
-%updateStr = curTime.strftime(tf)
+%tf = '%m/%d/%y %I:%M %p'
+%updateStr = toLocalTime(curTime).strftime(tf)
 <div class=updateTime>
 <p>Page Last Updated: {{updateStr}}</p>
 </div>

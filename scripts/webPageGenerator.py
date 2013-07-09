@@ -8,6 +8,7 @@ import gevent
 import bottle
 from operator import itemgetter
 from collections import defaultdict, Counter
+from metroTimes import utcnow, toLocalTime, localToUTCTime
 
 import dbUtils
 import stations
@@ -32,7 +33,7 @@ if not os.path.exists(DYNAMIC_DIR):
 ##############################
 # Make a wrapper around the bottle.template call
 def makePage(*args, **kwargs):
-    curTime = datetime.now()
+    curTime = toLocalTime(utcnow())
     kwargs['curTime'] = curTime
     return bottle.template(*args, **kwargs)
 
@@ -74,6 +75,9 @@ def initDB():
     # The glossary
     queries.append({'class' : 'glossary'})
 
+    # The Data downloads page
+    queries.append({'class' : 'data'})
+
     # The page for each hotcars
     hotCarNums = db.hotcars.distinct('car_number')
     for carNum in hotCarNums:
@@ -101,7 +105,7 @@ def genEscalatorPage(doc):
     statuses = dbUtils.getEscalatorStatuses(escId = escId)
     dbUtils.addStatusAttr(statuses)
 
-    curTime = datetime.now()
+    curTime = utcnow()
     # Set the end_time of the current status to now
     if statuses and 'end_time' not in statuses[0]:
         statuses[0]['end_time'] = curTime
@@ -109,8 +113,8 @@ def genEscalatorPage(doc):
     escData = dbUtils.escIdToEscData[escId]
 
     # Summarize the escalator performance
-    startTime = datetime(2000,1,1)
-    escSummary = dbUtils.summarizeStatuses(statuses, startTime=startTime, endTime=datetime.now())
+    startTime =  statuses[-1]['time'] if statuses else localToUTCTime(datetime(2000,1,1))
+    escSummary = dbUtils.summarizeStatuses(statuses, startTime=startTime, endTime=curTime)
 
     # Generate the page
     content = makePage('escalator', unitId = escUnitShort, escData=escData, statuses=statuses, escSummary=escSummary)
@@ -186,6 +190,12 @@ def genEscalatorRankings(doc):
 def genHomePage(doc):
     content = makePage('home')
     filename = 'home.html'
+    writeContent(filename, content)
+
+#########
+def genDataPage(doc):
+    content = makePage('data')
+    filename = 'data.html'
     writeContent(filename, content)
 
 #####################################################
@@ -293,8 +303,11 @@ def genHotCarPage(doc):
     reports = data['reports']
     colors = data['colors']
     numReports = data['numReports']
-    lastReportTime = max(r['time'] for r in data['reports'])
-    lastReportTimeStr = hotCarsWeb.formatTimeStr(lastReportTime)
+    if data['reports']:
+        lastReportTime = max(r['time'] for r in data['reports'])
+        lastReportTimeStr = hotCarsWeb.formatTimeStr(lastReportTime)
+    else:
+        lastReportTimeStr = 'N/A'
     content = makePage('hotCar', carNum=carNum, numReports=numReports, lastReportTimeStr=lastReportTimeStr, reports=reports, colors=colors)
     filename = 'hotcar_%i.html'%carNum
     writeContent(filename, content)
@@ -344,7 +357,8 @@ class WebPageGenerator(RestartingGreenlet):
         docs.extend(db.webpages.find({'lastUpdateTime' : {'$exists' : False}}))
 
         # Get stale documents
-        curTime = datetime.now()
+        curTime = utcnow()
+        curTimeLocal = toLocalTime(curTime)
         oneHourAgo = curTime - timedelta(hours=1)
         docs.extend(db.webpages.find({'lastUpdateTime' : {'$lt' : oneHourAgo}}))
 
@@ -363,6 +377,7 @@ class WebPageGenerator(RestartingGreenlet):
               'hotcars' : genHotCars,
               'hotcar' : genHotCarPage,
               'glossary' : genGlossaryPage,
+              'data' : genDataPage,
               'home' : genHomePage
             }
         
@@ -375,12 +390,12 @@ class WebPageGenerator(RestartingGreenlet):
 
            #Generate the webpage
            tf = '%m/%d/%y %I:%M %p'
-           timeStamp = datetime.now().strftime(tf)
+           timeStamp = curTimeLocal.strftime(tf)
            self.logFile.write("%s: Updating webpage: %s\n"%(timeStamp,str(doc)))
            pageGenerator(doc)
 
            #Update the webpage database
            newDoc = dict(doc)
-           newDoc['lastUpdateTime'] = datetime.now()
+           newDoc['lastUpdateTime'] = utcnow()
            newDoc['forceUpdate'] = False
            db.webpages.update({'_id' : doc['_id']}, newDoc)

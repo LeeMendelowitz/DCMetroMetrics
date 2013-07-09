@@ -4,6 +4,7 @@
 %import hotCarsWeb
 %from hotCarsWeb import tweetLinks, formatTimeStr, recToLinkHtml, makeHotCarLink
 %from operator import itemgetter
+%from metroTimes import toLocalTime
 
 %description="Compilation of crowdsourced reports of #wmata #hotcar's in the WMATA Metrorail system"
 
@@ -97,8 +98,8 @@
 <div id="hotCarsByUserTableChartDiv"></div>
 
 
-%tf = '%m/%d/%y %H:%M'
-%updateStr = curTime.strftime(tf)
+%tf = '%m/%d/%y %I:%M %p'
+%updateStr = toLocalTime(curTime).strftime(tf)
 <div class=updateTime>
 <p>Page Last Updated: {{updateStr}}</p>
 </div>

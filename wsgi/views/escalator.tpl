@@ -1,7 +1,6 @@
 %# Listing for an escalator
 %from metroEscalatorsWeb import stationCodeToWebPath
-%from metroTimes import secondsToDHM, secondsToHMS
-
+%from metroTimes import secondsToDHM, secondsToHMS, toLocalTime
 
 %description = "DC Metro Escalator {0} at {1} station, {2} {3}. Escalator performance history, and more."
 %description = description.format(unitId, escData['station_name'], escData['station_desc'], escData['esc_desc'])
@@ -35,8 +34,9 @@
 %#    <th>Tick Delta</th>
 </tr>
 %for status in statuses:
-%   tf = '%a, %m/%d/%y %H:%M'
-%   timeStr = status['time'].strftime(tf)
+%   tf = '%a, %m/%d/%y %I:%M %p'
+%   localTime = toLocalTime(status['time'])
+%   timeStr = localTime.strftime(tf)
 %   durationStr = ''
 %   if 'end_time' in status:
 %      duration = status['end_time'] - status['time']
@@ -52,8 +52,8 @@
 %end
 </table>
 
-%tf = '%m/%d/%y %H:%M'
-%updateStr = curTime.strftime(tf)
+%tf = '%m/%d/%y %I:%M %p'
+%updateStr = toLocalTime(curTime).strftime(tf)
 <div class=updateTime>
 <p>Page Last Updated: {{updateStr}}</p>
 </div>

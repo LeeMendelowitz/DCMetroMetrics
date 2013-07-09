@@ -1,6 +1,7 @@
 %# Page for a station
 %import metroEscalatorsWeb
 %from metroEscalatorsWeb import lineToColoredSquares, escUnitIdToWebPath, stationCodeToWebPath
+%from metroTimes import toLocalTime
 
 <script type="text/javascript" src="https://www.google.com/jsapi"></script>
 
@@ -62,8 +63,8 @@
 </div>
 </div>
 
-%tf = '%m/%d/%y %H:%M'
-%updateStr = curTime.strftime(tf)
+%tf = '%m/%d/%y %I:%M %p'
+%updateStr = toLocalTime(curTime).strftime(tf)
 <div class=updateTime>
 <p>Page Last Updated: {{updateStr}}</p>
 </div>

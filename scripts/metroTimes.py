@@ -1,8 +1,13 @@
 # Utilities for determining opening/closing time
 # of Metrorail system
-##################################################
+# TODO: Make this module correct for daylights saving time.
 
+##################################################
 from datetime import time, date, datetime, timedelta
+from dateutil.tz import tzlocal, tzutc
+from dateutil import zoneinfo
+nytz = zoneinfo.gettz("America/New_York")
+tzutc = tzutc()
 combine = datetime.combine
 
 # Sunday: Opens at 7 AM
@@ -24,12 +29,14 @@ def dateToOpen(d):
     wd = d.weekday()
     offset = wdToOpenOffset[wd]
     dt = combine(date=d,time=time()) + timedelta(hours = offset)
+    dt = dt.replace(tzinfo=nytz)
     return dt
 
 def dateToClose(d):
     wd = d.weekday()
     offset = wdToCloseOffset[wd]
     dt = combine(date=d,time=time()) + timedelta(hours = offset)
+    dt = dt.replace(tzinfo=nytz)
     return dt
 
 def dateToOpenHours(d):
@@ -107,16 +114,20 @@ def metroIsOpen(t):
 
 class TimeRange(object):
     def __init__(self, start, end):
+
+        if any(isNaive(t) for t in (start, end)):
+            raise RuntimeError('TimeRange: start and end cannot be naive')
         if start > end:
             raise RuntimeError('Invalid time range!')
-        self.start = start
-        self.end = end
+        self.start = toLocalTime(start)
+        self.end = toLocalTime(end)
 
     def absTime(self):
         return (self.end - self.start).total_seconds()
 
     # Get the amount of seconds in time range for which
     # Metrorail was open
+    # TODO: Make this function more efficient
     def metroOpenTime(self):
         start = self.start
         end = self.end
@@ -134,35 +145,7 @@ class TimeRange(object):
             t = te
         return secOpen
 
-#    def metroOpenTime2(self):
-#        start = self.start
-#        end = self.end
-#        d1 = start.date()
-#        d2 = end.date()
-#        openTimeBeforeStart = getLastOpenTime(start)
-#        openTimeBeforeEnd = getLastOpenTime(end)
-#        numDays = (d1-d2).days
-#
-#        isFullDay = lambda d: (dateToOpen(d) >= start) and (dateToClose(d) <= end)
-#
-#        # Collect the full days in between the start and end time
-#        dateGen = (d1 + timedelta(days=delta) for delta in xrange(numDays+1))
-#        fullDay = (d for d in dategen if isFullday(d))
-#
-#        # Count the hours from the full days (as a timedelta instance)
-#        fullDayHours = sum((dateToOpenHours(d) for d in fullDay), timedelta(hours=0))
-#
-#        # Compute hours for the first day
-#        firstDayTime = None
-#        if not isFullDay(d1):
-#            day1start = start if metroIsOpen(start) else getNextStartTime(start)
-#            day1end = min(getNextCloseTime(day1start), end)
-#            firstDayTime = day1end - day1start if day1end > day1start else timedelta(0.0)
-#
-#        # Compute hours for the last day
-#        lastDayIsDifferent = (d1 != d2) and (openTimeBeforeStart != openTimeBeforeEnd)
-#        if (d2 > d1) and not is 
-
+##################################################
 def secondsToDHM(seconds):
     secondsPerDay = 24 * 3600
     numDays = int(seconds/secondsPerDay)
@@ -175,6 +158,7 @@ def secondsToDHM(seconds):
         timeStr = dstr
     return timeStr
 
+##################################################
 def secondsToHMS(seconds):
     secondsPerDay = 24 * 3600
     numDays = int(seconds/secondsPerDay)
@@ -185,3 +169,54 @@ def secondsToHMS(seconds):
     seconds = d.second
     timeStr = '%ih %im %is'%(hours,minutes,seconds)
     return timeStr
+
+##################################################
+# Convert UTC datetime to local datetime.
+# We use New York Time
+# If utcDateTime is naive, treat timezone as UTC
+def UTCToLocalTime(utcDateTime):
+    from_zone = tzutc
+    to_zone = nytz
+    if utcDateTime.tzinfo is None:
+        utcDateTime = utcDateTime.replace(tzinfo=from_zone)
+    localdt = utcDateTime.astimezone(to_zone)
+    return localdt
+
+##################################################
+# Convert local dateTime to UTC dateTime
+# If localDateTime is naive, treat timezone as NY
+def localToUTCTime(localDateTime):
+    from_zone = nytz
+    to_zone = tzutc
+    if localDateTime.tzinfo is None:
+        localDateTime = localDateTime.replace(tzinfo=from_zone)
+    utcDt = localDateTime.astimezone(to_zone)
+    return utcDt
+
+#################################################
+# Convert a non-naive datetime to UTC
+def toUtc(dt):
+    if isNaive(dt):
+        raise RuntimeError('toUtc: datetime cannot be naive')
+    dt = dt.astimezone(tzutc)
+    return dt
+
+#################################################
+# Convert a non-naive datetime to NY time
+def toLocalTime(dt):
+    if isNaive(dt):
+        raise RuntimeError('toLocalTime: datetime cannot be naive')
+    dt = dt.astimezone(nytz)
+    return dt
+
+#################################################
+def makeNaive(dt):
+    return dt.replace(tzinfo=None)
+
+#################################################
+def isNaive(dt):
+    return dt.tzinfo is None
+
+#################################################
+def utcnow():
+    return datetime.utcnow().replace(tzinfo=tzutc)
