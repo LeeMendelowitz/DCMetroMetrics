@@ -6,6 +6,7 @@ import gviz_api
 import metroEscalatorsWeb
 from twitter import TwitterError
 from datetime import datetime, date, timedelta
+from metroTimes import toLocalTime
 
 def makeTwitterUrl(handle, statusId):
     s = 'https://www.twitter.com/{handle}/status/{statusId:d}'
@@ -46,11 +47,36 @@ def makeColorString(records):
     colorStr = ', '.join(colors)
     return colorStr
 
-def getAllHotCarData():
+#####################################################
+# Return a dictionary from hot car number to the list
+# of reports for that hot car.
+# Convert all times to local times.
+def getHotCarToReports():
     db = dbUtils.getDB()
 
     # Car number to reports
     hotCarToReports = hotCars.getAllHotCarReports(db)
+
+    for carNum, reports in hotCarToReports.iteritems():
+        for r in reports:
+            r['time'] = toLocalTime(r['time'])
+
+    return hotCarToReports
+
+####################################################
+# Return a list of hot car reports for a single car.
+# Convert all times to local time zone
+def getHotCarReportsForCar(carNum):
+    db = dbUtils.getDB()
+    reports = hotCars.getHotCarReportsForCar(db, carNum)
+    for r in reports:
+        r['time'] = toLocalTime(r['time'])
+    return reports
+
+def getAllHotCarData():
+
+    # Car number to reports
+    hotCarToReports = getHotCarToReports()
 
     # Summarize this data
     carNumToData = {}
@@ -95,10 +121,9 @@ def hotCarGoogleTable(hotCarData):
     return dtHotCars
 
 def getHotCarDataByUser():
-    db = dbUtils.getDB()
 
     # Car number to reports
-    hotCarToReports = hotCars.getAllHotCarReports(db)
+    hotCarToReports = getHotCarToReports()
 
     reportsByUser = defaultdict(list)
     reports = (d for dlist in hotCarToReports.itervalues() for d in dlist)
@@ -151,7 +176,7 @@ def getHotCarData(carNum):
     db = dbUtils.getDB()
 
     # Get all hot car reports for this car num
-    reports = hotCars.getHotCarReportsForCar(db, carNum)
+    reports = getHotCarReportsForCar(carNum)
 
     # Get the tweet embedding html. Cache the html if it does not exist
     for report in reports:
@@ -243,7 +268,7 @@ def makeColorCountsGoogleTableCustom(colorToCount):
 # Get number of reports per day
 def makeReportTimeSeries():
     db = dbUtils.getDB()
-    hotCarDict = hotCars.getAllHotCarReports(db)
+    hotCarDict = getHotCarToReports()
     reports = [r for rl in hotCarDict.itervalues() for r in rl]
     reportDates = [r['time'].date() for r in reports]
     dateCounts = Counter(reportDates)
