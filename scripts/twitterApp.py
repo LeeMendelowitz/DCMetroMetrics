@@ -3,7 +3,7 @@ import os
 import sys
 from time import sleep
 from datetime import datetime, date, time, timedelta
-from metroTimes import utcnow, tzutc, metroIsOpen
+from metroTimes import utcnow, tzutc, metroIsOpen, toLocalTime
 
 # Custom modules
 import stations
@@ -132,6 +132,7 @@ class TwitterApp(object):
         db.escalator_appstate.update({'_id' : 1}, update, upsert = True)
 
     def runDailyStats(self, db, curTime):
+        curTimeLocal = toLocalTime(curTime)
         appState = db.escalator_appstate.find_one()
         lastStatsTime = None
         if appState is not None:
@@ -141,7 +142,7 @@ class TwitterApp(object):
         lastRanDay = lastStatsTime.weekday() if lastStatsTime else None
 
         # Send the daily stats at 8 AM
-        runStats = (curTime.hour > 8)
+        runStats = (curTimeLocal.hour > 8)
         runStats = runStats and ((lastRanDay is None) or (lastRanDay != curTime.weekday()))
 
         # If we do not need to run the dailyStats, return
