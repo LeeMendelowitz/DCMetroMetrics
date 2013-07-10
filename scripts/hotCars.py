@@ -499,9 +499,9 @@ def genResponseTweet(toScreenName, hotCarData):
     color = normalize(colors[0]) if len(colors) == 1 else ''
     car = carNums[0]
     if color:
-        msg = '@wmata {color} line car {car} is a #wmata #hotcar HT @{user}'.format(color=color, car=car, user=user)
+        msg = '@wmata @MetroRailInfo {color} line car {car} is a #wmata #hotcar HT @{user}'.format(color=color, car=car, user=user)
     else:
-        msg = '@wmata Car {car} is a #wmata #hotcar HT @{user}'.format(car=car, user=user)
+        msg = '@wmata @MetroRailInfo Car {car} is a #wmata #hotcar HT @{user}'.format(car=car, user=user)
 
     # Add information about the number of reports for this hot car.
     db = dbUtils.getDB()
