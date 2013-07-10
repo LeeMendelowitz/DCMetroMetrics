@@ -12,7 +12,7 @@ from collections import defaultdict, Counter
 from operator import itemgetter
 import dbUtils
 
-from metroTimes import utcnow, toLocalTime, UTCToLocalTime
+from metroTimes import utcnow, toLocalTime, UTCToLocalTime, tzutc
 
 
 ME = 'MetroHotCars'.upper()
@@ -446,7 +446,7 @@ def filterDuplicates(tweetData, log=sys.stderr):
         assert(len(cars)==1)
         carNumber = cars[0]
         data = {'car_number' : carNumber,
-                'time' : datetime.fromtimestamp(tweet.created_at_in_seconds),
+                'time' : datetime.fromtimestamp(tweet.created_at_in_seconds).replace(tzinfo=tzutc),
                 'tweet_id' : tweet.id,
                 'user_id' : tweet.user.id
                }                
@@ -454,7 +454,7 @@ def filterDuplicates(tweetData, log=sys.stderr):
 
     filteredTweetData = []
     for tweet, hotCarData in tweetData:
-        tweetTime = datetime.fromtimestamp(tweet.created_at_in_seconds)
+        tweetTime = datetime.fromtimestamp(tweet.created_at_in_seconds).replace(tzinfo=tzutc)
         timeCutoff = tweetTime - timedelta(days=30)
         user_id = tweet.user.id
         screen_name = tweet.user.screen_name
