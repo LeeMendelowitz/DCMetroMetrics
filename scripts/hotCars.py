@@ -69,7 +69,7 @@ def getHotCarReportsForCar(db, carNum):
     hotCarReports = list(cursor)
     # Convert times to local time
     for rec in hotCarReports:
-        rec['time'] = UTCToLocalTime(rec['time'])
+        rec['time'] = rec['time'].replace(tzinfo=tzutc)
         rec['tweet_id'] = int(rec['tweet_id'])
     return hotCarReports
 
@@ -89,14 +89,15 @@ def makeFullHotCarReport(db, rec):
      
 
 #########################################
+# Return a dictionary from hot car number to a list of reports
+# All report time's are datetimes in UTC timezone
 def getAllHotCarReports(db):
     db.hotcars.ensure_index([('car_number',pymongo.ASCENDING),('time', pymongo.DESCENDING)])
     cursor = db.hotcars.find().sort('time', pymongo.DESCENDING)
     hotCarReportDict = defaultdict(list)
     for report in cursor:
         report = makeFullHotCarReport(db, report)
-        # Convert the time stamp to local time
-        report['time'] = UTCToLocalTime(report['time'])
+        report['time'] = report['time'].replace(tzinfo=tzutc)
         hotCarReportDict[report['car_number']].append(report)
     return hotCarReportDict
 
@@ -310,7 +311,7 @@ def getHotCarData(text):
 def makeUTCDateTime(secSinceEpoch):
     t = time.gmtime(secSinceEpoch)
     dt = datetime(t.tm_year, t.tm_mon, t.tm_mday,
-                  t.tm_hour, t.tm_min, t.tm_sec)
+                  t.tm_hour, t.tm_min, t.tm_sec).replace(tzinfo=tzutc)
     return dt
 
 ########################################
@@ -408,8 +409,8 @@ def tweetIsValid(tweet, hotCarData):
     if not carNumValid:
         return False
 
-    # Check if the tweet has any forbidded words
-    excludedWords = ['series'] # People may refer to 3000 series cars
+    # Check if the tweet has any forbidded words.
+    excludedWords = []
     excludedWords = [w.upper() for w in excludedWords]
     excludedWords = set(excludedWords)
     tweetText = preprocessText(tweet.text)
@@ -436,17 +437,18 @@ def tweetIsValid(tweet, hotCarData):
 # tweetData: List of (tweet, hotCarData) tuples
 def filterDuplicates(tweetData, log=sys.stderr):
 
-    # Build a dictionary from car number to the reporting users/times
+    # Build a dictionary from car number to the reporting users/times.
+    # This includes all previous reports.
     db = dbUtils.getDB()
     hotCarReportDict = getAllHotCarReports(db)
 
-    # Add the current batch of tweets to the hotCarReportDic
+    # Add the current batch of tweets to the hotCarReportDict
     for tweet, hotCarData in tweetData:
         cars = hotCarData['cars']
         assert(len(cars)==1)
         carNumber = cars[0]
         data = {'car_number' : carNumber,
-                'time' : datetime.fromtimestamp(tweet.created_at_in_seconds).replace(tzinfo=tzutc),
+                'time' : makeUTCDateTime(tweet.created_at_in_seconds),
                 'tweet_id' : tweet.id,
                 'user_id' : tweet.user.id
                }                
@@ -454,7 +456,7 @@ def filterDuplicates(tweetData, log=sys.stderr):
 
     filteredTweetData = []
     for tweet, hotCarData in tweetData:
-        tweetTime = datetime.fromtimestamp(tweet.created_at_in_seconds).replace(tzinfo=tzutc)
+        tweetTime = makeUTCDateTime(tweet.created_at_in_seconds)
         timeCutoff = tweetTime - timedelta(days=30)
         user_id = tweet.user.id
         screen_name = tweet.user.screen_name
