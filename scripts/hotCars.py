@@ -14,7 +14,6 @@ import dbUtils
 
 from metroTimes import utcnow, toLocalTime, UTCToLocalTime, tzutc
 
-
 ME = 'MetroHotCars'.upper()
 
 # Words which are not allowed in tweets which mention
@@ -219,12 +218,19 @@ def tick(db, tweetLive = False, log=sys.stderr):
         response = genResponseTweet(tweeterDoc['handle'], getHotCarData(tweetText))
         tweetResponses.append((doc['_id'], response))
 
-    # Get the latest tweets about WMATA hotcars
+    # Remove any tweets returned by Twitter search which mention ME. These
+    # will be collected by getMentions.
+    def tweetMentionsMe(tweet):
+        mentions = [u.screen_name.upper() for u in tweet.user_mentions]
+        return ME in mentions
+
+    # Get the latest tweets about WMATA hotcars. Ignore tweets which
+    # mention MetroHotCars, as these will be processed by getMentions
     queries = ['wmata hotcar', 'wmata hot car', 'wmata hotcars', 'wmata hot cars']
     tweets = []
     for q in queries:
-        res = T.GetSearch(q, count=100, since_id = lastTweetId, result_type='recent', include_entities=True)
-        tweets.extend(t for t in res)
+        queryResult = T.GetSearch(q, count=100, since_id = lastTweetId, result_type='recent', include_entities=True)
+        tweets.extend(t for t in queryResult if not tweetMentionsMe(t))
 
     # Find the max tweet id seen through twitter search
     maxTweetId = max([t.id for t in tweets]) if tweets else 0
@@ -232,20 +238,20 @@ def tick(db, tweetLive = False, log=sys.stderr):
 
     # Get tweets which have been manually curated
     tweets.extend(getManuallyTaggedTweets(db, log=log))
+
+    # Get tweets which mention MetroHotCars
     tweets.extend(getMentions(curTime=curTime))
+
     tweets = uniqueTweets(tweets)
     log.write('Twitter search returned %i unique tweets\n'%len(tweets))
 
     def filterPass(t):
-
         # Reject retweets
         if t.retweeted_status:
             return False
-
         # Ignore tweets from self
         if t.user.screen_name.upper() == ME.upper():
             return False
-
         return True
 
     filteredTweets = [t for t in tweets if filterPass(t)]
@@ -256,7 +262,7 @@ def tick(db, tweetLive = False, log=sys.stderr):
 
     tweetData = [(t,getHotCarData(t.text)) for t in filteredTweets]
     tweetData = [(t,hcd) for t,hcd in tweetData if tweetIsValid(t, hcd)]
-    tweetData = filterDuplicates(tweetData, log=log)
+    tweetData = filterDuplicateReports(tweetData, log=log)
 
     log.write('Filtered to %i tweets after removing invalid and duplicate reports\n'%len(tweetData))
     log.write('Have %i tweets about hot cars\n'%len(tweetData))
@@ -315,9 +321,14 @@ def makeUTCDateTime(secSinceEpoch):
     return dt
 
 ########################################
+# Update these database collections:
+# hotcars_tweets: store the tweet data
+# hotcars_tweeters: store the twitter user information
+# hotcars: store the hotcar data 
+# webpages: Mark webpages which need to be regenerated
 def updateDBFromTweet(db, tweet, hotCarData, log=sys.stderr):
 
-    log.write('hotcars_tweets has %i docs\n'%(db.hotcars_tweets.count()))
+    #log.write('hotcars_tweets has %i docs\n'%(db.hotcars_tweets.count()))
     log.write('Updating hotcar_tweets collection with tweet %i\n'%tweet.id)
     tweetText = tweet.text.encode('utf-8', errors='ignore')
 
@@ -363,7 +374,6 @@ def updateDBFromTweet(db, tweet, hotCarData, log=sys.stderr):
     # Trigger regeneration of the hot car webpage
     db.webpages.update({'class' : 'hotcars'}, {'$set' : {'forceUpdate' : True}})
     db.webpages.update({'class' : 'hotcar', 'car_number' : carNum}, {'$set' : {'forceUpdate' : True}})
-
     return updated
 
 ###########################################################
@@ -435,7 +445,7 @@ def tweetIsValid(tweet, hotCarData):
 # 30 days.
 #
 # tweetData: List of (tweet, hotCarData) tuples
-def filterDuplicates(tweetData, log=sys.stderr):
+def filterDuplicateReports(tweetData, log=sys.stderr):
 
     # Build a dictionary from car number to the reporting users/times.
     # This includes all previous reports.
@@ -515,16 +525,75 @@ def genResponseTweet(toScreenName, hotCarData):
     msg = msg + '. %s'%msg2
     return msg
 
+
+#######################################
+# Check non-automated tweets made by MetroHotCars
+# If MetroHotCars mentions a 4-digit car number,
+# in a non-automated tweet,
+# we forbid submissions of the same hot car number via
+# menion for a 2-day period. 
+# This is done to forbid duplicate reports if a user
+# modifies or quotes the non-automated tweet.
+#
+# Returns a set of forbidden car numbers
+def getForbiddenCarsByMention():
+    db = dbUtils.getDB()
+    appState = db.hotcars_appstate.find_one({'_id' : 1})
+    lastSelfTweetId = appState.get('lastSelfTweetId', 0)
+
+    # Clean up any old forbidden car numbers (older than two days)
+    curTime = utcnow()
+    oldDocs = db.hotcars_forbidden_by_mention.find({'time' : {'$lt' : curTime - timedelta(days=2)}})
+    for oldDoc in oldDocs:
+        db.hotcars_forbidden_by_mention.remove({'_id' : oldDoc['_id']})
+
+    # Get any tweets by MetroHotCars since the lastSelfTweetId
+    T = getTwitterAPI()
+    selfTweets = T.GetUserTimeline(screen_name = ME, since_id=lastSelfTweetId, count=200)
+    maxTweetId = max(t.id for t in selfTweets) if selfTweets else 0
+    maxTweetId = max(lastSelfTweetId, maxTweetId)
+
+    def isAutomatedTweet(tweet):
+        text = tweet.text.upper()
+        pattern = "CAR \d{4} IS A #WMATA #HOTCAR HT"
+        return (re.search(pattern, text) is not None)
+
+    nonAutomatedTweets = [t for t in selfTweets if not isAutomatedTweet(t)] 
+
+    # Get any car numbers in nonAutomatedTweet and forbid them from being
+    # reported via mentions
+
+    def getTimeCarPairs(tweet):
+        hcd = getHotCarData(tweet.text)
+        time = makeUTCDateTime(tweet.created_at_in_seconds)
+        return [(time, n) for n in hcd['cars']]
+
+    timeAndCarNums = [(time,carNum) for tweet in nonAutomatedTweets\
+                                    for time,carNum in getTimeCarPairs(tweet)]
+
+    # Add these car numbers to the hotcars_forbidden_by_mention database
+    for time, carNum in timeAndCarNums:
+        db.hotcars_forbidden_by_mention.update({'car_number' : carNum}, {'$set' : {'time' : time}},\
+                                               upsert=True)
+
+    # Update the app state
+    db.hotcars_appstate.update({'_id' : 1}, {'$set' : {'lastSelfTweetId' : maxTweetId}})
+
+    # Return the list of tweetIds which are forbidden by mention
+    docs = db.hotcars_forbidden_by_mention.find()
+    forbiddenCarNums = set(d['car_number'] for d in docs)
+    return forbiddenCarNums
+
 #######################################
 # Get tweets which mention MetroHotCars
 # since this is rate limited to once per minute,
-# only do this once per 90 sec
+# only do this once per 90 sec.
 def getMentions(curTime):
     db = dbUtils.getDB()
     appState = next(db.hotcars_appstate.find({'_id' : 1}))
     lastMentionsCheckTime = appState.get('lastMentionsCheckTime', None)
     if lastMentionsCheckTime is not None:
-        lastMentionsCheckTime = lastMentionsCheckTime.replace(tzinfo=tzlocal())
+        lastMentionsCheckTime = lastMentionsCheckTime.replace(tzinfo=tzutc)
     lastMentionsTweetId = appState.get('lastMentionsTweetId', 0)
     doCheck = False
 
@@ -537,15 +606,22 @@ def getMentions(curTime):
     
     T = getTwitterAPI() 
     mentions = T.GetMentions(include_entities=True, since_id=lastMentionsTweetId)
+    maxMentionsTweetId = max(t.id for t in mentions) if mentions else 0
+    maxMentionsTweetId = max(maxMentionsTweetId, lastMentionsTweetId)
 
     def hasForbiddenWord(t):
         text = t.text.upper()
         count = sum(1 for w in mentions_forbidden_words if w in text)
         return count > 0
 
-    mentions = [t for t in mentions if not hasForbiddenWord(t)]
-    maxMentionsTweetId = max(t.id for t in mentions) if mentions else 0
-    maxMentionsTweetId = max(maxMentionsTweetId, lastMentionsTweetId)
+    # Get car numbers which are forbidden to be submitted by mention
+    forbiddenCarNumbers = getForbiddenCarsByMention()
+
+    def tweetIsForbidden(tweet):
+        carNums = getHotCarData(tweet.text)['cars']
+        return any(carNum in forbiddenCarNumbers for carNum in carNums)
+
+    mentions = [t for t in mentions if (not hasForbiddenWord(t)) and (not tweetIsForbidden(t))]
 
     # Update the appstate
     update = {'lastMentionsCheckTime' : curTime, 'lastMentionsTweetId' : maxMentionsTweetId}
