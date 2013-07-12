@@ -738,6 +738,24 @@ def getEscalatorStatuses(escId=None, escUnitId=None, startTime = None, endTime =
 # - time spent in each status code
 # - metro open time spent in each status code
 # startTime and endTime must be provided to properly compute the times.
+#
+# Note: there are a couple clunky things with this function.
+# It makes two separate calls to StatusGroup to summarize statuses.
+#
+# 1. The first call uses the full context of statuses for the specified
+# time range. Statuses before startTime and after endTime are used
+# to properly identify when breaks initiallly occur, and whether they
+# should be allocated to the time range or not.
+# For example, if a startTime occurs during a broken status, the break
+# should not be allocated to this time window.
+#
+# 2. The second call to StatusGroup is for counting time allocation.
+# For this, the status list is trimmed to the start_time and end_time range,
+# so time can be properly accounted for.
+#
+#
+# This is clumsy and needs to be fixed.
+#. Also, the deepcopy's are expensive and probably not necessary.
 def summarizeStatuses(statusList, startTime, endTime):
 
     _checkAllTimesNotNaive(statusList)
