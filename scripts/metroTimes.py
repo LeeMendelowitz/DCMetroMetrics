@@ -125,10 +125,59 @@ class TimeRange(object):
     def absTime(self):
         return (self.end - self.start).total_seconds()
 
+    def metroOpenTime(self):
+        start = self.start
+        end  = self.end
+        secOpen = 0.0
+
+        # Trick: Think of a "Metro Day" as the time range between conesecutive openings.
+        # Each time the metro opens, it's a new day.
+        #
+        # |------|------|------|------|-----|-----|
+        # Open   Close  O      C      O     C     O
+        # <------------>|<----------->|<--------->|
+        #    Day 0           Day 1        Day 2
+
+        firstDayOpenTime = getLastOpenTime(start)
+        firstDay = firstDayOpenTime.date()
+        firstDayCloseTime = getNextCloseTime(firstDayOpenTime)
+        lastDayOpenTime = getLastOpenTime(end)
+        lastDay = lastDayOpenTime.date()
+
+        # First consider the case where the time range is within one metro day
+        #  |--------|---------|
+        #  O        C         O
+        #     |---------|
+        #     S         E
+        if firstDay == lastDay:
+            startTime = start
+            endTime = min(end, firstDayCloseTime)
+            totalSeconds = (endTime - startTime).total_seconds() if endTime > startTime\
+                           else 0.0
+            return totalSeconds
+
+        lastDayCloseTime = getNextCloseTime(lastDayOpenTime)
+        lastDayEnd = min(lastDayCloseTime, end)
+
+        # In the other case, the time range spans multiple metro days.
+        # Add the contributions from the first day, the last day, and interior days (if any)
+        firstDaySeconds = (firstDayCloseTime - start).total_seconds() if start < firstDayCloseTime\
+                          else 0.0
+        lastDaySeconds  = (min(lastDayCloseTime, end) - lastDayOpenTime).total_seconds()
+        assert(lastDaySeconds >= 0.0)
+
+        numDays = (lastDay - firstDay).days
+        assert(numDays >= 1)
+        interiorDays = (firstDay + timedelta(i) for i in range(1, numDays)) 
+        interiorHours = sum(wdToOpenHours[d.weekday()] for d in interiorDays)
+        interiorSeconds = interiorHours *3600.0
+        metroOpenSeconds = firstDaySeconds + lastDaySeconds + interiorSeconds
+        return metroOpenSeconds
+
+    ###################################################
     # Get the amount of seconds in time range for which
     # Metrorail was open
-    # TODO: Make this function more efficient
-    def metroOpenTime(self):
+    def metroOpenTime_OLD(self):
         start = self.start
         end = self.end
         t = start

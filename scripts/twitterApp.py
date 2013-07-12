@@ -139,11 +139,11 @@ class TwitterApp(object):
             lastStatsTime = appState.get('lastDailyStatsTime', None)
             if lastStatsTime:
                 lastStatsTime = lastStatsTime.replace(tzinfo=tzutc)
-        lastRanDay = lastStatsTime.weekday() if lastStatsTime else None
+        lastRanDay = toLocalTime(lastStatsTime).weekday() if lastStatsTime else None
 
         # Send the daily stats at 8 AM
-        runStats = (curTimeLocal.hour > 8)
-        runStats = runStats and ((lastRanDay is None) or (lastRanDay != curTime.weekday()))
+        runStats = (curTimeLocal.hour >= 8 and curTimeLocal.hour <= 9)
+        runStats = runStats and ((lastRanDay is None) or (lastRanDay != curTimeLocal.weekday()))
 
         # If we do not need to run the dailyStats, return
         if not runStats:

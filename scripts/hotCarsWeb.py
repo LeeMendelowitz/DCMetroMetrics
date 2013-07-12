@@ -6,7 +6,7 @@ import gviz_api
 import metroEscalatorsWeb
 from twitter import TwitterError
 from datetime import datetime, date, timedelta
-from metroTimes import toLocalTime
+from metroTimes import toLocalTime, utcnow
 
 def makeTwitterUrl(handle, statusId):
     s = 'https://www.twitter.com/{handle}/status/{statusId:d}'
@@ -78,6 +78,7 @@ def getAllHotCarData():
     # Car number to reports
     hotCarToReports = getHotCarToReports()
 
+
     # Summarize this data
     carNumToData = {}
     for carNum, reports in hotCarToReports.iteritems():
@@ -100,22 +101,43 @@ def getAllHotCarData():
 
 
 def hotCarGoogleTable(hotCarData):
+
+    curTime = toLocalTime(utcnow())
+
+    def countReportsLastNDays(reports, n):
+        minTime = curTime - timedelta(days=n)
+        return sum(1 for r in reports if r['time'] >= minTime)
+
     # Make a DataTable with this data
     schema = [('carNum', 'string', 'Car'),
               ('line', 'string', 'Line'),
               ('numReports', 'number', 'Num. Reports'),
+              ('1d', 'number','1d'),
+              ('3d', 'number','3d'),
+              ('7d', 'number','7d'),
+              ('14d', 'number', '14d'),
+              ('28d', 'number', '28d'),
               ('lastReportTime', 'datetime', 'Last Report Time'),
-              ('lastReport', 'string', 'Last Report'),
-              ('allReports', 'string', 'All Reports')]
+              #('lastReport', 'string', 'Last Report'),
+             # ('allReports', 'string', 'All Reports'),
+              ]
     rowData = []
+
     for d in hotCarData.itervalues():
         lastReport = d['lastReport']
+        reports = d['reports']
         row = [makeHotCarLink(d['carNum']),
                metroEscalatorsWeb.lineToColoredSquares(d['colors']),
                len(d['reports']),
+               countReportsLastNDays(reports, 1),
+               countReportsLastNDays(reports, 3),
+               countReportsLastNDays(reports, 7),
+               countReportsLastNDays(reports, 14),
+               countReportsLastNDays(reports, 28),
                d['lastReportTime'],
-               recToLinkHtml(lastReport, lastReport['handle']),
-               tweetLinks(d['reports'])]
+               #recToLinkHtml(lastReport, lastReport['handle']),
+               #tweetLinks(d['reports'])
+               ]
         rowData.append(row)
     dtHotCars = gviz_api.DataTable(schema, rowData)
     return dtHotCars
