@@ -1,11 +1,7 @@
 %#Generate javascript for the symptom table
-<script type="text/javascript">
-  google.load('visualization', '1', {packages: ['corechart', 'table']});
-</script>
+google.load('visualization', '1', {packages: ['corechart', 'table']});
 
-<script type="text/javascript">
-
-var data_json = {{!dt.ToJSon()}};
+var data_json = {{!dtSymptoms.ToJSon()}};
 var outageDataJson = {{!dtOutages.ToJSon()}};
 
 // Set the property for an entire datatable row, cell by cell
@@ -141,9 +137,13 @@ var PlotHandler = function()
     return true;
 };
 
-var plotHandler = new PlotHandler();
+
+var drawPlots = function(){
+    var plotHandler = new PlotHandler();
+    plotHandler.drawAll();
+    return true;
+}
+    
 
 // Set a callback to run when the Google Visualization API is loaded.
-google.setOnLoadCallback(plotHandler.drawAll);
-
-</script>
+google.setOnLoadCallback(drawPlots);

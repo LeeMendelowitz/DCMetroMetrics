@@ -420,7 +420,7 @@ def tweetIsValid(tweet, hotCarData):
         return False
 
     # Check if the tweet has any forbidded words.
-    excludedWords = []
+    excludedWords = ['MBTA', 'BART']
     excludedWords = [w.upper() for w in excludedWords]
     excludedWords = set(excludedWords)
     tweetText = preprocessText(tweet.text)
@@ -431,7 +431,6 @@ def tweetIsValid(tweet, hotCarData):
 
     # The tweet is good!
     return True
-
 
 #########################################
 # Remove tweets which are duplicate reports.

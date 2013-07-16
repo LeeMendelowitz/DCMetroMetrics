@@ -177,11 +177,6 @@ def getRankings(startTime=None, endTime=None):
         endTime = utcnow()
     escToSummary = dbUtils.getAllEscalatorSummaries(startTime=startTime, endTime=endTime)
 
-    # Add to the summary the percentage of Metro Open time that the escalator is broken
-    for escId, escSum in escToSummary.iteritems():
-        brokenTime= escSum['symptomCategoryToTime']['BROKEN']        
-        escSum['brokenTimePercentage'] = float(brokenTime)/escSum['metroOpenTime']
-
     def keySort(q):
         def key(k):
             return escToSummary[k][q]
@@ -250,8 +245,9 @@ def compileRankings(rankingDict, N=20):
 
 #########################################
 # Make a Google Table of escalator rankings
-def escalatorRankingsTable():
-    rankingD = getRankings()
+def escalatorRankingsTable(startTime=None, endTime=None):
+
+    rankingD = getRankings(startTime, endTime)
     escToSummary = rankingD['escToSummary']
 
     schema = [('unitId', 'string','Escalator'),
@@ -287,8 +283,8 @@ def makeBreakInspectionTable():
         gevent.sleep(0.0)
         statuses = getEscalatorStatuses(escId=escId)[::-1] # Put in ascending order
         statusGroup = StatusGroup(statuses)
-        breaks = statusGroup.breakStatuses()
-        inspections = statusGroup.inspectionStatuses()
+        breaks = statusGroup.breakStatuses
+        inspections = statusGroup.inspectionStatuses
         d = {'breaks' : breaks,
              'inspections' : inspections}
         escToStatuses[escId] = d
@@ -415,3 +411,33 @@ def makeStationRankingGoogleTable(stationCodeToSummary):
         rows.append(row)
     dtStationRankings = gviz_api.DataTable(schema, rows)
     return dtStationRankings 
+
+####################################
+# Convert a python dictionary to javascript
+# The dictionary can have str's, floats/ints, or other dictionaries embedded
+def pyDictToJS(d, depth=0):
+
+    output = StringIO()
+    output.write( '{')
+    numK = len(d)
+
+    def isDict(var):
+        return (isinstance(var, dict) or isinstance(var, defaultdict))
+
+    for i,(k,v) in enumerate(d.iteritems()):
+        if isDict(v):
+            s = "{key} : {val}".format(key=k, val=pyDictToJS(v, depth=depth+1))
+        elif isinstance(v, str):
+            s = '{key} : \'{val}\''.format(key=k, val=str(v))
+        else:
+            s = '{key} : {val}'.format(key=k, val=str(v))
+        output.write(s)
+        if i < numK-1:
+            output.write(', ')
+    output.write('}')
+    if depth == 0:
+       #output.write(';\n')
+       output.write('\n')
+    retVal = output.getvalue()
+    output.close()
+    return retVal

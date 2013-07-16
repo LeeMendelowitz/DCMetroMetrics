@@ -3,7 +3,6 @@
 %from metroEscalatorsWeb import lineToColoredSquares, escUnitIdToWebPath, stationCodeToWebPath
 %from metroTimes import toLocalTime
 
-<script type="text/javascript" src="https://www.google.com/jsapi"></script>
 
 <h2>Escalator Outages</h2>
 
@@ -69,7 +68,7 @@
 <p>Page Last Updated: {{updateStr}}</p>
 </div>
 
-%include escalatorOutages_js.tpl dt=dtSymptoms, dtOutages=dtOutages, dtOutagesRowClasses=dtOutagesRowClasses
-
+<script type="text/javascript" src="https://www.google.com/jsapi"></script>
+<script type="text/javascript" src="/js/escalatorOutages.js"></script>
 
 %rebase layout title='DC Metro Metrics: Nonoperational Escalators', description=''

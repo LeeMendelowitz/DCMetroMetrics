@@ -45,6 +45,10 @@ def hotCar(carNum):
 def server_static(filename):
     return static_file(filename, root=STATIC_DIR)
 
+########################################
+@bottle.route('/js/<filename>')
+def server_static(filename):
+    return static_file(filename, root=DYNAMIC_DIR)
 
 ########################################
 @bottle.route('/data')
