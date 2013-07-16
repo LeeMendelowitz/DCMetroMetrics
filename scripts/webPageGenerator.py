@@ -8,7 +8,7 @@ import gevent
 import bottle
 from operator import itemgetter
 from collections import defaultdict, Counter
-from metroTimes import utcnow, toLocalTime, localToUTCTime
+from metroTimes import utcnow, toLocalTime, localToUTCTime, tzutc
 
 import dbUtils
 import stations
@@ -29,6 +29,25 @@ if not os.path.exists(WEBPAGE_DIR):
 
 if not os.path.exists(DYNAMIC_DIR):
     os.mkdir(DYNAMIC_DIR)
+
+
+# Update time in hours
+classToUpdateInterval = \
+{
+    'escalator' : 1,
+    'escalatorRankings': 6,
+    'escalatorDirectory' : 1,
+    'escalatorOutages' : 1,
+    'stationDirectory' : 1,
+    'station': 1,
+    'hotcars' : 1,
+    'hotcar' : 1,
+    'glossary' : 6,
+    'data'  : 6,
+    'home' : 6
+}
+
+
 
 ##############################
 # Make a wrapper around the bottle.template call
@@ -178,12 +197,34 @@ def genEscalatorRankings_Old(doc):
 
 ###################################
 def genEscalatorRankings(doc):
-    dtRankings = metroEscalatorsWeb.escalatorRankingsTable()
+    now = utcnow()
+    rankingArgs = [
+                     #key,  (startTime, endTime),       header value
+                    ('d1', (now - timedelta(days=1), now), '1 day'),
+                    ('d3', (now - timedelta(days=3), now), '3 day'),
+                    ('d7', (now - timedelta(days=7), now), '7 day'),
+                    ('d14', (now - timedelta(days=14), now), '14 day'),
+                    ('d28', (now - timedelta(days=28), now), '28 day'),
+                    ('AllTime', (None, None), 'All Time') ]
+    def makeEntry(args, header):
+        dt = metroEscalatorsWeb.escalatorRankingsTable(*args)
+        return {'dataTable' : dt,
+                'json' : dt.ToJSon(),
+                'header' : header}
+
+    rankingsDict = dict((k, makeEntry(args, header)) for k,args,header in rankingArgs)
     dtDailyCounts = metroEscalatorsWeb.makeBreakInspectionTable()
     stationCodeToSummary = metroEscalatorsWeb.getStationSummaries()
     dtStationRankings = metroEscalatorsWeb.makeStationRankingGoogleTable(stationCodeToSummary)
-    content = makePage('escalatorRankings', dtRankings=dtRankings, dtDailyCounts=dtDailyCounts, dtStationRankings=dtStationRankings)
+
+    # Write html
+    content = makePage('escalatorRankings', rankingsDict = rankingsDict, dtDailyCounts=dtDailyCounts, dtStationRankings=dtStationRankings)
     filename = 'escalatorRankings.html'
+    writeContent(filename, content)
+
+    # Write javacsript
+    content = makePage('escalatorRankings_js', rankingsDict=rankingsDict, dtDailyCounts=dtDailyCounts, dtStationRankings=dtStationRankings)
+    filename = 'escalatorRankings.js'
     writeContent(filename, content)
 
 #########
@@ -235,8 +276,22 @@ def genEscalatorOutages(doc):
 
     # Get the availability and weighted availability
     systemAvailability = dbUtils.getSystemAvailability()
-    content = makePage('escalatorOutages', escList=escalatorList, symptomCounts=symptomCounts, systemAvailability=systemAvailability, dtSymptoms=dtSymptoms, dtOutages=dtOutages, dtOutagesRowClasses=dtOutagesRowClasses)
+    kwargs = {'escList' : escalatorList,
+              'symptomCounts' : symptomCounts,
+              'systemAvailability' : systemAvailability,
+              'dtSymptoms' : dtSymptoms,
+              'dtOutages' : dtOutages,
+              'dtOutagesRowClasses' : dtOutagesRowClasses
+             }
+
+    # Make html
+    content = makePage('escalatorOutages', **kwargs)
     filename = 'escalatorOutages.html'
+    writeContent(filename, content)
+
+    # Make javascript
+    content = makePage('escalatorOutages_js', **kwargs)
+    filename = 'escalatorOutages.js'
     writeContent(filename, content)
 
 #########
@@ -259,8 +314,15 @@ def genEscalatorDirectory(doc):
 #########
 def genStationDirectory(doc):
     stationRecs, dtStations = metroEscalatorsWeb.stationList()
+
+    # Make HTML
     content = makePage('stations', stationRecs=stationRecs, dtStations = dtStations)
     filename = 'stations.html'
+    writeContent(filename, content)
+
+    # Make javascript
+    content = makePage('stations_js', stationRecs=stationRecs, dtStations = dtStations)
+    filename = 'stations.js'
     writeContent(filename, content)
 
 #########
@@ -287,9 +349,14 @@ def genHotCars(doc):
                'dtHotCarsTimeSeries' : dtHotCarsTimeSeries
              }
 
-    #content = makePage('hotCars', summary=summary, hotCarData=hotCarData, dtHotCars = dtHotCars, dtHotCarsByUser=dtHotCarsByUser, dtHotCarsBySeries = dtHotCarsBySeries, dtHotCarsByColor = dtHotCarsByColor, dtHotCarsByColorCustom=dtHotCarsByColorCustom)
+    # Write hotCars
     content = makePage('hotCars', **kwargs)
     filename = 'hotcars.html'
+    writeContent(filename, content)
+
+    # Write javascript
+    content = makePage('hotCars_js', **kwargs)
+    filename = 'hotCars.js'
     writeContent(filename, content)
 
 def genGlossaryPage(doc):
@@ -359,8 +426,20 @@ class WebPageGenerator(RestartingGreenlet):
         # Get stale documents
         curTime = utcnow()
         curTimeLocal = toLocalTime(curTime)
-        oneHourAgo = curTime - timedelta(hours=1)
-        docs.extend(db.webpages.find({'lastUpdateTime' : {'$lt' : oneHourAgo}}))
+        staleDocs = []
+        for doc in db.webpages.find():
+            gevent.sleep(0.0)
+            lastUpdateTime = doc.get('lastUpdateTime', None)
+            if lastUpdateTime is None:
+                continue
+            lastUpdateTime = lastUpdateTime.replace(tzinfo=tzutc)
+            updateInterval = classToUpdateInterval.get(doc['class'], None) #in hours
+            if updateInterval is None:
+                continue
+            if (curTime - lastUpdateTime).total_seconds() > 3600*updateInterval:
+                staleDocs.append(doc)
+
+        docs.extend(staleDocs)
 
         # Make the document list unique
         seen = set()

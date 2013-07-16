@@ -1,9 +1,6 @@
 %#Generate javascript for the symptom table
-<script type="text/javascript">
-  google.load('visualization', '1', {packages: ['corechart', 'table', 'annotatedtimeline']});
-</script>
 
-<script type="text/javascript">
+google.load('visualization', '1', {packages: ['corechart', 'table', 'annotatedtimeline']});
 
 var hotCarsJson = {{!dtHotCars.ToJSon()}};
 var hotCarsByUserJson = {{!dtHotCarsByUser.ToJSon()}};
@@ -153,9 +150,10 @@ var PlotHandler = function()
     return true;
 };
 
-var plotHandler = new PlotHandler();
+var drawPlots = function() {
+    var plotHandler = new PlotHandler();
+    plotHandler.drawAll();
+};
 
 // Set a callback to run when the Google Visualization API is loaded.
-google.setOnLoadCallback(plotHandler.drawAll);
-
-</script>
+google.setOnLoadCallback(drawPlots);

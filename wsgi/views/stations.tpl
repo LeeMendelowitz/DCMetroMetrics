@@ -43,6 +43,6 @@
 </div>
 
 <script type="text/javascript" src="https://www.google.com/jsapi"></script>
-%include stations_js dtStations=dtStations
+<script type="text/javascript" src="/js/stations.js"></script>
 
 %rebase layout title='DC Metro Metrics: Stations', description=''

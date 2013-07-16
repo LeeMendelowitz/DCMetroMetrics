@@ -12,6 +12,7 @@ from escalatorUtils import symptomToCategory, OPERATIONAL_CODE
 import stations
 from metroTimes import TimeRange, utcnow, isNaive, toUtc, tzutc
 import gevent
+from statusGroup import StatusGroup, _checkAllTimesNotNaive
 
 invDict = lambda d: dict((v,k) for k,v in d.iteritems())
 
@@ -278,6 +279,7 @@ def addStatusAttr(statusList):
         # Add escalator data fields 
         d.update((k, escData[k]) for k in escDataKeys)
         lastTime = d['time']
+
 
 ###############################################
 # From a list of statuses, select key statuses
@@ -738,24 +740,6 @@ def getEscalatorStatuses(escId=None, escUnitId=None, startTime = None, endTime =
 # - time spent in each status code
 # - metro open time spent in each status code
 # startTime and endTime must be provided to properly compute the times.
-#
-# Note: there are a couple clunky things with this function.
-# It makes two separate calls to StatusGroup to summarize statuses.
-#
-# 1. The first call uses the full context of statuses for the specified
-# time range. Statuses before startTime and after endTime are used
-# to properly identify when breaks initiallly occur, and whether they
-# should be allocated to the time range or not.
-# For example, if a startTime occurs during a broken status, the break
-# should not be allocated to this time window.
-#
-# 2. The second call to StatusGroup is for counting time allocation.
-# For this, the status list is trimmed to the start_time and end_time range,
-# so time can be properly accounted for.
-#
-#
-# This is clumsy and needs to be fixed.
-#. Also, the deepcopy's are expensive and probably not necessary.
 def summarizeStatuses(statusList, startTime, endTime):
 
     _checkAllTimesNotNaive(statusList)
@@ -772,47 +756,10 @@ def summarizeStatuses(statusList, startTime, endTime):
     if(startTime > endTime):
        raise RuntimeError('summarizeStatuses: bad startTime/endTime')
 
-    statusList = copy.deepcopy(statusList)
-
-    addStatusAttr(statusList)
-
     # Reverse the sort order so statuses are in asending order
     fullStatusList = statusList[::-1]
-    statusList = copy.deepcopy(fullStatusList) # This will be trimmed to startTime/endTime
-
-    def filterStatusList(sl):
-        if startTime is not None:
-            sl = [s for s in sl if s['time'] >= startTime]
-        if endTime is not None:
-            sl = [s for s in sl if s['time'] < endTime]
-        return sl
-
-    # We need the full context of the statuses in this time period
-    # in order to properly count the number of breaks, fixes, and inspections
-    # allocated to this time period.
-    fullStatusGroup = StatusGroup(fullStatusList)
-    breakStatuses = filterStatusList(fullStatusGroup.breakStatuses())
-    fixStatuses = filterStatusList(fullStatusGroup.fixStatuses())
-    inspectionStatuses = filterStatusList(fullStatusGroup.inspectionStatuses())
-    numBreaks = len(breakStatuses)
-    numFixes = len(fixStatuses)
-    numInspections = len(inspectionStatuses)
-
-    # The statusList may have statuses that provide context before and after the  startTime/endTime
-    # If necessary, adjust the statusList to restrict statuses to the specified startTime/endTime.
-    beforeStart = [(i,s) for i,s in enumerate(statusList) if s['time'] < startTime]
-    firstInd, firstStatus = beforeStart[-1] if beforeStart else (None, None)
-    # Adjust the beginning of the list, if necessary
-    if firstInd is not None:
-        statusList = statusList[firstInd:]
-        assert(statusList[0] is firstStatus)
-
-    afterEnd = [(i,s) for i,s in enumerate(statusList) if s['time'] >= endTime]
-    afterEndInd, afterEndStatus = afterEnd[0] if afterEnd else (None, None)
-
-    # Adjust the beginning of the list, if necessary
-    if afterEndInd is not None:
-        statusList = statusList[:afterEndInd]
+    statusGroup = StatusGroup(fullStatusList, startTime=startTime, endTime=endTime)
+    statusList = statusGroup.statuses
 
     if not statusList:
         default_ret = { 'numBreaks' : 0,
@@ -825,36 +772,32 @@ def summarizeStatuses(statusList, startTime, endTime):
                         'availableTime' : 0,
                         'availability' : 1.0,
                         'metroOpenTime' : 0.0,
+                        'brokenTimePercentage' : 0.0,
                         'absTime' : 0.0}
         return default_ret
 
-   
-    # Adjust the 'time' of the first status and the end_time of the last status
+    breakStatuses = statusGroup.breakStatuses
+    fixStatuses = statusGroup.fixStatuses
+    inspectionStatuses = statusGroup.inspectionStatuses
+    
+    numBreaks = len(breakStatuses)
+    numFixes = len(fixStatuses)
+    numInspections = len(inspectionStatuses)
 
-    statusList[0]['time'] = max(startTime, statusList[0]['time'])
-
-    firstStatus = statusList[0]
-    lastStatus = statusList[-1]
-    if 'end_time' in lastStatus:
-        lastStatus['end_time'] = min(lastStatus['end_time'], endTime)
-    else:
-        lastStatus['end_time'] = endTime
-            
     for s in statusList:
         if any(s.get(k, None) is None for k in ('time', 'end_time')):
             raise RuntimeError('summarizeStatuses: status is missing end_time field')
 
     # Summarize the time allocation to various symptoms for this time window
-    sg = StatusGroup(statusList)
-    symptomCodeToTime = sg.symptomCodeToTime
-    symptomCodeToAbsTime = sg.symptomCodeToAbsTime
-    symptomCategoryToTime = sg.symptomCategoryToTime
-    symptomCategoryToAbsTime = sg.symptomCategoryToAbsTime
+    symptomCodeToTime = statusGroup.symptomTimeAllocation
+    symptomCodeToAbsTime = statusGroup.symptomAbsTimeAllocation
+    symptomCategoryToTime = statusGroup.timeAllocation
+    symptomCategoryToAbsTime = statusGroup.absTimeAllocation
 
     availTime = symptomCategoryToTime['ON']
-    timeRange = TimeRange(firstStatus['time'], lastStatus['end_time'])
-    metroOpenTime = timeRange.metroOpenTime()
-    absTime = timeRange.absTime()
+    timeRange = statusGroup.timeRange
+    metroOpenTime = timeRange.metroOpenTime
+    absTime = timeRange.absTime
     availability = availTime/metroOpenTime if metroOpenTime > 0.0 else 1.0
 
     ret = { 'numBreaks' : numBreaks,
@@ -866,11 +809,11 @@ def summarizeStatuses(statusList, startTime, endTime):
             'symptomCategoryToAbsTime' : symptomCategoryToAbsTime,
             'availableTime' : availTime,
             'availability' : availability,
+            'brokenTimePercentage' : statusGroup.brokenTimePercentage,
             'metroOpenTime' : metroOpenTime,
             'absTime' : absTime}
 
     return ret
-
 
 
 ############################################################################
@@ -895,160 +838,13 @@ def getAllEscalatorSummaries(startTime=None, endTime=None):
         st = startTime if startTime is not None else min(s['time'] for s in statuses)
         summary = summarizeStatuses(statuses, st, et)
         summary['statuses'] = statuses
+    
+        # Add escalator meta-data to the summary
+        escData = escIdToEscData[escId]
+        summary.update(escData)
+
         escToSummary[escId] = summary
+
     return escToSummary
-
-class StatusGroup(object):
-    """
-    Helper class to summarize a time series of statuses for a single escalator.
-    """
-    def __init__(self, statuses):
-
-        _checkAllTimesNotNaive(statuses)
-        self.statuses = statuses
-
-        if not self.statuses:
-            return
-
-        # The statuses must be sorted in ascending order
-        lastTime = None
-        for s in self.statuses:
-            if lastTime and s['time'] < lastTime:
-                raise RuntimeError('StatusGroup: statuse are not sorted in ascending order')
-            lastTime = s['time']
-
-        self.startTime = statuses[0]['time']
-        self.endTime = statuses[-1].get('end_time', None)
-        if self.endTime is None:
-            self.endTime = statuses[-1]['time']
-
-        self.timeRange = TimeRange(self.startTime, self.endTime)
-        self.absTime = self.timeRange.absTime
-        self.metroOpenTime = self.timeRange.metroOpenTime
-
-        self.symptomCategoryCounts = Counter(s['symptomCategory'] for s in self.statuses)
-
-        self.symptomCodeToTimeRanges = None
-        self.symptomCategoryToTimeRanges = None
-        self.symptomCategoryToTime = None
-        self.symptomCategoryToAbsTime = None
-        self.symptomCodeToTime = None
-        self.symptomCodeToAbsTime = None
-        self._setTimes()
-
-
-    ############################
-    # Count the number of transitions to a broken state within
-    # this group of statuses. If the first status is broken, it does
-    # not count as a break.
-    # Only count at most one break between operational states
-    def breakStatuses(self):
-        wasBroken = False
-        #breakCount = 0
-        breakStatuses = []
-        for s in self.statuses:
-            if s['symptomCategory'] == 'ON':
-                wasBroken = False
-            elif s['symptomCategory'] == 'BROKEN':
-                if not wasBroken:
-                    #breakCount += 1
-                    breakStatuses.append(s)
-                wasBroken = True
-        return breakStatuses
-
-    ############################
-    # Count the number of resolved broken states.
-    # Transitions such as : CALLBACK/REPAIR -> MINOR REPAIR -> OPERATIONAL only
-    # should count as a single fix.
-    # this group of statuses
-    def fixStatuses(self):
-        wasBroken = False
-        fixStatuses = []
-        for s in self.statuses:
-            if s['symptomCategory'] == 'BROKEN':
-                wasBroken = True
-            elif s['symptomCategory'] == 'ON':
-                if wasBroken:
-                    fixStatuses.append(s)
-                wasBroken = False
-        return fixStatuses
-
-    ############################
-    # Count the number of inspection statuses
-    # Only get the first inspection state between operational states
-    def inspectionStatuses(self):
-        wasInspection = False
-        iStatuses = []
-        for s in self.statuses:
-            if s['symptomCategory'] == 'INSPECTION':
-                if not wasInspection:
-                    iStatuses.append(s)
-                wasInspection = True
-            elif s['symptomCategory'] == 'ON':
-                wasInspection = False
-        return iStatuses
-
-    ######################################
-    # Get the amount of metro open time allocated to each symptom category
-    def getTimeAllocation(self):
-        symptomCategoryToTime = defaultdict(lambda: 0.0)
-        for symptomCategory, trList in self.symptomCategoryToTimeRanges.iteritems():
-            symptomCategoryToTime[symptomCategory] = sum(tr.metroOpenTime() for tr in trList)
-        totalTime = sum(symptomCategoryToTime.values())
-        assert(abs(totalTime - self.timeRange.metroOpenTime()) < 1E-3)
-        return symptomCategoryToTime
-
-    ######################################
-    # Get the amount of absolute time allocated to each symptom category
-    def getAbsTimeAllocation(self):
-        symptomCategoryToTime = defaultdict(lambda: 0.0)
-        for symptomCategory, trList in self.symptomCategoryToTimeRanges.iteritems():
-            symptomCategoryToTime[symptomCategory] = sum(tr.absTime() for tr in trList)
-        totalTime = sum(symptomCategoryToTime.values())
-        assert(abs(totalTime - self.timeRange.absTime()) < 1E-3)
-        return symptomCategoryToTime
-
-    ######################################
-    # Get the amount of metro open time allocated to each symptom category
-    def getSymptomTimeAllocation(self):
-        symptomCodeToTime = defaultdict(lambda: 0.0)
-        for symptomCode, trList in self.symptomCodeToTimeRanges.iteritems():
-            symptomCodeToTime[symptomCode] = sum(tr.metroOpenTime() for tr in trList)
-        totalTime = sum(symptomCodeToTime.values())
-        assert(abs(totalTime - self.timeRange.metroOpenTime()) < 1E-3)
-        return symptomCodeToTime
-
-    ######################################
-    # Get the amount of absolute time allocated to each symptom category
-    def getSymptomAbsTimeAllocation(self):
-        symptomCodeToTime = defaultdict(lambda: 0.0)
-        for symptomCode, trList in self.symptomCodeToTimeRanges.iteritems():
-            symptomCodeToTime[symptomCode] = sum(tr.absTime() for tr in trList)
-        totalTime = sum(symptomCodeToTime.values())
-        assert(abs(totalTime - self.timeRange.absTime()) < 1E-3)
-        return symptomCodeToTime
-
-    ############################
-    def _setTimes(self):
-        self.symptomCodeToTimeRanges = defaultdict(list)
-        self.symptomCategoryToTimeRanges = defaultdict(list)
-        for s in self.statuses:
-            st = s['time']
-            tr = TimeRange(s['time'], s.get('end_time',st))
-            sc = s['symptom_code']
-            c = s['symptomCategory']
-            self.symptomCodeToTimeRanges[sc].append(tr)
-            self.symptomCategoryToTimeRanges[c].append(tr)
-        self.symptomCategoryToTime = self.getTimeAllocation()
-        self.symptomCategoryToAbsTime = self.getAbsTimeAllocation()
-        self.symptomCodeToTime = self.getSymptomTimeAllocation()
-        self.symptomCodeToAbsTime = self.getSymptomAbsTimeAllocation()
-
-def _checkAllTimesNotNaive(statusList):
-    for s in statusList:
-        if isNaive(s['time']):
-            raise RuntimeError('Times cannot be naive')
-        if 'end_time' in s and isNaive(s['end_time']):
-            raise RuntimeError('Times cannot be naive')
 
 updateGlobals()

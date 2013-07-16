@@ -1,11 +1,24 @@
 %#Generate javascript for the symptom table
-<script type="text/javascript">
-  google.load('visualization', '1', {packages: ['corechart', 'table', 'annotatedtimeline']});
-</script>
+%from metroEscalatorsWeb import pyDictToJS
 
-<script type="text/javascript">
+google.load('visualization', '1', {packages: ['corechart', 'table', 'annotatedtimeline']});
 
-var escalatorRankingsJson = {{!dtRankings.ToJSon()}};
+%#Unpack the rankingsDict
+
+%numRankings = len(rankingsDict)
+var rankingsJSON = {
+%for i,(k,data) in enumerate(rankingsDict.iteritems()):
+{{k}} : {{!data['dataTable'].ToJSon()}} {{',' if i < numRankings-1 else ''}}
+%end
+};
+
+var rankingsHeaders = {
+%for i,(k,data) in enumerate(rankingsDict.iteritems()):
+{{k}} : "{{data['header']}}" {{',' if i < numRankings-1 else ''}}
+%end
+};
+
+%#var rankingsData = {{!pyDictToJS(rankingsDict)}};
 var dailyCountsJson = {{!dtDailyCounts.ToJSon()}};
 var stationRankingsJson = {{!dtStationRankings.ToJSon()}};
 
@@ -24,13 +37,22 @@ var PlotHandler = function()
 {
     var self = this;
 
-    this.rankingsDT = new google.visualization.DataTable(escalatorRankingsJson);
-    this.rankingsDT.sort([{column: 1, desc: false}]);
+    var formatter = new google.visualization.NumberFormat({suffix: '%'});
+    this.allRankingsDt = {
+    %numK = len(rankingsDict)
+    %for i,(k,dt) in enumerate(rankingsDict.iteritems()):
+    {{k}} : new google.visualization.DataTable(rankingsJSON.{{k}}) {{',' if i < numK-1 else ''}}
+    %end
+    };
+
     this.stationRankingsDT = new google.visualization.DataTable(stationRankingsJson);
 
-    var formatter = new google.visualization.NumberFormat({suffix: '%'});
-    formatter.format(this.rankingsDT, 4);
-    formatter.format(this.rankingsDT, 5);
+    //Format percentages in DataTables
+    for (x in this.allRankingsDt)
+    {
+        formatter.format(this.allRankingsDt[x], 4);
+        formatter.format(this.allRankingsDt[x], 5);
+    }
     formatter.format(this.stationRankingsDT, 4);
     formatter.format(this.stationRankingsDT, 5);
 
@@ -39,7 +61,8 @@ var PlotHandler = function()
     this.rankingsTableChart = new google.visualization.Table(document.getElementById('escalatorRankingsTableChartDiv'));
     this.dailyTrendsChart = new google.visualization.AnnotatedTimeLine(document.getElementById('trendsPlotDiv'));
 
-    this.drawRankingsTable = function() {
+    //Key should be '1d', '3d', '7d', '14d', '28d', or 'AllTime'
+    this.drawRankingsTable = function(key) {
 
         var options = { allowHtml: true,
                         sortAscending: false,
@@ -49,7 +72,10 @@ var PlotHandler = function()
                         pageSize: 15}
 
         // Instantiate and draw our chart, passing in some options.
-        self.rankingsTableChart.draw(self.rankingsDT, options);
+        self.rankingsTableChart.draw(self.allRankingsDt[key], options);
+
+        // Change the header
+        document.getElementById('escRankings_header').innerHTML = rankingsHeaders[key] + " Rankings";
     };
 
     this.drawDailyTrends = function() {
@@ -70,12 +96,34 @@ var PlotHandler = function()
                         page: 'enable',
                         pageSize: 15}
         chart.draw(self.stationRankingsDT, options);
-    }
+    };
+
+    this.setEscalatorRankingLinks = function()
+    {
+        for (var k in rankingsHeaders)
+        {
+            var a = document.getElementById("escRankings_" + k);
+
+            var makeOnClickFunc = function()
+            {
+                var myKey = k;
+                var clickFunc = function(){
+                    self.drawRankingsTable(myKey);
+                    return false;
+                }
+                return clickFunc;
+            };
+
+            a.onclick = makeOnClickFunc();
+        }
+    };
 
     this.drawAll = function()
     {
+        self.setEscalatorRankingLinks();
         document.getElementById('escalatorRankingsTableManual').innerHTML = "";
-        self.drawRankingsTable();
+        document.getElementById('sort_instructions').innerHTML = "Sort columns by clicking on the column header.";
+        self.drawRankingsTable("AllTime");
         self.drawDailyTrends();
         self.drawStationRankings();
     };
@@ -83,9 +131,10 @@ var PlotHandler = function()
     return true;
 };
 
-var plotHandler = new PlotHandler();
+var drawPlots = function(){
+    var plotHandler = new PlotHandler();
+    plotHandler.drawAll();
+};
 
 // Set a callback to run when the Google Visualization API is loaded.
-google.setOnLoadCallback(plotHandler.drawAll);
-
-</script>
+google.setOnLoadCallback(drawPlots);

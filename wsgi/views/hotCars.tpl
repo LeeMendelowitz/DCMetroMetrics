@@ -105,6 +105,6 @@
 </div>
 
 <script type="text/javascript" src="https://www.google.com/jsapi"></script>
-%include hotCars_js dtHotCars=dtHotCars, dtHotCarsByUser=dtHotCarsByUser, dtHotCarsBySeries=dtHotCarsBySeries, dtHotCarsByColor=dtHotCarsByColor, dtHotCarsByColorCustom=dtHotCarsByColorCustom, dtHotCarsTimeSeries=dtHotCarsTimeSeries
+<script type="text/javascript" src="/js/hotCars.js"></script>
 
 %rebase layout title='DC Metro Metrics: HotCars', description=description

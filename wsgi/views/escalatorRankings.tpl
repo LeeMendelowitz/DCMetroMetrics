@@ -16,20 +16,34 @@ of escalator breaks and inspections.</p>
 <a href="#trends">Trends</a>&nbsp;
 </p>
 
+<!-- ESCALATOR RANKINGS -->
 <a id="escalatorRankings"></a>
 <h3>Escalator Rankings (<a href="#top">top</a>)</h3>
-<a href="/glossary" onclick="javascript:void window.open('/glossary','','width=600,height=600,toolbar=0,menubar=0,location=0,status=0,scrollbars=1,resizable=1,left=0,top=0');return false;">Glossary</a>
-<p>Sort columns by clicking on the column header.</p>
+<p id="sort_instructions"></p>
+<p><a href="/glossary" onclick="javascript:void window.open('/glossary','','width=600,height=600,toolbar=0,menubar=0,location=0,status=0,scrollbars=1,resizable=1,left=0,top=0');return false;">Glossary</a></p>
+
+<!-- Rankings table for those without Javascript -->
 <div id='escalatorRankingsTableManual'>
 %# Disabling due to incorrect escaping of <a> tags in text fields
 %#{{!dtRankings.ToHtml()}}
 </div>
+
+<!-- Rankings table for those with Javascript -->
+<div style="font: 8px;">
+<a id="escRankings_d1" href="#">1d</a>&nbsp;
+<a id="escRankings_d3" href="#">3d</a>&nbsp;
+<a id="escRankings_d7" href="#">7d</a>&nbsp;
+<a id="escRankings_d14" href="#">14d</a>&nbsp;
+<a id="escRankings_d28" href="#">28d</a>&nbsp;
+<a id="escRankings_AllTime" href="#">All Time</a><br><br>
+</div>
+<div style="font-weight:bold;" id="escRankings_header"></div>
 <div id='escalatorRankingsTableChartDiv'></div>
 
+<!-- STATION RANKINGS -->
 <a id="stationRankings"></a>
 <h3>Station Rankings (<a href="#top">top</a>)</h3>
 <a href="/glossary" onclick="javascript:void window.open('/glossary','','width=600,height=600,toolbar=0,menubar=0,location=0,status=0,scrollbars=1,resizable=1,left=0,top=0');return false;">Glossary</a>
-<p>Sort columns by clicking on the column header.</p>
 <div id="stationRankingsTableChartDiv"></div>
 
 <a id="trends"></a>
@@ -47,6 +61,6 @@ collected due to technical difficulties, resulting in low counts.</p>
 </div>
 
 <script type="text/javascript" src="https://www.google.com/jsapi"></script>
-%include escalatorRankings_js dtRankings=dtRankings, dtDailyCounts=dtDailyCounts, dtStationRankings=dtStationRankings
+<script type="text/javascript" src="/js/escalatorRankings.js"></script>
 
 %rebase layout title='DC Metro Metrics: Escalator Rankings', description=description

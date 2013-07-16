@@ -1,11 +1,16 @@
 # Utilities for determining opening/closing time
 # of Metrorail system
-# TODO: Make this module correct for daylights saving time.
+
+# TODO: Make this module correct for daylights saving time:
+# wdToOpenHours will not be correct on the two days a year when
+# daylight savings starts/ends. This is a low impact bug.
 
 ##################################################
 from datetime import time, date, datetime, timedelta
 from dateutil.tz import tzlocal, tzutc
 from dateutil import zoneinfo
+from descriptors import setOnce, computeOnce
+
 nytz = zoneinfo.gettz("America/New_York")
 tzutc = tzutc()
 combine = datetime.combine
@@ -113,6 +118,10 @@ def metroIsOpen(t):
     return (lastOpen > lastClose)
 
 class TimeRange(object):
+
+    start = setOnce("start")
+    end = setOnce("end")
+
     def __init__(self, start, end):
 
         if any(isNaive(t) for t in (start, end)):
@@ -122,9 +131,11 @@ class TimeRange(object):
         self.start = toLocalTime(start)
         self.end = toLocalTime(end)
 
+    @computeOnce
     def absTime(self):
         return (self.end - self.start).total_seconds()
-
+        
+    @computeOnce
     def metroOpenTime(self):
         start = self.start
         end  = self.end
