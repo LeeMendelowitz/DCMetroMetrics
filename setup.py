@@ -1,8 +1,5 @@
 from setuptools import setup
 
-# Define DUMMY to force git push
-DUMMY = 1
-
 setup(name='MetroEscalators', version='1.0',
       description='WMATA Escalator Data',
       author='Lee Mendelowitz', author_email='MetroEscalators@gmail.com',
