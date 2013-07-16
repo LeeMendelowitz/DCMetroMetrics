@@ -1,7 +1,7 @@
 # Author: Lee Mendelowitz
 # Date: 2/19/2013
 
-# Create a database of stations
+# Create a database of stations: stations.py
 # Write variables to a python module, which can be
 # imported
 #############################################
@@ -9,7 +9,6 @@
 import wmataApi
 import json
 from collections import defaultdict
-import renameStations
 import numpy as np
 
 

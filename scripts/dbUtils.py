@@ -8,7 +8,7 @@ from datetime import datetime, time, date, timedelta
 from operator import itemgetter
 import copy
 
-from escalatorUtils import symptomToCategory, OPERATIONAL_CODE
+from escalatorDefs import symptomToCategory, OPERATIONAL_CODE
 import stations
 from metroTimes import TimeRange, utcnow, isNaive, toUtc, tzutc
 import gevent

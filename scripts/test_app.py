@@ -11,16 +11,9 @@ import imp
 # Setup environmental variables
 test_setup.setupPaths()
 
-# Clear the database
-#test_setup.clearDB()
-
 # Run the application
 cwd = os.getcwd()
 REPO_DIR = os.environ['OPENSHIFT_REPO_DIR']
 appPath = os.path.join(REPO_DIR, 'app.py')
 appModule = imp.load_source('app', appPath)
 appModule.run(LIVE=False)
-#appModule.hotCarTest()
-#H = appModule.HotCarApp(LIVE=False)
-#H.start()
-#H.join()
