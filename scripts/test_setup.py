@@ -1,6 +1,8 @@
+####################################################
 # Perform any setup for local testing
 # This includes setting any environmental variables,
-# and running a pymongo
+# and running a mongod instance.
+####################################################
 
 import os
 import sys

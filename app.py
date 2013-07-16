@@ -23,7 +23,7 @@ from gevent import monkey; monkey.patch_all() # Needed for bottle
 
 # Import application modules
 sys.path.append(SCRIPT_DIR)
-from runTwitterApp import TwitterApp
+from runEscalatorApp import EscalatorApp
 from hotCarApp import HotCarApp
 from webPageGenerator import WebPageGenerator
 from restartingGreenlet import RestartingGreenlet
@@ -41,10 +41,11 @@ class BottleApp(RestartingGreenlet):
 
     def _run(self):
         try:
-            # Run the server. Note: This call blocks
+            # Run the server.
             ip   = os.environ['OPENSHIFT_INTERNAL_IP']
             port = 8080
             bottle = self.bottleApp.application
+            # This call blocks
             bottle.run(host=ip, port=port, server='gevent')
 
         except Exception as e:
@@ -61,8 +62,8 @@ def run(LIVE=False):
    bottleApp.start()
 
    # Run MetroEsclaators twitter App
-   twitterApp = TwitterApp(LIVE=LIVE)
-   twitterApp.start()
+   escalatorApp = EscalatorApp(LIVE=LIVE)
+   escalatorApp.start()
 
    # Run HotCar twitter app
    hotCarApplication = HotCarApp(LIVE=LIVE)

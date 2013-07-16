@@ -16,7 +16,7 @@ import twitterUtils
 from escalatorRequest import getELESIncidents, WMATA_API_ERROR
 from utils import *
 from keys import MetroEscalatorKeys
-from escalatorUtils import symptomToCategory, OPERATIONAL_CODE
+from escalatorDefs import symptomToCategory, OPERATIONAL_CODE
 import metroEscalatorsWeb
 
 TWEET_LEN = 140
@@ -61,7 +61,7 @@ def getEscalatorIncidents(log=sys.stdout):
 
 
 #############################################
-class TwitterApp(object):
+class EscalatorApp(object):
     
     def __init__(self, log, LIVE=True, QUIET=False):
         self.LIVE = LIVE
@@ -98,9 +98,11 @@ class TwitterApp(object):
 
         # Get the app state to determine the tick delta
         appState = db.escalator_appstate.find_one()
-        lastRunTime = appState['lastRunTime'].replace(tzinfo=tzutc)
+        lastRunTime = None
+        if appState is not None and 'lastRunTime' in appState:
+            lastRunTime = appState['lastRunTime'].replace(tzinfo=tzutc)
         tickDelta = (curTime - lastRunTime).total_seconds() \
-                    if appState is not None else 0.0
+                    if lastRunTime is not None else 0.0
 
         # Determine escalators which changed status
         changedStatusDict = dbUtils.processIncidents(db, escIncidents, curTime, tickDelta, log=log)
@@ -246,7 +248,7 @@ def main():
 
     LIVE = False 
     log = sys.stdout
-    app = TwitterApp(log, LIVE=LIVE)
+    app = EscalatorApp(log, LIVE=LIVE)
     app.tick()
 
 ####################################################

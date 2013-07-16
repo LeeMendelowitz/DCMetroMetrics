@@ -1,4 +1,6 @@
 import test_setup
+test_setup.startup()
+
 import hotCarApp
 
 def runTest():
@@ -14,7 +16,6 @@ def runTestGreenlet():
 
     
 def run():
-    test_setup.startup()
     runTestGreenlet()
     #runTest()
     test_setup.shutdown()
