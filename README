@@ -7,7 +7,6 @@ about OpenShift.
 Repo Layout
 ===========
 wsgi/ - Externally exposed wsgi code goes.
-        bottleApp.py handles the website server routes.
 
 wsgi/static/ - Public static content gets served here. (images and stylesheets)
 
@@ -15,13 +14,14 @@ wsgi/views/ - Bottle Templates for generating html and javascript.
 
 scripts/ - Code for running @MetroEscalators, @MetroHotCars, and generating the
            DCMetroMetrics website. There are 4 separate applications:
-             - the web server (../wsgi/bottleApp.py)
-             - the MetroEscalators App (./runEscalatorApp.py)
-             - the MetroHotCars App (./hotCarApp.py)
-             - the WebPageGenerator App (./webPageGenerator.py)
+             - the web server (bottleApp.py)
+             - the MetroEscalators App (runEscalatorApp.py)
+             - the MetroHotCars App (hotCarApp.py)
+             - the WebPageGenerator App (webPageGenerator.py)
            These are run as Greenlets (micro-threads).
            
            Key files:
+           - bottleApp.py handles the website server routes.
            - runEscalatorApp.py:
                This checks the WMATA API for escalator outages,
                updates the MongoDB with escalator changes,

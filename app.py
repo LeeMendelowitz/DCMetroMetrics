@@ -35,7 +35,7 @@ class BottleApp(RestartingGreenlet):
     def __init__(self, LIVE=False):
         RestartingGreenlet.__init__(self, LIVE=LIVE)
         # Load the bottleApp module
-        self.bottleAppPath = os.path.join(REPO_DIR,'wsgi', 'bottleApp.py')
+        self.bottleAppPath = os.path.join(SCRIPT_DIR, 'bottleApp.py')
         self.bottleApp = imp.load_source('bottleApp', self.bottleAppPath)
         self.LIVE=LIVE
 
