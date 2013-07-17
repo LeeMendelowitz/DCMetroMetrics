@@ -30,12 +30,14 @@ def index():
 
 ########################################
 @bottle.route('/hotcars')
+@bottle.route('/hotcars/')
 def hotCars():
     filename = 'hotcars.html'
     return static_file(filename, root=DYNAMIC_DIR)
 
 ########################################
 @bottle.route('/hotcars/<carNum>')
+@bottle.route('/hotcars/<carNum>/')
 def hotCar(carNum):
     filename = 'hotcar_%s.html'%carNum
     return static_file(filename, root=DYNAMIC_DIR)
@@ -52,6 +54,7 @@ def server_static(filename):
 
 ########################################
 @bottle.route('/data')
+@bottle.route('/data/')
 def data():
     filename = 'data.html'
     return static_file(filename, root=DYNAMIC_DIR)
@@ -63,42 +66,44 @@ def serve_data(filename):
 
 ########################################
 @bottle.route('/escalators/<unitId>')
+@bottle.route('/escalators/<unitId>/')
 def genEscalatorStatus(unitId):
     filename = 'escalator_%s.html'%unitId
     return static_file(filename, root=DYNAMIC_DIR)
 
 ###############################################
 @bottle.route('/stations/<shortName>')
+@bottle.route('/stations/<shortName>/')
 def stationStatus(shortName):
     filename = 'station_%s.html'%shortName
     return static_file(filename, root=DYNAMIC_DIR)
 
 ###############################################
 @bottle.route('/escalators/directory')
+@bottle.route('/escalators/directory/')
 def allEscalators():
     filename = 'escalators.html'
     return static_file(filename, root=DYNAMIC_DIR)
 
 ###############################################
 @bottle.route('/escalators')
+@bottle.route('/escalators/')
 @bottle.route('/escalators/outages')
+@bottle.route('/escalators/outages/')
 def escalatorOutages():
     filename = 'escalatorOutages.html'
     return static_file(filename, root=DYNAMIC_DIR)
 
 ###############################################
 @bottle.route('/escalators/rankings')
+@bottle.route('/escalators/rankings/')
 def escalatorRankings():
     filename = 'escalatorRankings.html'
     return static_file(filename, root=DYNAMIC_DIR)
 
-@bottle.route('/escalators/rankingsTable')
-def escalatorRankingsTable():
-    filename = 'escalatorRankingsTable.html'
-    return static_file(filename, root=DYNAMIC_DIR)
-
 ###############################################
 @bottle.route('/stations')
+@bottle.route('/stations/')
 # Listing of all stations
 def stationListing():
     filename = 'stations.html'
@@ -106,6 +111,7 @@ def stationListing():
 
 ########################################
 @bottle.route('/glossary')
+@bottle.route('/glossary/')
 def glossary():
     filename = 'glossary.html'
     return static_file(filename, root=DYNAMIC_DIR)

@@ -43,6 +43,7 @@ def setupPaths():
         d = os.environ[dk]
         if not os.path.exists(d):
             os.mkdir(d)
+setupPaths()
 
 #####################################################
 # Setup MongoDB by adding a user to the database, if necessary
@@ -181,3 +182,4 @@ def getDB():
 
     db = client.MetroEscalators
     return db
+

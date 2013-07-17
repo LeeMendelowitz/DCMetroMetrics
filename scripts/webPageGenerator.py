@@ -3,18 +3,19 @@
 import os
 import sys
 from datetime import datetime, timedelta
-from restartingGreenlet import RestartingGreenlet
 import gevent
 import bottle
 from operator import itemgetter
 from collections import defaultdict, Counter
-from metroTimes import utcnow, toLocalTime, localToUTCTime, tzutc
+import __builtin__
 
 import dbUtils
 import stations
 import metroEscalatorsWeb
 import hotCarsWeb
 import hotCars
+from metroTimes import utcnow, toLocalTime, localToUTCTime, tzutc
+from restartingGreenlet import RestartingGreenlet
 
 # Set the path to the bottle template directory
 REPO_DIR = os.environ['OPENSHIFT_REPO_DIR']
@@ -48,6 +49,25 @@ classToUpdateInterval = \
 }
 
 
+
+################################################
+# Reload the essential parts of this module.
+# Useful for testing. Call this after editing
+# a bottle template file in order to generate
+# a page using the updated template.
+#
+# Warning: This function is redefining the python "reload" object
+# from the python builtin for this module. The builtin reload
+# function is still available through __builtin__ module.
+def reload():
+    """ 
+    Reload the essential parts of the webPageGenerator module
+    """
+    __builtin__.reload(bottle)
+    bottle.TEMPLATE_PATH.append(os.path.join(REPO_DIR, 'wsgi', 'views'))
+    __builtin__.reload(metroEscalatorsWeb)
+    __builtin__.reload(hotCarsWeb)
+    __builtin__.reload(hotCars)
 
 ##############################
 # Make a wrapper around the bottle.template call
