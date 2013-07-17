@@ -1,22 +1,40 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
+# This handles the bottle routes, and defines
+# the BottleApp which runs the gevent webserver.
+
+# If you execute this module directly, it runs
+# a local bottle webserver for testing purposes.
+#################################################
+
+if __name__ == "__main__":
+    # Local Testing
+    import test_setup
+    test_setup.setupPaths()
+
 import os
-import bottle
 import pymongo
 from StringIO import StringIO
 from datetime import datetime
 from operator import itemgetter
 from collections import defaultdict, Counter
 
+# Import bottle
+import gevent
+from gevent import monkey; monkey.patch_all() # Needed before importing bottle
+import bottle
+from bottle import static_file
+
 import metroEscalatorsWeb
 import hotCarsWeb
 import stations
+from restartingGreenlet import RestartingGreenlet
 
-from bottle import static_file
 #bottle.debug(True)
+
 
 REPO_DIR = os.environ['OPENSHIFT_REPO_DIR']
 DATA_DIR = os.environ['OPENSHIFT_DATA_DIR']
+SCRIPT_DIR = os.path.join(REPO_DIR, 'scripts')
 STATIC_DIR = os.path.join(REPO_DIR, 'wsgi', 'static')
 DYNAMIC_DIR = os.path.join(DATA_DIR, 'webpages', 'dynamic')
 SHARED_DATA_DIR = os.path.join(DATA_DIR, 'data_shared')
@@ -116,4 +134,31 @@ def glossary():
     filename = 'glossary.html'
     return static_file(filename, root=DYNAMIC_DIR)
 
-application = bottle.default_app()
+#################################################
+# Run the bottle app in a greenlet 
+class BottleApp(RestartingGreenlet):
+
+    def __init__(self):
+        RestartingGreenlet.__init__(self)
+
+    def _run(self):
+        try:
+            # Run the server.
+            ip   = os.environ['OPENSHIFT_INTERNAL_IP']
+            port = 8080
+            bottleApp = bottle.default_app()
+            # This call blocks
+            bottle.run(host=ip, port=port, server='gevent')
+
+        except Exception as e:
+            logName = os.path.join(DATA_DIR, 'bottle.log')
+            fout = open(logName, 'a')
+            fout.write('Caught Exception while running bottle! %s\n'%(str(e)))
+            fout.close()
+
+# Run the bottle app for local testing
+if __name__ == "__main__":
+    print 'Running the bottle app locally....'
+    bottleApp = BottleApp()
+    bottleApp.start()
+    bottleApp.join()

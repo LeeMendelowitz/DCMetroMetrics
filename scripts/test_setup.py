@@ -43,6 +43,7 @@ def setupPaths():
         d = os.environ[dk]
         if not os.path.exists(d):
             os.mkdir(d)
+
 setupPaths()
 
 #####################################################

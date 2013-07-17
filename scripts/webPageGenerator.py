@@ -481,7 +481,8 @@ class WebPageGenerator(RestartingGreenlet):
             }
         
         for doc in docs:
-           gevent.sleep(0.0)
+           gevent.sleep(0.0) # Cooperative yield
+
            # Get the webpage generator based on the doc's class
            pageGenerator = classToPageGenerator.get(doc['class'], None)
            if pageGenerator is None:
