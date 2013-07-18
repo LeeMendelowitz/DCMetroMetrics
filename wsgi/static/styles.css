@@ -1,6 +1,7 @@
 body {
   padding-top: 60px;
   padding-bottom: 40px;
+  background-color:#D0D0D0;
   background: url('/static/wmata_ceiling_banner_web.jpg') no-repeat center center fixed;
   -webkit-background-size: cover;
   -moz-background-size: cover;
