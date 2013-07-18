@@ -1,20 +1,17 @@
 %# Page for a station
 %import metroEscalatorsWeb
-%from metroEscalatorsWeb import lineToColoredSquares, escUnitIdToWebPath, symptomCategoryToClass
+%from metroEscalatorsWeb import lineToColoredSquares, escUnitIdToWebPath
 %from metroTimes import toLocalTime
     
 %#station data
 %codeStr = ', '.join(stationSnapshot['allCodes'])
-%lineStr = lineToColoredSquares(stationSnapshot['allLines'])
+%lineStr = lineToColoredSquares(stationSnapshot['lineCodes'])
 %numRiderStr = '{:,d}'.format(stationSnapshot['numRiders'])
-
-<div class="container">
-<div class="main-content">
 
 <h2>{{stationSnapshot['name']}}</h2>
 
 <h3>Station Data</h3>
-<table class="station_data table table-hover table-bordered table-striped" style="width:40%; min-width:250px;">
+<table class="station_data">
 <tr> <td>Station Name</td><td>{{stationSnapshot['name']}}</td> </tr>
 <tr> <td>Station Codes</td><td>{{codeStr}}</td> </tr>
 <tr> <td>Station Lines</td><td>{{!lineStr}} </td></tr>
@@ -22,7 +19,7 @@
 </table>
 
 <h3>Escalator Summary</h3>
-<table class="station_escalator_summary table table-hover table-bordered table-striped" style="width:25%; min-width:250px;">
+<table class="station_escalator_summary">
 <tr><td># Escalators</td><td>{{stationSnapshot['numEscalators']}}</td></tr>
 <tr><td># Working Escalators</td><td>{{stationSnapshot['numWorking']}}</td></tr>
 <tr><td>Current Availability</td><td>{{'%.2f%%'%(100.0*stationSnapshot['availability'])}}</td></tr>
@@ -32,7 +29,7 @@
 
 <h3>Escalators</h3>
 %hasStationDesc = any(e['stationDesc'] for e in escalators)
-<table class="status table table-hover table table-striped">
+<table class="status">
 <tr>
     <th>Unit</th>
     %if hasStationDesc:
@@ -44,8 +41,7 @@
 </tr>
 %for esc in escalators:
 %   escWebPath = escUnitIdToWebPath(esc['unitId'])
-%   symptomCat = esc['curSymptomCategory'].lower()
-<tr class={{symptomCategoryToClass[symptomCat]}}>
+<tr class={{esc['curSymptomCategory'].lower()}}>
     <td><a href="{{escWebPath}}">{{esc['unitId']}}</a></td>
     %if hasStationDesc:
     <td>{{esc['stationDesc']}}</td>
@@ -61,9 +57,6 @@
 %updateStr = toLocalTime(curTime).strftime(tf)
 <div class=updateTime>
 <p>Page Last Updated: {{updateStr}}</p>
-</div>
-
-</div>
 </div>
 
 %rebase layout title=stationSnapshot['name'], description=''

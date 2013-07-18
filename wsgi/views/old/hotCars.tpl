@@ -8,9 +8,6 @@
 
 %description="Compilation of crowdsourced reports of #wmata #hotcar's in the WMATA Metrorail system"
 
-<div class="container">
-<div class="main-content">
-
 <a id="top"></a>
 <h2>HotCars</h2>
 
@@ -24,7 +21,7 @@
 
 <a id="summary"></a>
 <h3>Summary</h3>
-<table class="table table-hover table-bordered" style="width:25%; min-width:250px;">
+<table>
     <tr> <td>Num. Reports</td> <td>{{summary['numReports']}}</td> </tr>
     <tr> <td>Num. Reporters</td> <td>{{summary['numReporters']}}</td> </tr>
     <tr> <td>Num. Cars Reported</td> <td>{{summary['numCars']}}</td> </tr>
@@ -34,7 +31,7 @@
 
 <h3>Most reported (<a href="#top">top</a>) </h3>
 
-<div id="MostReportedTableChartDiv" style="width:100%;"></div>
+<div id="MostReportedTableChartDiv"></div>
 
 <a id="plots"></a>
 <h3>Data Visualizations (<a href="#top">top</a>) </h3>
@@ -46,13 +43,13 @@
 
 <a id="bySeries"></a>
 <h4>Reports By Car Series (<a href="#top">top</a>) </h4>
-<div id="hotCarsBySeriesBarChartDiv" style="width:100%;"></div>
-<div id="hotCarsBySeriesPieChartDiv" style="width:100%;"></div>
+<div id="hotCarsBySeriesBarChartDiv"></div>
+<div id="hotCarsBySeriesPieChartDiv"></div>
 
 <a id="byColor"></a>
 <h4>Reports by Line Color (<a href="#top">top</a>)</h4>
-<div id="hotCarsByColorBarChartDiv" style="width:100%;"></div>
-<div id="hotCarsByColorPieChartDiv" style="width:100%;"></div>
+<div id="hotCarsByColorBarChartDiv"></div>
+<div id="hotCarsByColorPieChartDiv"></div>
 
 <a id="byDate"></a>
 <h4>Reports by Date (<a href="#top">top</a>) </h4>
@@ -65,10 +62,10 @@
 <a href="#reportsByUser">Reports By User</a>&nbsp;
 
 <a id="reportsByCar"></a>
-<h4>Reports by Car Number <a href="#top">(top)</a></h4>
-<div id="hotCarTableChartDiv" style="width:100%;"></div>
+<h4>Reports by Car Number <a href="#top">(top)</a> </h4>
+<div id="hotCarTableChartDiv"></div>
 <div id="hotCarTableManual">
-    <table class="hotcars table table-hover table-bordered">
+    <table class="hotcars">
     <tr>
         <th>Car Number</th>
         <th>Color</th>
@@ -98,7 +95,8 @@
 
 <a id="reportsByUser"></a>
 <h4>Reports By User (<a href="#top">top</a>) </h4>
-<div id="hotCarsByUserTableChartDiv" style="width:100%;"></div>
+<div id="hotCarsByUserTableChartDiv"></div>
+
 
 %tf = '%m/%d/%y %I:%M %p'
 %updateStr = toLocalTime(curTime).strftime(tf)
@@ -106,12 +104,7 @@
 <p>Page Last Updated: {{updateStr}}</p>
 </div>
 
-</div> <!-- end main-content -->
-</div> <!-- end container -->
-
-%def scriptsToInclude():
 <script type="text/javascript" src="https://www.google.com/jsapi"></script>
 <script type="text/javascript" src="/js/hotCars.js"></script>
-%end
 
-%rebase layout title='DC Metro Metrics: HotCars', description=description, scriptsToInclude=scriptsToInclude
+%rebase layout title='DC Metro Metrics: HotCars', description=description

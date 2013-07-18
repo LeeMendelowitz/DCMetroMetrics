@@ -19,6 +19,16 @@ PATHS = {'escalators' : '/escalators/directory',
          'data' : '/data'
         }
 
+# Dictionary for selecting the row class for an escalator
+# status table.
+symptomCategoryToClass = {
+"on" : "success",
+"broken" : "error",
+"inspection" : "warning",
+"off" : "warning",
+"rehab" : "info"
+}
+
 ###################################
 # This can convert a list of codes or upper case words
 # ex: lineCodes = ['RD', 'OR']
@@ -40,7 +50,7 @@ def lineToColoredSquares(lineCodes):
     s.write('<div class="color_squares">')
     if colors:
         for color in colors:
-            s.write('<div id="%ssquare"></div>'%(color))
+            s.write('<div class="%ssquare"></div>'%(color))
     else:
         s.write('N/A')
     outS = s.getvalue()

@@ -291,7 +291,11 @@ def genEscalatorOutages(doc):
     schemaKeys = ['unitIdHtml', 'stationNameHtml', 'stationDesc', 'escDesc', 'symptom']
     outageTableData = [[d[k] for k in schemaKeys] for d in escalatorList]
     dtOutages = gviz_api.DataTable(schema, data=outageTableData)
-    dtOutagesRowClasses = [d['symptomCategory'].lower() for d in escalatorList]
+
+    def getOutageClass(d):
+        sympCat = d['symptomCategory'].lower()
+        return metroEscalatorsWeb.symptomCategoryToClass[sympCat] 
+    dtOutagesRowClasses = [getOutageClass(d) for d in escalatorList]
 
 
     # Get the availability and weighted availability
@@ -466,36 +470,42 @@ class WebPageGenerator(RestartingGreenlet):
         docs = [d for d in docs if not (d['_id'] in seen or seen.add(d['_id']))]
 
         # Make the updates
-        classToPageGenerator =  \
-            { 'escalator' : genEscalatorPage,
-              'escalatorRankings' : genEscalatorRankings,
-              'escalatorDirectory': genEscalatorDirectory,
-              'escalatorOutages' : genEscalatorOutages,
-              'stationDirectory' : genStationDirectory,
-              'station' : genStationPage,
-              'hotcars' : genHotCars,
-              'hotcar' : genHotCarPage,
-              'glossary' : genGlossaryPage,
-              'data' : genDataPage,
-              'home' : genHomePage
-            }
-        
         for doc in docs:
            gevent.sleep(0.0) # Cooperative yield
-
-           # Get the webpage generator based on the doc's class
-           pageGenerator = classToPageGenerator.get(doc['class'], None)
-           if pageGenerator is None:
-               raise RuntimeError('No page generator for webpage with class %s'%doc['class'])
-
-           #Generate the webpage
-           tf = '%m/%d/%y %I:%M %p'
-           timeStamp = curTimeLocal.strftime(tf)
-           self.logFile.write("%s: Updating webpage: %s\n"%(timeStamp,str(doc)))
-           pageGenerator(doc)
-
+           updatePage(doc, curTimeLocal, self.logFile)
            #Update the webpage database
            newDoc = dict(doc)
            newDoc['lastUpdateTime'] = utcnow()
            newDoc['forceUpdate'] = False
            db.webpages.update({'_id' : doc['_id']}, newDoc)
+
+classToPageGenerator =  \
+    { 'escalator' : genEscalatorPage,
+      'escalatorRankings' : genEscalatorRankings,
+      'escalatorDirectory': genEscalatorDirectory,
+      'escalatorOutages' : genEscalatorOutages,
+      'stationDirectory' : genStationDirectory,
+      'station' : genStationPage,
+      'hotcars' : genHotCars,
+      'hotcar' : genHotCarPage,
+      'glossary' : genGlossaryPage,
+      'data' : genDataPage,
+      'home' : genHomePage
+    }
+
+############################################
+def updatePage(doc, curTimeLocal = None, logFile = sys.stdout):
+    """
+    Re-generate the webpage given by doc.
+    """
+    pageGenerator = classToPageGenerator.get(doc['class'], None)
+    if pageGenerator is None:
+       raise RuntimeError('No page generator for webpage with class %s'%doc['class'])
+
+    if curTimeLocal is None:
+        curTimeLocal = toLocalTime(utcnow())
+    #Generate the webpage
+    tf = '%m/%d/%y %I:%M %p'
+    timeStamp = curTimeLocal.strftime(tf)
+    logFile.write("%s: Updating webpage: %s\n"%(timeStamp,str(doc)))
+    pageGenerator(doc)

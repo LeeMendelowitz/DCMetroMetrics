@@ -3,10 +3,6 @@
 
 %description = 'Performance rankings of escalators in the WMATA Metrorail system.'
 
-<div class="container">
-
-<div class="main-content">
-
 <a id="top"></a>
 <h2>Rankings</h2>
 
@@ -27,7 +23,7 @@ of escalator breaks and inspections.</p>
 <p><a href="/glossary" onclick="javascript:void window.open('/glossary','','width=600,height=600,toolbar=0,menubar=0,location=0,status=0,scrollbars=1,resizable=1,left=0,top=0');return false;">Glossary</a></p>
 
 <!-- Rankings table for those without Javascript -->
-<div id='escalatorRankingsTableManual' width="100%;">
+<div id='escalatorRankingsTableManual'>
 %# Disabling due to incorrect escaping of <a> tags in text fields
 %#{{!dtRankings.ToHtml()}}
 </div>
@@ -48,7 +44,7 @@ of escalator breaks and inspections.</p>
 <a id="stationRankings"></a>
 <h3>Station Rankings (<a href="#top">top</a>)</h3>
 <a href="/glossary" onclick="javascript:void window.open('/glossary','','width=600,height=600,toolbar=0,menubar=0,location=0,status=0,scrollbars=1,resizable=1,left=0,top=0');return false;">Glossary</a>
-<div id="stationRankingsTableChartDiv" width="100%;"></div>
+<div id="stationRankingsTableChartDiv"></div>
 
 <a id="trends"></a>
 <h3>Trends (<a href="#top">top</a>)</h3>
@@ -57,17 +53,14 @@ of escalator breaks and inspections.</p>
 <p>Note: "Data outages" refer to times when escalator data was not 
 collected due to technical difficulties, resulting in low counts.</p>
 
+
 %tf = '%m/%d/%y %I:%M %p'
 %updateStr = toLocalTime(curTime).strftime(tf)
 <div class=updateTime>
 <p>Page Last Updated: {{updateStr}}</p>
 </div>
 
-</div> <!-- end main content -->
-
-%def scriptsToInclude():
 <script type="text/javascript" src="https://www.google.com/jsapi"></script>
 <script type="text/javascript" src="/js/escalatorRankings.js"></script>
-%end
 
-%rebase layout title='DC Metro Metrics: Escalator Rankings', description=description, scriptsToInclude=scriptsToInclude
+%rebase layout title='DC Metro Metrics: Escalator Rankings', description=description

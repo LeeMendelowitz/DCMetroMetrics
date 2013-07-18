@@ -1,6 +1,3 @@
-<div class="container">
-
-<div class="main-content">
 <h2>Data Downloads</h2>
 
 <p>From this page you can download all of the data used to
@@ -50,8 +47,5 @@ this dataset only include tweet ID's and Twitter user ID's.</p>
 <p><a href="/data/escalator_descriptions.csv">Escalator descriptions (CSV)</a></p>
 <p><a href="/data/escalator_statuses.csv">Escalator statuses (CSV)</a></p>
 
-</div> <!-- end main-content -->
-</div> <!-- end container -->
 
-
-%rebase layout title='DC Metro Metrics: Data Downloads'
+%rebase layout title='DC Metro Metrics: Data Downloads', description=''

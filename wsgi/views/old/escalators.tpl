@@ -1,6 +1,6 @@
 %# Page for a station
 %import metroEscalatorsWeb
-%from metroEscalatorsWeb import lineToColoredSquares, escUnitIdToWebPath, stationCodeToWebPath, symptomCategoryToClass
+%from metroEscalatorsWeb import lineToColoredSquares, escUnitIdToWebPath, stationCodeToWebPath
 %from metroTimes import toLocalTime
 
 <div class="container">
@@ -40,7 +40,7 @@
 </a>
 % end
 
-<table class="status table tabe-border table-hover table-striped">
+<table class="status table table-hover table-border">
 <tr>
     <th>Unit</th>
     % if hasEntranceData:
@@ -51,8 +51,7 @@
 </tr>
 %   for esc in escList:
 %      escWebPath = escUnitIdToWebPath(esc['unitId'])
-%      symptomCat = esc['symptomCategory'].lower()
-<tr class={{symptomCategoryToClass[symptomCat]}}>
+<tr class={{esc['symptomCategory'].lower()}}>
     <td><a href="{{escWebPath}}">{{esc['unitId']}}</a></td>
     % if hasEntranceData:
     <td>{{esc['stationDesc']}}</td>
@@ -66,6 +65,8 @@
 </div>
 %end
 
+
+
 %tf = '%m/%d/%y %I:%M %p'
 %updateStr = toLocalTime(curTime).strftime(tf)
 <div class=updateTime>
@@ -75,4 +76,4 @@
 </div>
 </div>
 
-%rebase layout title='DC Metro Metrics: All Escalators', description=''
+%rebase layout title='DC Metro Metrics: All Escalators'

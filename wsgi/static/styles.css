@@ -1,0 +1,88 @@
+body {
+  padding-top: 60px;
+  padding-bottom: 40px;
+  background: url('/static/wmata_ceiling_banner_web.jpg') no-repeat center center fixed;
+  -webkit-background-size: cover;
+  -moz-background-size: cover;
+  -o-background-size: cover;
+  background-size: cover;
+}
+.footer {
+  margin-top: 10px;
+  padding-top: 10px;
+  background-color: white;
+  border-radius: 6px 6px 6px 6px;
+}
+.navbar .nav > li > .dropdown-menu:after {
+  border: none;
+}
+
+.googletable td{border: thin solid #dddddd;}
+.googletable td.success{background-color:#dff0d8;}
+.googletable td.error{background-color:#f2dede;}
+.googletable td.warning{background-color:#fcf8e3;}
+.googletable td.info{background-color:#d9edf7;}
+
+
+.main-content {
+  padding: 25px;
+  background-color: #D0D0D0;
+  background-color: #FBFCE6;
+  background-color: white;
+  border-radius: 6px 6px 6px 6px;
+}
+
+.updateTime
+{
+    padding-top:20px;
+    color:black
+    font-size:small;
+    text-align:right;
+}
+
+.redsquare
+{
+    width:14px;
+    height:14px;
+    background-color:red;
+    border:1px solid black;
+    float:left;
+    margin:5px;
+}
+
+.bluesquare
+{
+    width:14px;
+    height:14px;
+    background-color:blue;
+    border:1px solid black;
+    float:left;
+    margin:5px;
+}
+.yellowsquare
+{
+    width:14px;
+    height:14px;
+    background-color:yellow;
+    border:1px solid black;
+    float:left;
+    margin:5px;
+}
+.orangesquare
+{
+    width:14px;
+    height:14px;
+    background-color:orange;
+    border:1px solid black;
+    float:left;
+    margin:5px;
+}
+.greensquare
+{
+    width:14px;
+    height:14px;
+    background-color:green;
+    border:1px solid black;
+    float:left;
+    margin:5px;
+}

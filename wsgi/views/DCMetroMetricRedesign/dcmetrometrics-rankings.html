@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>DC Metro Metrics</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Sharing public and crowdsourced data related to the Washington DC Metrorail system, including data on escalator outages, escalator historical performance, and #wmata #hotcar&#039;s.">
+    <meta name="author" content="">
+
+    <!-- Le styles -->
+    <link href="http://netdna.bootstrapcdn.com/twitter-bootstrap/2.3.2/css/bootstrap-combined.min.css" rel="stylesheet">
+    <style type="text/css">
+
+      body {
+        padding-top: 60px;
+        padding-bottom: 40px;
+        background: url('http://www.dcmetrometrics.com/static/wmata_ceiling_banner_web.jpg') no-repeat center center fixed;
+        -webkit-background-size: cover;
+        -moz-background-size: cover;
+        -o-background-size: cover;
+        background-size: cover;
+      }
+      .footer {
+        margin-top: 10px;
+        padding-top: 10px;
+        background-color: white;
+        border-radius: 6px 6px 6px 6px;
+      }
+      .navbar .nav > li > .dropdown-menu:after {
+        border: none;
+      }
+      .main-content {
+        padding: 25px;
+        background-color: #D0D0D0;
+        background-color: #FBFCE6;
+        background-color: white;
+        border-radius: 6px 6px 6px 6px;
+      }
+    </style>
+  </head>
+
+  <body>
+
+    <div class="navbar navbar-inverse navbar-fixed-top">
+      <div class="navbar-inner">
+        <div class="container">
+          <button type="button" class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="brand" href="#">DC Metro Metric</a>
+          <div class="nav-collapse collapse">
+            <ul class="nav">
+              <li><a href="#">Home</a></li>
+              <li class="dropdown">
+                <a href="#" class="dropdown-toggle" data-toggle="dropdown">Escalators <b class="caret"></b></a>
+                <ul class="dropdown-menu">
+                  <li><a href="#">Directory</a></li>
+                  <li><a href="#">Outages</a></li>
+                  <li><a href="#">Rankings</a></li>
+                </ul>
+              </li>
+              <li><a href="#">Stations</a></li>
+              <li><a href="#">Hot Cars</a></li>
+              <li><a href="#">Data</a></li>
+              <li><a href="#">Contact</a></li>
+            </ul>
+          </div><!--/.nav-collapse -->
+        </div>
+      </div>
+    </div>
+
+
+<div class="container">
+
+<div class="main-content">
+<a id="top"></a>
+<h2>Rankings</h2>
+
+<p>Explore which escalators are the most broken, and which stations have the
+best and worst performing escalators. Also explore historical daily counts
+of escalator breaks and inspections.</p>
+
+<p>
+<a href="#escalatorRankings">Escalator Rankings</a>&nbsp;
+<a href="#stationRankings">Station Rankings</a>&nbsp;
+<a href="#trends">Trends</a>&nbsp;
+</p>
+
+<!-- ESCALATOR RANKINGS -->
+<a id="escalatorRankings"></a>
+<h3>Escalator Rankings (<a href="#top">top</a>)</h3>
+<p id="sort_instructions"></p>
+<p><a href="/glossary" onclick="javascript:void window.open('/glossary','','width=600,height=600,toolbar=0,menubar=0,location=0,status=0,scrollbars=1,resizable=1,left=0,top=0');return false;">Glossary</a></p>
+
+<!-- Rankings table for those without Javascript -->
+<div id='escalatorRankingsTableManual'>
+</div>
+
+<!-- Rankings table for those with Javascript -->
+<div style="font: 8px;">
+<a id="escRankings_d1" href="#">1d</a>&nbsp;
+<a id="escRankings_d3" href="#">3d</a>&nbsp;
+<a id="escRankings_d7" href="#">7d</a>&nbsp;
+<a id="escRankings_d14" href="#">14d</a>&nbsp;
+<a id="escRankings_d28" href="#">28d</a>&nbsp;
+<a id="escRankings_AllTime" href="#">All Time</a><br><br>
+</div>
+<div style="font-weight:bold;" id="escRankings_header"></div>
+<div id='escalatorRankingsTableChartDiv'></div>
+
+<!-- STATION RANKINGS -->
+<a id="stationRankings"></a>
+<h3>Station Rankings (<a href="#top">top</a>)</h3>
+<a href="/glossary" onclick="javascript:void window.open('/glossary','','width=600,height=600,toolbar=0,menubar=0,location=0,status=0,scrollbars=1,resizable=1,left=0,top=0');return false;">Glossary</a>
+<div id="stationRankingsTableChartDiv"></div>
+
+<a id="trends"></a>
+<h3>Trends (<a href="#top">top</a>)</h3>
+<p>Number of breaks (red) and inspections (blue) per day.</p>
+<div id='trendsPlotDiv' style="width:700px; height:300px;"></div>
+<p>Note: "Data outages" refer to times when escalator data was not 
+collected due to technical difficulties, resulting in low counts.</p>
+
+
+<div class=updateTime>
+<p>Page Last Updated: 07/16/13 06:36 PM</p>
+</div>
+
+<script type="text/javascript" src="https://www.google.com/jsapi"></script>
+<script type="text/javascript" src="escalatorRankings.js"></script>
+</div> <!-- main-content -->
+
+
+      <footer class="footer">
+        <p class="text-center">&copy; Lee M. Mendelowitz 2013</p>
+        <p class="text-center"><a href="https://twitter.com/MetroEscalators" class="twitter-follow-button" data-show-count="false">Follow @MetroEscalators</a> <a href="https://twitter.com/MetroHotCars" class="twitter-follow-button" data-show-count="false">Follow @MetroHotCars</a></p>
+      </footer>
+
+</div> <!-- container-->
+
+    <!-- Le javascript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.1/jquery.min.js"></script>
+    <script src="http://netdna.bootstrapcdn.com/twitter-bootstrap/2.3.2/js/bootstrap.min.js"></script>
+    <!--<script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');</script>-->
+    %if defined(scriptsToInclude):
+    %scriptsToInclude()
+    %end
+    <script src="https://platform.twitter.com/widgets.js"></script>
+  </body>
+</html>

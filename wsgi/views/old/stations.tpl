@@ -3,14 +3,12 @@
 %import metroEscalatorsWeb
 %from metroTimes import toLocalTime
 
-<div class="container">
-<div class="main-content">
 
 <h2>Stations</h2>
-<div id="stationsTableChartDiv" style="width:100%;"></div>
+<div id="stationsTableChartDiv"></div>
 
 <div id="stationTableManual">
-<table class="station_listing table table-hover table-bordered">
+<table class="station_listing">
 <tr>
     <th>Station Name</th>
     <th>Lines</th>
@@ -44,12 +42,7 @@
 <p>Page Last Updated: {{updateStr}}</p>
 </div>
 
-</div> <!-- end main-content -->
-</div> <!-- end container -->
-
-%def scriptsToInclude():
 <script type="text/javascript" src="https://www.google.com/jsapi"></script>
 <script type="text/javascript" src="/js/stations.js"></script>
-%end
 
-%rebase layout title='DC Metro Metrics: Stations', scriptsToInclude=scriptsToInclude
+%rebase layout title='DC Metro Metrics: Stations', description=''

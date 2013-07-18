@@ -1,0 +1,132 @@
+<html>
+
+<head>
+<script type="text/javascript" src="https://www.google.com/jsapi"></script>
+<script type="text/javascript">
+  google.load('visualization', '1', {packages: ['corechart', 'table']});
+</script>
+
+</head>
+
+<body>
+
+<div id='tableChartDiv'></div>
+<div id='tableChartDivAsc'></div>
+<div id='tableChartDivDesc'></div>
+<div id='pieChartDiv'></div>
+
+</body>
+
+<script type="text/javascript">
+
+var data_json = {"rows":[{"c":[{"v":"HANDRAIL"},{"v":2}]},{"c":[{"v":"MINOR REPAIR"},{"v":7}]},{"c":[{"v":"TURNED OFF/WALKER"},{"v":4}]},{"c":[{"v":"CALLBACK/REPAIR"},{"v":16}]},{"c":[{"v":"SCHEDULED SUPPORT"},{"v":1}]},{"c":[{"v":"SAFETY INSPECTION"},{"v":2}]},{"c":[{"v":"REHAB/MODERNIZATION"},{"v":11}]},{"c":[{"v":"INCIDENT/ACCIDENT"},{"v":1}]},{"c":[{"v":"SAFETY WORK ORDER"},{"v":1}]},{"c":[{"v":"MAJOR REPAIR"},{"v":7}]}],"cols":[{"type":"string","id":"symptom","label":"Symptom"},{"type":"number","id":"count","label":"Number"}]};
+
+
+// Set the property for an entire datatable row
+var setRowProperty = function(dt, rowNum, property)
+{
+    var numCols = dt.getNumberOfColumns();
+    for(var i=0; i<numCols; i++)
+    {
+        dt.setProperties(rowNum, i, property);
+    }
+    return true;
+};
+
+var PlotHandler = function()
+{
+    var self = this;
+    this.dataTable = new google.visualization.DataTable(data_json);
+    this.dataTable.sort([{column: 1, desc: true}]);
+
+    // Compute the total symptom count
+    var keys = [{column:0, modifier:function(val){ return 1;}, type:'number'}]; // Group all rows together
+    var columns = [{column : 1, 'aggregation' : google.visualization.data.sum, 'type' : 'number'}];
+    this.totalCount = google.visualization.data.group(this.dataTable, keys, columns).getValue(0,1);
+
+    this.pieChart = new google.visualization.PieChart(document.getElementById('pieChartDiv'));
+    this.tableChart = new google.visualization.Table(document.getElementById('tableChartDiv'));
+//    this.tableChartAsc = new google.visualization.Table(document.getElementById('tableChartDivAsc'));
+ //   this.tableChartDesc = new google.visualization.Table(document.getElementById('tableChartDivDesc'));
+
+    this.drawPieChart = function() {
+
+        // Set chart options
+        var options = {title:'Escalator Outages',
+                       width:600,
+                       height:400,
+                       backgroundColor: {fill: 'transparent', stroke: 'black', strokeWidth: 0},
+                       chartArea : {width:'100%'}
+                       };
+
+        // Instantiate and draw our chart, passing in some options.
+        self.pieChart.draw(self.dataTable, options);
+    };
+
+    // Define a sort handler to keep the Total row in the
+    // last row.
+    this.tableSortHandler = function(e)
+    {
+        var msg = '\nGot event: Ascending: ' + e.ascending + ', col: ' + e.column;
+        //alert(msg);
+
+        var dtClone = self.dataTable.clone();
+
+        // Apply the sort to the cloned table
+        dtClone.sort({column : e.column, desc: !e.ascending});
+
+        // Add a row with the Total Symptom Count
+        dtClone.addRow(['TOTAL', self.totalCount]);
+        var lastRow = dtClone.getNumberOfRows()-1;
+        var prop = {style : 'color: blue;'};
+        setRowProperty(dtClone, lastRow, prop);
+        //dtClone.setProperties(lastRow,0, {style: 'color: blue;'});
+        //dtClone.setProperties(lastRow,1, {style: 'color: blue;'});
+
+
+        var config = {sort : 'event', sortAscending : e.ascending, sortColumn : e.column, width:600, allowHtml: true};
+        self.tableChart.draw(dtClone, config);
+    };
+    this.tableReadyHandler = function()
+    {
+        var sortInfo = self.tableChart.getSortInfo();
+        var msg = 'Table is ready!\nCur Sort info: acending=' + sortInfo['ascending'] + ', col=' + sortInfo['column'] + '.';
+        //alert(msg);
+    };
+
+    this.drawTableChart = function() {
+        var dtClone = self.dataTable.clone();
+        dtClone.sort([{column: 1, desc: true}]);
+        dtClone.addRow(['TOTAL', self.totalCount])
+
+        var config = {sort: 'event', sortAscending: false, sortColumn : 1, width : 600, allowHtml: true};
+        var lastRow = dtClone.getNumberOfRows()-1;
+        //dtClone.setRowProperties(lastRow, {className : 'totalRow'});
+        var prop = {style : 'color: blue;'};
+        setRowProperty(dtClone, lastRow, prop);
+        //dtClone.setProperties(lastRow,0, {style: 'color: blue;'});
+        //dtClone.setProperties(lastRow,1, {style: 'color: blue;'});
+        self.tableChart.draw(dtClone, config);
+
+    };
+    
+    // Add table listeners
+    google.visualization.events.addListener(this.tableChart, 'sort', this.tableSortHandler);
+    google.visualization.events.addListener(this.tableChart, 'ready',  this.tableReadyHandler);
+
+    this.drawAll = function()
+    {
+        self.drawPieChart();
+        self.drawTableChart();
+    };
+    return true;
+};
+
+var plotHandler = new PlotHandler();
+
+// Set a callback to run when the Google Visualization API is loaded.
+google.setOnLoadCallback(plotHandler.drawAll);
+
+</script>
+
+</html>

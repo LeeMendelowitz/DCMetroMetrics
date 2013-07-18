@@ -1,16 +1,12 @@
 %# Listing for an escalator
-%from metroEscalatorsWeb import stationCodeToWebPath, symptomCategoryToClass
+%from metroEscalatorsWeb import stationCodeToWebPath
 %from metroTimes import secondsToDHM, secondsToHMS, toLocalTime
 
 %description = "DC Metro Escalator {0} at {1} station, {2} {3}. Escalator performance history, and more."
 %description = description.format(unitId, escData['station_name'], escData['station_desc'], escData['esc_desc'])
 %#escalator data
-
-<div class="container">
-<div class="main-content">
-
 <h2>Escalator {{unitId}}</h2>
-<table class="escalator_data table table-bordered table-hover table-striped" style="min-width:250px; width:40%">
+<table class="escalator_data">
 %stationWebPath = stationCodeToWebPath(escData['station_code'])
 <tr> <td>Station Name</td><td><a href="{{stationWebPath}}">{{escData['station_name']}}</a></td></tr>
 <tr> <td>Station Code</td><td>{{escData['station_code']}}</td> </tr>
@@ -20,7 +16,7 @@
 
 %#escalator summary
 <h2>Summary</h2>
-<table class="escalator_summary table table-bordered table-hover table-striped" style="min-width:250px; width:40%">
+<table class="escalator_summary">
 <tr> <td>Num. Breaks</td><td>{{escSummary['numBreaks']}}</td> </tr>
 <tr> <td>Num. Fixes</td><td>{{escSummary['numFixes']}}</td> </tr>
 <tr> <td>Num. Inspections</td><td>{{escSummary['numInspections']}}</td></tr>
@@ -30,7 +26,7 @@
 </table>
 
 <h2>History</h2>
-<table class="status table table-hover">
+<table class="status">
 <tr>
     <th>Time</th>
     <th>Status</th>
@@ -47,8 +43,7 @@
 %      durationStr = secondsToDHM(duration.total_seconds())
 %   end
 %   tickDeltaStr = secondsToHMS(status.get('tickDelta',0.0))
-%   symptomCat = status['symptomCategory'].lower()
-<tr class={{symptomCategoryToClass[symptomCat]}}>
+<tr class={{status['symptomCategory'].lower()}}>
     <td>{{timeStr}}</td>
     <td>{{status['symptom']}}</td>
     <td>{{durationStr}}</td>
@@ -61,9 +56,6 @@
 %updateStr = toLocalTime(curTime).strftime(tf)
 <div class=updateTime>
 <p>Page Last Updated: {{updateStr}}</p>
-</div>
-
-</div>
 </div>
 
 %rebase layout title=unitId, description=description

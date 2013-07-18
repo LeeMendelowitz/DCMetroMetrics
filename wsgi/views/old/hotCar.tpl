@@ -5,15 +5,12 @@
 
 %description = "Reports for #wmata #hotcar {0} of the WMATA Metrorail System.".format(carNum)
 
-<div class="container">
-<div class="main-content">
-
 <h2>HotCar {{carNum}}</h2>
 
 <h3>Summary</h3>
 
 %lineStr = lineToColoredSquares(colors)
-<table class="table table-hover table-striped table-bordered" style="min-width:250px; width:40%">
+<table>
 <tr><td>Num. Reports</td><td>{{numReports}}</td></tr>
 <tr><td>Lines</td><td>{{!lineStr}}</td></tr>
 <tr><td>Last Report Time</td><td>{{lastReportTimeStr}}</td></tr>
@@ -35,9 +32,6 @@
 %updateStr = toLocalTime(curTime).strftime(tf)
 <div class=updateTime>
 <p>Page Last Updated: {{updateStr}}</p>
-</div>
-
-</div>
 </div>
 
 %rebase layout title='Hot Car %i'%carNum, description=description
