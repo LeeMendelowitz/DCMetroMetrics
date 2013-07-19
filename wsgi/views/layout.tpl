@@ -64,7 +64,7 @@
 </div>
 
 
-<footer class="footer">
+<footer class="footer container">
   <p class="text-center">&copy; Lee M. Mendelowitz 2013</p>
   <p class="text-center"><a href="https://twitter.com/MetroEscalators" class="twitter-follow-button" data-show-count="false">Follow @MetroEscalators</a> <a href="https://twitter.com/MetroHotCars" class="twitter-follow-button" data-show-count="false">Follow @MetroHotCars</a></p>
 </footer>

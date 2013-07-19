@@ -8,12 +8,21 @@ body {
   -o-background-size: cover;
   background-size: cover;
 }
+
+@media (max-width:979px){
+    body{
+        padding-top:0px;
+        padding-bottom:0px;
+    }
+}
+
 .footer {
   margin-top: 10px;
   padding-top: 10px;
   background-color: white;
   border-radius: 6px 6px 6px 6px;
 }
+
 .navbar .nav > li > .dropdown-menu:after {
   border: none;
 }
@@ -27,8 +36,6 @@ body {
 
 .main-content {
   padding: 25px;
-  background-color: #D0D0D0;
-  background-color: #FBFCE6;
   background-color: white;
   border-radius: 6px 6px 6px 6px;
 }

@@ -494,6 +494,8 @@ classToPageGenerator =  \
     }
 
 ############################################
+# Re-generate a single webpage, specified by the document from
+# the db.webpages collection
 def updatePage(doc, curTimeLocal = None, logFile = sys.stdout):
     """
     Re-generate the webpage given by doc.
@@ -509,3 +511,14 @@ def updatePage(doc, curTimeLocal = None, logFile = sys.stdout):
     timeStamp = curTimeLocal.strftime(tf)
     logFile.write("%s: Updating webpage: %s\n"%(timeStamp,str(doc)))
     pageGenerator(doc)
+
+#############################################
+# Re-generate all webpages
+def updateAllPages():
+    """
+    Re-generate all webpages
+    """
+    reload()
+    db = dbUtils.getDB()
+    for doc in db.webpages.find():
+        updatePage(doc)
