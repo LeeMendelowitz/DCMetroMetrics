@@ -117,6 +117,9 @@ def initDB():
     # The Data downloads page
     queries.append({'class' : 'data'})
 
+    # The Press page
+    queries.append({'class' : 'press'})
+
     # The page for each hotcars
     hotCarNums = db.hotcars.distinct('car_number')
     for carNum in hotCarNums:
@@ -257,6 +260,12 @@ def genHomePage(doc):
 def genDataPage(doc):
     content = makePage('data')
     filename = 'data.html'
+    writeContent(filename, content)
+
+#########
+def genPressPage(doc):
+    content = makePage('press')
+    filename = 'press.html'
     writeContent(filename, content)
 
 #####################################################
@@ -490,8 +499,10 @@ classToPageGenerator =  \
       'hotcar' : genHotCarPage,
       'glossary' : genGlossaryPage,
       'data' : genDataPage,
+      'press' : genPressPage,
       'home' : genHomePage
     }
+
 
 ############################################
 # Re-generate a single webpage, specified by the document from

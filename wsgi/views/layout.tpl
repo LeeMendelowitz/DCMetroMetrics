@@ -50,6 +50,7 @@
           <li><a href="/stations">Stations</a></li>
           <li><a href="/hotcars">Hot Cars</a></li>
           <li><a href="/data">Data</a></li>
+          <li><a href="/press">Press</a></li>
           <li><a href="mailto:info@dcmetrometrics.com" target="_blank">Contact</a></li>
         </ul>
       </div><!--/.nav-collapse -->

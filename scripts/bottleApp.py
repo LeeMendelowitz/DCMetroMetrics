@@ -77,6 +77,13 @@ def data():
     filename = 'data.html'
     return static_file(filename, root=DYNAMIC_DIR)
 
+########################################
+@bottle.route('/press')
+@bottle.route('/press/')
+def press():
+    filename = 'press.html'
+    return static_file(filename, root=DYNAMIC_DIR)
+
 #########################################
 @bottle.route('/data/<filename>')
 def serve_data(filename):

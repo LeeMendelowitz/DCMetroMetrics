@@ -40,6 +40,37 @@ body {
   border-radius: 6px 6px 6px 6px;
 }
 
+.press-item {
+  margin-top: 10px;
+  margin-bottom: 20px;
+  background-color: #eee;
+  
+  #background-color:#F2F6FF;
+  #background-color:#E4EDFF;
+  #background-color:#E9F1FF;
+
+  text-align: left;
+  height:100%;
+  -webkit-border-radius: 10px;
+     -moz-border-radius: 10px;
+          border-radius: 10px;
+  padding: 10px; 
+}
+
+.press-item img
+{
+  display: block;
+  max-width:200px;
+  max-height:100px;
+  margin-top:10px;
+  margin-bottom:10px;
+}
+
+.press-item:hover {
+  background-color:#D2E1FF;
+}
+
+
 .updateTime
 {
     padding-top:20px;
