@@ -13,7 +13,7 @@ have been mentioned or featured in the following articles:
 <div class="row-fluid">
 
 	<div class="span4 press-item">
-		<h4>WUSA 9</h4>
+		<!-- <h4>WUSA 9</h4> -->
 		<img src="/static/wusa9logo.gif"><br>
 		<p>July 18, 2013:<br> 
 			<a href="http://www.wusa9.com/news/article/266991/158/Help-WUSA9-Report-on-Metro-Hot-Cars-and-Other-Problems-Join-Alfarones-Army" target="_blank">
@@ -25,7 +25,7 @@ have been mentioned or featured in the following articles:
 	</div>
 
 	<div class="span4 press-item">
-		<h4>The DCist</h4>
+		<!--<h4>The DCist</h4> -->
 		<img src="/static/dcist.logo.gif">
 		<p>
 			May 16, 2013:<br> 
@@ -34,7 +34,7 @@ have been mentioned or featured in the following articles:
 	</div>
 
 	<div class="span4 press-item">
-		<h4>Unsuck DC Metro</h4>
+		<!-- <h4>Unsuck DC Metro</h4> -->
 		<img src="/static/unsuckdcmetro.logo.jpg">
 		<p>
 			April 10, 2013:<br> 
@@ -63,8 +63,8 @@ have been mentioned or featured in the following articles:
 	</div>
 
 	<div class="press-item span4">
-		<h4>The Daily Caller</h4>
-		<br>
+		<!-- <h4>The Daily Caller</h4> -->
+		<img src="/static/dailycaller.logo.png"><br>
 		<p>
 			April 10, 2013:<br> 
 			<a href="http://dailycaller.com/2013/04/10/the-guy-in-charge-of-dc-metro-escalators-just-got-promoted/" target="_blank">The guy in charge of DC Metro escalators just got promoted</a>
