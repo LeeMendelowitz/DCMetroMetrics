@@ -14,35 +14,41 @@ have been mentioned or featured in the following articles:
 
 	<div class="span4 press-item">
 		<!-- <h4>WUSA 9</h4> -->
-		<img src="/static/wusa9logo.gif"><br>
+		<a href="http://www.wusa9.com/news/article/266991/158/Help-WUSA9-Report-on-Metro-Hot-Cars-and-Other-Problems-Join-Alfarones-Army" target="_blank">
+			<img src="/static/wusa9logo.gif">
+		</a>
 		<p>July 18, 2013:<br> 
 			<a href="http://www.wusa9.com/news/article/266991/158/Help-WUSA9-Report-on-Metro-Hot-Cars-and-Other-Problems-Join-Alfarones-Army" target="_blank">
-			Report Metro Hot Cars and Other Problems. Join WUSA9's Debra Alfarone's Army!
+				Report Metro Hot Cars and Other Problems. Join WUSA9's Debra Alfarone's Army!
 			</a>
 		</p>
 		<br>
 		<!-- <object id="flashObj" width="480" height="270" classid="clsid:D27CDB6E-AE6D-11cf-96B8-444553540000" codebase="http://download.macromedia.com/pub/shockwave/cabs/flash/swflash.cab#version=9,0,47,0"><param name="movie" value="http://c.brightcove.com/services/viewer/federated_f9?isVid=1&isUI=1" /><param name="bgcolor" value="#eee" /><param name="flashVars" value="videoId=2553861268001&playerID=1685956553001&playerKey=AQ~~,AAAABvaL9Hk~,mLC66bU8hPOBGO8BPO1coBAeF5n-gkxo&domain=embed&dynamicStreaming=true" /><param name="base" value="http://admin.brightcove.com" /><param name="seamlesstabbing" value="false" /><param name="allowFullScreen" value="true" /><param name="swLiveConnect" value="true" /><param name="allowScriptAccess" value="always" /><embed src="http://c.brightcove.com/services/viewer/federated_f9?isVid=1&isUI=1" bgcolor="#FFFFFF" flashVars="videoId=2553861268001&playerID=1685956553001&playerKey=AQ~~,AAAABvaL9Hk~,mLC66bU8hPOBGO8BPO1coBAeF5n-gkxo&domain=embed&dynamicStreaming=true" base="http://admin.brightcove.com" name="flashObj" width="480" height="270" seamlesstabbing="false" type="application/x-shockwave-flash" allowFullScreen="true" allowScriptAccess="always" swLiveConnect="true" pluginspage="http://www.macromedia.com/shockwave/download/index.cgi?P1_Prod_Version=ShockwaveFlash"></embed></object> -->
 	</div>
 
-	<div class="span4 press-item">
+		<div class="span4 press-item">
 		<!--<h4>The DCist</h4> -->
-		<img src="/static/dcist.logo.gif">
+		<a href="http://www.washingtonpost.com/blogs/dr-gridlock/wp/2013/07/19/twitter-and-metros-hot-cars/" target="_blank">
+			<img src="/static/wapo.logo.png">
+		</a>
 		<p>
-			May 16, 2013:<br> 
-			<a href="http://dcist.com/2013/05/a_guide_to_recognizing_your_metro_c.php" target="_blank">A Guide to Recognizing Your Metro Critics</a>
+			July 19, 2013:<br> 
+			<a href="http://www.washingtonpost.com/blogs/dr-gridlock/wp/2013/07/19/twitter-and-metros-hot-cars/" target="_blank">
+				Twitter and Metro’s hot cars
+			</a>
 		</p>
 	</div>
 
 	<div class="span4 press-item">
-		<!-- <h4>Unsuck DC Metro</h4> -->
-		<img src="/static/unsuckdcmetro.logo.jpg">
+		<!--<h4>The DCist</h4> -->
+		<a href="http://dcist.com/2013/05/a_guide_to_recognizing_your_metro_c.php" target="_blank">
+			<img src="/static/dcist.logo.gif">
+		</a>
 		<p>
-			April 10, 2013:<br> 
-			<a href="http://unsuckdcmetro.blogspot.com/2013/04/metro-escalator-boss-to-run-rails.html" target="_blank">Metro Escalator Boss To Run Rails</a>
-		</p>
-		<p>
-			May 3, 2013:<br> 
-			<a href="http://unsuckdcmetro.blogspot.com/2013/05/unspinning-metros-escalator-issues.html" target="_blank">Unspinning Metro's Escalator Issues</a>
+			May 16, 2013:<br> 
+			<a href="http://dcist.com/2013/05/a_guide_to_recognizing_your_metro_c.php" target="_blank">
+				A Guide to Recognizing Your Metro Critics
+			</a>
 		</p>
 	</div>
 
@@ -51,11 +57,27 @@ have been mentioned or featured in the following articles:
 
 <div class="row-fluid">
 
-	
+	<div class="span4 press-item">
+		<!-- <h4>Unsuck DC Metro</h4> -->
+		<a href="http://unsuckdcmetro.blogspot.com/2013/05/unspinning-metros-escalator-issues.html" target="_blank">
+			<img src="/static/unsuckdcmetro.logo.jpg">
+		</a>
+		<p>
+			April 10, 2013:<br> 
+			<a href="http://unsuckdcmetro.blogspot.com/2013/04/metro-escalator-boss-to-run-rails.html" target="_blank">Metro Escalator Boss To Run Rails</a>
+		</p>
+		<p>
+			May 3, 2013:<br> 
+			<a href="http://unsuckdcmetro.blogspot.com/2013/05/unspinning-metros-escalator-issues.html" target="_blank">
+				Unspinning Metro's Escalator Issues
+			</a>
+		</p>
+	</div>
 
-	<div class="press-item span4">
-		<h4>Hot Air</h4>
-		<br>
+	<div class="press-item span4">	
+		<a href="http://hotair.com/archives/2013/04/10/d-c-promotes-guy-who-runs-most-ruinously-broken-part-of-metro-to-run-the-whole-system/" target="_blank">
+			<img src="/static/hotair.logo.gif">
+		</a>
 		<p>
 			April 10, 2013:<br> 
 			<a href="http://hotair.com/archives/2013/04/10/d-c-promotes-guy-who-runs-most-ruinously-broken-part-of-metro-to-run-the-whole-system/" target="_blank">D.C. promotes guy who runs most ruinously broken part of Metro to run the whole system</a>
@@ -64,16 +86,25 @@ have been mentioned or featured in the following articles:
 
 	<div class="press-item span4">
 		<!-- <h4>The Daily Caller</h4> -->
-		<img src="/static/dailycaller.logo.png"><br>
+		<a href="http://dailycaller.com/2013/04/10/the-guy-in-charge-of-dc-metro-escalators-just-got-promoted/" target="_blank">
+			<img src="/static/dailycaller.logo.png">
+		</a>
 		<p>
 			April 10, 2013:<br> 
-			<a href="http://dailycaller.com/2013/04/10/the-guy-in-charge-of-dc-metro-escalators-just-got-promoted/" target="_blank">The guy in charge of DC Metro escalators just got promoted</a>
+			<a href="http://dailycaller.com/2013/04/10/the-guy-in-charge-of-dc-metro-escalators-just-got-promoted/" target="_blank">
+				The guy in charge of DC Metro escalators just got promoted
+			</a>
 		</p>
 	</div>
 
+</div> <!-- end row -->
+
+<div class="row-fluid">
+
 		<div class="press-item span4">
-		<h4>Architect Magazine</h4>
-		<br>
+		<a href="http://www.architectmagazine.com/architecture/metro-architect-plans-to-revise-harry-weese-station-design.aspx" target="_blank">
+			<img src="/static/architect.logo.png">
+		</a>
 		<p>
 			April 10, 2013:<br> 
 			<a href="http://www.architectmagazine.com/architecture/metro-architect-plans-to-revise-harry-weese-station-design.aspx" target="_blank">Metro Architect Plans to Revise Harry Weese Station Design</a>

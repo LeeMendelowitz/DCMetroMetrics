@@ -41,6 +41,7 @@ body {
 }
 
 .press-item {
+  height:180px;
   margin-top: 10px;
   margin-bottom: 20px;
   background-color: #eee;
@@ -50,20 +51,20 @@ body {
   #background-color:#E9F1FF;
 
   text-align: left;
-  height:100%;
+  
   -webkit-border-radius: 10px;
      -moz-border-radius: 10px;
           border-radius: 10px;
-  padding: 10px; 
+  padding: 10px;
 }
 
 .press-item img
 {
   display: block;
   max-width:200px;
-  max-height:100px;
+  max-height:75px;
   margin-top:10px;
-  margin-bottom:10px;
+  margin-bottom:15px;
 }
 
 .press-item:hover {
