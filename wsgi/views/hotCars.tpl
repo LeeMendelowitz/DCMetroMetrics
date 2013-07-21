@@ -34,6 +34,9 @@
 
 <h3>Most reported (<a href="#top">top</a>) </h3>
 
+<p>
+    This table shows the number of #wmata #hotcar reports for each #hotcar over different time periods. Click on the column headers to sort.
+</p>
 <div id="MostReportedTableChartDiv" style="width:100%;"></div>
 
 <a id="plots"></a>
@@ -56,6 +59,10 @@
 
 <a id="byDate"></a>
 <h4>Reports by Date (<a href="#top">top</a>) </h4>
+<p>
+    This plot shows the number of daily #wmata #hotcar reports (orange) and
+    the daily high temperature for Washington, DC (red).
+</p>
 <div id="timeSeriesDiv" style="width:700px; height:300px;"></div>
 
 <a id="allreports"></a>

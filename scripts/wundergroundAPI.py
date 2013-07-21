@@ -85,7 +85,7 @@ class WundergroundAPI(object):
         nextCallTime = minCallTime + timedelta(minutes=1)
         sleepSeconds = (nextCallTime - now).total_seconds()
         if sleepSeconds > 0:
-            print 'Sleeping %.2f seconds'%sleepSeconds
+            #print 'Sleeping %.2f seconds'%sleepSeconds
             do_sleep(sleepSeconds)
         return True
     
@@ -102,7 +102,6 @@ class WundergroundAPI(object):
             raise TypeError("zipcode must be 5 digits")
         dateStr = d.strftime("%Y%m%d")
         query = self._buildUrl(query_template, dateStr=dateStr, zipcode=zipcode)
-        print query
         res = self._request(query, sleep=sleep)
         history = res['history']
         return history
