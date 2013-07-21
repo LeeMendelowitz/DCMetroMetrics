@@ -369,7 +369,7 @@ def genHotCars(doc):
     dtHotCarsBySeries = hotCarsWeb.makeCarSeriesGoogleTable(summary['seriesToCount'])
     dtHotCarsByColorCustom = hotCarsWeb.makeColorCountsGoogleTableCustom(summary['colorToCount'])
     dtHotCarsByColor = hotCarsWeb.makeColorCountsGoogleTable(summary['colorToCount'])
-    dtHotCarsTimeSeries = hotCarsWeb.makeReportTimeSeries()
+    dtHotCarsTimeSeries = hotCarsWeb.makeHotCarTimeSeries()
     numReports = sum(d['numReports'] for d in hotCarData.itervalues())
 
     kwargs = { 'summary' : summary,

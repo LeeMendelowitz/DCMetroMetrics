@@ -162,6 +162,12 @@ def getTwitterAPI():
         T = twitterUtils.getApi(keys)
     return T
 
+def getWundergroundAPI():
+    from wundergroundAPI import WundergroundAPI
+    from keys import WundergroundKey
+    key = WundergroundKey()
+    return WundergroundAPI(key, callsPerMinute=10)
+
 ###########################
 # Return a list of unique tweets from a list of tweets
 def uniqueTweets(tweetList):    

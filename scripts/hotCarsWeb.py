@@ -8,6 +8,7 @@ from twitter import TwitterError
 from datetime import datetime, date, timedelta
 from metroTimes import toLocalTime, utcnow
 
+
 def makeTwitterUrl(handle, statusId):
     s = 'https://www.twitter.com/{handle}/status/{statusId:d}'
     return s.format(handle=handle, statusId=statusId)
@@ -287,8 +288,8 @@ def makeColorCountsGoogleTableCustom(colorToCount):
     return dtLineCount
 
 ###############################
-# Get number of reports per day
-def makeReportTimeSeries():
+# Get Time Series of Hot Car Report Count and Daily High Temperature
+def makeHotCarTimeSeries():
     db = dbUtils.getDB()
     hotCarDict = getHotCarToReports()
     reports = [r for rl in hotCarDict.itervalues() for r in rl]
@@ -300,8 +301,52 @@ def makeReportTimeSeries():
     numDays = (today-firstDate).days + 1
     days = [firstDate + timedelta(days=i) for i in range(numDays)]
 
+    dailyTemps = dict(getDailyTemps(firstDate, today))
+    assert(len(dailyTemps) == len(days))
+
     schema = [('date', 'date', 'date'),
-              ('count', 'number', 'count')]
-    rowData = [(d, dateCounts.get(d,0)) for d in days]
+              ('count', 'number', 'Hot Car Reports'),
+              ('temp', 'number', 'DC Temperature')]
+    rowData = [(d, dateCounts.get(d,0), int(dailyTemps.get(d,0)) ) for d in days]
     dtDateCounts = gviz_api.DataTable(schema, rowData)
     return dtDateCounts
+
+################################################
+# Get the max temperatue for each day between
+# firstDay and lastDay.
+# lastDay should be no greater than today.
+def getDailyTemps(firstDay, lastDay = None):
+
+    db = dbUtils.getDB()
+    W = hotCars.getWundergroundAPI()
+    today = date.today()
+    if lastDay is None:
+        lastDay = today
+
+    lastDay = min(lastDay, today)
+    toDateTime = lambda d: datetime(d.year, d.month, d.day)
+
+    # Extract temperatures from database. Convert datetimes to dates.
+    allTemps = db.temperatures.find()
+    dayToTemp = dict((doc['_id'].date(), doc['maxTemp']) for doc in allTemps)
+
+    def genDayTemps():
+        numDays = (lastDay - firstDay).days
+        dateGen = (firstDay + timedelta(days=i) for i in xrange(numDays+1))
+        lastTemp = 0
+        for d in dateGen:
+            maxTemp = dayToTemp.get(d, None)
+            if maxTemp is None or d == today:
+                # Get the temperature from the WundergroundAPI.
+                wdata = W.getHistory(d, zipcode=20009, sleep=True)
+                dailySummary = wdata.get('dailysummary', [])
+                dailySummary = dailySummary[0] if dailySummary else {}
+                maxTemp = float(dailySummary.get('maxtempi', lastTemp)) # Set to yesterday's temp if it's not available
+                dt = toDateTime(d)
+                db.temperatures.update({"_id" : dt}, {"$set" : {'maxTemp' : maxTemp}}, upsert=True)
+            lastTemp = maxTemp
+            yield (d, maxTemp)
+
+    return  list(genDayTemps())
+
+

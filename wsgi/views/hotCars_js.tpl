@@ -128,8 +128,10 @@ var PlotHandler = function()
     this.drawTimeSeries = function() {
         var chart = new google.visualization.AnnotatedTimeLine(document.getElementById('timeSeriesDiv'));
         var opts = {fill:40,
+                    scaleType:'allmaximized',
+                    scaleColumns:[1,0],
                     dateFormat: "EEE, MMM d, yyyy",
-                    colors: ['orange', 'orange'],
+                    colors: ['orange', 'red'],
                     thickness: 2};
         chart.draw(self.hotCarsTimeSeriesDT, opts);
     };
