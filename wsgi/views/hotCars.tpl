@@ -61,9 +61,12 @@
 <h4>Reports by Date (<a href="#top">top</a>) </h4>
 <p>
     This plot shows the number of daily #wmata #hotcar reports (orange) and
-    the daily high temperature for Washington, DC (red).
+    the daily maximum temperature for Washington, DC (red).
 </p>
 <div id="timeSeriesDiv" style="width:700px; height:300px;"></div>
+<p>
+    The daily maximum temperatures are provided by <a href="http://www.wunderground.com/" target="_blank">Weather Underground</a>.
+</p>
 
 <a id="allreports"></a>
 <h3>All reports <a href="#top">(top)</a></h3>
