@@ -205,6 +205,25 @@ class TimeRange(object):
             t = te
         return secOpen
 
+    def overlaps(self, otherTime):
+        """
+        Return True if this TimeRange overlaps the otherTime.
+        otherTime can be a date, datetime, or TimeRange instance.
+        """
+        if isinstance(otherTime, datetime):
+            if isNaive(otherTime):
+                otherTime = otherTime.replace(tzinfo=self.start.tzinfo)
+            return (otherTime >= self.start) and (otherTime <= self.end)
+        elif isinstance(otherTime, date):
+            d = otherTime
+            dateStart = datetime(d.year, d.month, d.day, tzinfo=self.start.tzinfo)
+            dateEnd = dateStart + timedelta(days=1)
+            return not ((self.end < dateStart) or (self.start > dateEnd))
+        elif isinstance(otherTime, TimeRange):
+            return not ((self.end < otherTime.start) or (self.start > otherTime.end))
+        else:
+            raise TypeError("otherTime must be date, datetime, or TimeRange")
+
 ##################################################
 def secondsToDHM(seconds):
     secondsPerDay = 24 * 3600

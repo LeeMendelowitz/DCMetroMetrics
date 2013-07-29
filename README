@@ -4,6 +4,9 @@ The "Repo Layout" section of this README has been edited to provide information 
 the DC Metro Metrics layout, but the rest of this document provides generic information
 about OpenShift.
 
+The scheme for the MongoDB is available here:
+https://docs.google.com/spreadsheet/ccc?key=0ApJ9mCqX3jvVdGpBTzhHY0phclR0dm1Bc0hqRUZXNWc&usp=sharing
+
 Repo Layout
 ===========
 wsgi/ - Externally exposed wsgi code goes.

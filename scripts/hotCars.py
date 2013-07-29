@@ -242,8 +242,6 @@ def tick(db, tweetLive = False, log=sys.stderr):
     maxTweetId = max([t.id for t in tweets]) if tweets else 0
     maxTweetId = max(maxTweetId, lastTweetId)
 
-    # Get tweets which have been manually curated
-    tweets.extend(getManuallyTaggedTweets(db, log=log))
 
     # Get tweets which mention MetroHotCars
     tweets.extend(getMentions(curTime=curTime))
@@ -269,6 +267,15 @@ def tick(db, tweetLive = False, log=sys.stderr):
     tweetData = [(t,getHotCarData(t.text)) for t in filteredTweets]
     tweetData = [(t,hcd) for t,hcd in tweetData if tweetIsValid(t, hcd)]
     tweetData = filterDuplicateReports(tweetData, log=log)
+    tweetIds = set(t.id for t,hcd in tweetData)
+
+    # Get tweets which have been manually curated. We don't check if
+    # these manually tagged tweets are duplicate reports.
+    manualTweets = getManuallyTaggedTweets(db, log=log)
+    manualTweetData = [(t,getHotCarData(t.text)) for t in manualTweets if filterPass(t)]
+    manualTweetData = [(t,hcd) for t,hcd in manualTweetData if tweetIsValid(t, hcd) and\
+                                                               t.id not in tweetIds]
+    tweetData.extend(manualTweetData)
 
     log.write('Filtered to %i tweets after removing invalid and duplicate reports\n'%len(tweetData))
     log.write('Have %i tweets about hot cars\n'%len(tweetData))

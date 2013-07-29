@@ -789,8 +789,8 @@ def summarizeStatuses(statusList, startTime, endTime):
             raise RuntimeError('summarizeStatuses: status is missing end_time field')
 
     # Summarize the time allocation to various symptoms for this time window
-    symptomCodeToTime = statusGroup.symptomTimeAllocation
-    symptomCodeToAbsTime = statusGroup.symptomAbsTimeAllocation
+    symptomCodeToTime = statusGroup.symptomCodeTimeAllocation
+    symptomCodeToAbsTime = statusGroup.symptomCodeAbsTimeAllocation
     symptomCategoryToTime = statusGroup.timeAllocation
     symptomCategoryToAbsTime = statusGroup.absTimeAllocation
 
@@ -847,4 +847,20 @@ def getAllEscalatorSummaries(startTime=None, endTime=None):
 
     return escToSummary
 
+###############################################################################
+# Get all escalator statuses.
+# Return a dictionary from escalator to status list, in chronological order
+def getAllEscalatorStatuses():
+    updateGlobals(force=False)
+    db = getDB()
+
+    statuses = list(db.escalator_statuses.find({}, sort=[('time',pymongo.ASCENDING)]))
+    escIdToStatuses = defaultdict(list)
+    for s in statuses:
+        escIdToStatuses[s['escalator_id']].append(s)
+    for sl in escIdToStatuses.itervalues():
+        for s in sl:
+            s['time'] = s['time'].replace(tzinfo=tzutc)
+        addStatusAttr(sl[::-1])
+    return escIdToStatuses
 updateGlobals()
