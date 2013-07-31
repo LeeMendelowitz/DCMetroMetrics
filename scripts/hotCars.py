@@ -608,7 +608,7 @@ def getForbiddenCarsByMention():
 # only do this once per 90 sec.
 def getMentions(curTime):
     db = dbUtils.getDB()
-    appState = next(db.hotcars_appstate.find({'_id' : 1}))
+    appState = db.hotcars_appstate.find_one({'_id' : 1})
     lastMentionsCheckTime = appState.get('lastMentionsCheckTime', None)
     if lastMentionsCheckTime is not None:
         lastMentionsCheckTime = lastMentionsCheckTime.replace(tzinfo=tzutc)
