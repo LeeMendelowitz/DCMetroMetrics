@@ -34,7 +34,6 @@ class Incident(object):
                 raise RuntimeError('Key missing in incident data: %s'%k)
 
         self.data = data # Store a copy of the original data from this object was constructed
-
         self.__dict__.update(data.iteritems())
         self.addAttr()
 
@@ -42,6 +41,15 @@ class Incident(object):
         self.UnitId = self.UnitName + self.UnitType
         self.cleanTimes()
 
+        # Split the station name into a station name and station description.
+        # The station description has information about which entrance the escalator/elevator
+        # is located.
+        self.StationDesc = ''
+        stationName = self.StationName
+        if ',' in stationName:
+            sname, sdesc = stationName.split(',', 1)
+            self.StationName = sname.strip()
+            self.StationDesc = sdesc.strip()
 
     def cleanTimes(self):
         attrs = ['DateOutOfServ', 'TimeOutOfService', 'DateUpdated']

@@ -1,7 +1,7 @@
 # Functions for the MetroEscalators website
 import stations
 import dbUtils
-from dbUtils import StatusGroup
+from statusGroup import StatusGroup
 from StringIO import StringIO
 from operator import itemgetter
 from datetime import datetime, date, timedelta
@@ -104,7 +104,7 @@ def stationList():
 
     recs = []
 
-    systemAvailability = dbUtils.getSystemAvailability()
+    systemAvailability = dbUtils.getSystemAvailability(escalators=True)
     stationToAvailability = systemAvailability['stationToAvailability']
     stationToStatuses = systemAvailability['stationToStatuses']
     numWorking = lambda sl: sum(1 for s in sl if s['symptomCategory']=='ON')
@@ -147,7 +147,7 @@ def escalatorList():
     nameToStationCode = stations.nameToCodes
     codeToStationData = stations.codeToStationData
     recs = []
-    systemAvailability = dbUtils.getSystemAvailability()
+    systemAvailability = dbUtils.getSystemAvailability(escalators=True)
     numWorking = lambda sl: sum(1 for s in sl if s['symptomCategory']=='ON')
 
     curEscStatuses = systemAvailability['lastStatuses']
@@ -185,7 +185,7 @@ def getRankings(startTime=None, endTime=None):
 
     if endTime is None:
         endTime = utcnow()
-    escToSummary = dbUtils.getAllEscalatorSummaries(startTime=startTime, endTime=endTime)
+    escToSummary = dbUtils.getAllEscalatorSummaries(startTime=startTime, endTime=endTime, escalators=True)
 
     def keySort(q):
         def key(k):

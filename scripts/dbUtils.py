@@ -9,6 +9,7 @@ from operator import itemgetter
 import copy
 
 from escalatorDefs import symptomToCategory, OPERATIONAL_CODE
+OP_CODE = OPERATIONAL_CODE
 import stations
 from metroTimes import TimeRange, utcnow, isNaive, toUtc, tzutc
 import gevent
@@ -16,78 +17,8 @@ from statusGroup import StatusGroup, _checkAllTimesNotNaive
 
 invDict = lambda d: dict((v,k) for k,v in d.iteritems())
 
-###############################
-# GLOBALS
-db = None
-unitToEscId = None
-escIdToUnit = None
-symptomToId = None
-symptomCodeToSymptom = None
-escIdToEscData = None
-opCode = OPERATIONAL_CODE
-################################
-
-################################
-def updateGlobals(force=True):
-    global db, unitToEscId, escIdToUnit, symptomToId, symptomCodeToSymptom, escIdToEscData
-    globalList = [db, unitToEscId, escIdToUnit, symptomToId, symptomCodeToSymptom, escIdToEscData]
-    if force or any(g is None for g in globalList):
-        db = getDB()
-
-        # Add the operational code
-        db.symptom_codes.update({'_id' : OPERATIONAL_CODE},
-                                        {'$set' : {'symptom_desc' : 'OPERATIONAL'} },
-                                         upsert=True)
-
-        unitToEscId = getUnitToId(db)
-        escIdToUnit = invDict(unitToEscId)
-        symptomToId = getSymptomToId(db)
-        opCode = symptomToId['OPERATIONAL']
-        symptomCodeToSymptom = invDict(symptomToId)
-        escList = list(db.escalators.find())
-        escIdToEscData = dict((d['_id'], d) for d in escList)
-
-###############################
-def getDB():
-    global db  
-
-    if db is not None:
-        return db
-
-    host = os.environ["OPENSHIFT_MONGODB_DB_HOST"]
-    port = int(os.environ["OPENSHIFT_MONGODB_DB_PORT"])
-    user = os.environ["OPENSHIFT_MONGODB_DB_USERNAME"]
-    password = os.environ["OPENSHIFT_MONGODB_DB_PASSWORD"]
-    client = pymongo.MongoClient(host, port)
-
-    # Try authenticating with admin
-    db = client.admin
-    #serr('Attempting Authentication\n')
-    res = db.authenticate(user, password)
-    #serr('Authenticate returned: %s\n'%str(res))
-
-    db = client.MetroEscalators
-    updateGlobals()
-    return db
-
-########################################
-# Create dictionary from escalator unit id
-# to the pymongo id
-def getUnitToId(db):
-    escList = list(db.escalators.find())
-    unitToEscId = dict((d['unit_id'],d['_id']) for d in escList)
-    return unitToEscId
-
-##########################################
-# Create dictionary from symptom to symptom id
-def getSymptomToId(db):
-    symptoms = list(db.symptom_codes.find())
-    symptomDict = dict((d['symptom_desc'],d['_id']) for d in symptoms)
-    return symptomDict
-
-def getEsc(db, escId):
-    c = db.escalators.find({'_id' : escId})
-    return getOne(c)
+import dbGlobals
+from dbGlobals import *
 
 ##########################################
 # Get one item from the cursor. Return None if there is no item.
@@ -117,8 +48,9 @@ def getFirstStatusSince(statusList, time):
     return getOne(myRecs)
 
 ######################################################################
-def updateAppState(db, lastRunTime = None, nextDailyStatusTime = None):
+def updateAppState(lastRunTime = None, nextDailyStatusTime = None):
     update = {}
+    db = getDB()
     if lastRunTime is not None:
         update['lastRunTime'] = lastRunTime
     if nextDailyStatsTime is not None:
@@ -129,54 +61,53 @@ def updateAppState(db, lastRunTime = None, nextDailyStatusTime = None):
     db.app_state.find_and_modify({'_id' : 1}, update=update, upsert=True)
 
 ########################################
-# Initialize the escalator databased with entries
-# Initialize the escalator_statuses database with default
+# Initialize the escalator database with entries, and
+# initialize the escalator_statuses database with default
 # OPERATIONAL entries
-def initializeEscalators(db, escDataList, curTime):
+def initializeEscalators(escDataList, curTime):
+    db = getDB()
     for d in escDataList:
-        addEscalator(db, curTime, d['unit_id'], d['station_code'],
-                         d['station_name'], d['esc_desc'],
-                         d.get('station_desc',None))
-    updateGlobals()
+        addUnit(curTime, d)
+    dbGlobals.update()
 
 ########################################
 # Add escalator to the database if it does not exist already.
 # Note: This will not modify the escalator attributes if a document
 # with a matching unit_id already exists
-def addEscalator(db, curTime, unit_id, station_code, station_name, esc_desc, station_desc=None):
+def addUnit(curTime, data):
+
+    requiredKeys = ['unit_id', 'station_code', 'station_name', 'station_desc','esc_desc', 'unit_type']
+    if not all(r in data for r in requiredKeys):
+        raise RuntimeError('addUnit: data missing a required key. Has keys %s'%(', '.join(data.keys())))
+
+    db = getDB()
+    
+    unitCollection = db['escalators']
+    statusCollection = db['escalator_statuses']
 
     # See if this escalator already exists in the database
-    db.escalators.ensure_index('unit_id')
-    query = {'unit_id' : unit_id}
-    count = db.escalators.find(query).count()
+    unitCollection.ensure_index('unit_id')
+    query = {'unit_id' : data['unit_id']}
+    count = unitCollection.find(query).count()
     assert(count in (0,1))
-
-    # Update/Add the entry.
-    #db.escalators.find_and_modify(query=query, update=d, upsert=True)
 
     # Add the entry if necessary
     if count == 0:
-        d = { 'unit_id' : unit_id,
-              'station_code' : station_code,
-              'station_name' : station_name,
-              'esc_desc' : esc_desc,
-              'station_desc' : station_desc if station_desc is not None else ''
-            }
-        escId = db.escalators.insert(d)
+
+        escId = unitCollection.insert(data)
 
         # Add a new entry to the escalator_statuses collection
-        statusCount = db.escalator_statuses.find({'escalator_id' : escId}).count()
+        statusCount = statusCollection.find({'escalator_id' : escId}).count()
         assert(statusCount == 0)
-        symptomToId = getSymptomToId(db)
-        opCode = symptomToId['OPERATIONAL']
         doc = {'escalator_id' : escId,
                'time' : curTime - timedelta(seconds=1),
                'tickDelta' : 0,
-               'symptom_code' : opCode}
-        db.escalator_statuses.insert(doc)
+               'symptom_code' : OP_CODE}
+        statusCollection.insert(doc)
 
 ######################################################################
-def addSymptomCode(db, symptom_code, symptom_desc):
+def addSymptomCode(symptom_code, symptom_desc):
+    db = getDB()
     query = {'_id' : int(symptom_code)}
     count = db.symptom_codes.find(query).count()
     if count == 0:
@@ -188,33 +119,44 @@ def addSymptomCode(db, symptom_code, symptom_desc):
 # Update the database from incident data
 # This will add any new escalators or symptom codes that
 # have not yet been seen to the appropriate collection
-def updateDBFromIncidentData(db, inc, curTime):
+def updateDBFromIncidentData(inc, curTime):
 
     # Add the escalator to the database
-    station_desc = ''
-    station_name = inc.StationName
-    if ',' in station_name:
-        station_name, station_desc = station_name.split(',', 1)
-    station_name = station_name.strip()
-    station_desc = station_desc.strip()
-    addEscalator(db, curTime, inc.UnitId, inc.StationCode, station_name,
-       esc_desc = inc.LocationDescription, station_desc = station_desc)
+    doc = { 'unit_id' : inc['UnitId'],
+          'station_code' : inc['StationCode'],
+          'station_name' : inc['StationName'],
+          'esc_desc' : inc['LocationDescription'],
+          'station_desc' : inc['StationDesc'],
+          'unit_type' : inc['UnitType']
+    }
+    addUnit(curTime, doc)
 
     # Add the symptom code to the database
-    addSymptomCode(db, inc.SymptomCode, inc.SymptomDescription)
+    addSymptomCode(inc.SymptomCode, inc.SymptomDescription)
 
-    updateGlobals()
+    dbGlobals.update()
 
 ##########################################################
 # Retrieve information about the latest statuses for all escalators
 # Return a dictionary (key=escalator_id, value=status_dict)
 # status_dict is dictionary returned by getKeyStatuses
-def getLatestStatuses(db):
+# If both 'escalators' and 'elevators' are True or False, return
+# all of the statuses
+#
+# NOTE: This function can probably be improved by using MongoDB
+#       group or aggregate features, instead of retrieving escalator/elevators
+#       statuses escalator by escalator
+def getLatestStatuses(escalators=False, elevators=False):
 
-    updateGlobals(force=False)
+    db = getDB()
 
-    # Get the unique escalator ids
-    esc_ids = db.escalator_statuses.distinct('escalator_id')
+    if escalators and not elevators:
+        esc_ids = getEscalatorIds()
+    elif elevators and not escalators:
+        esc_ids = getElevatorIds()
+    else:
+        # Get both escalators and elevators
+        esc_ids = getUnitIds()
 
     db.escalator_statuses.ensure_index([('escalator_id', pymongo.ASCENDING),
                                         ('time', pymongo.DESCENDING)])
@@ -232,7 +174,7 @@ def getLatestStatuses(db):
 
 ###############################################
 # Add attributes to each escalator_status doc
-# in a sorted list of escalator docs for a single escalator.
+# in a sorted list of escalator docs for a single escalator/elevator.
 # To properly set end_time, docs must be sorted
 # in time descending order before calling this function.
 # - end_time: time when this status is replaced by a more recent status.
@@ -244,8 +186,6 @@ def getLatestStatuses(db):
 # - station_code: from escalators collection
 # - esc_desc: from escalators collection
 def addStatusAttr(statusList):
-
-    updateGlobals(force=False)
 
     if not statusList:
         return
@@ -280,7 +220,6 @@ def addStatusAttr(statusList):
         d.update((k, escData[k]) for k in escDataKeys)
         lastTime = d['time']
 
-
 ###############################################
 # From a list of statuses, select key statuses
 # -lastFix: The oldest operational status which follows the most recent break
@@ -294,13 +233,13 @@ def addStatusAttr(statusList):
 # first broken status in the stretch of brokeness.
 def getKeyStatuses(statuses):
 
-    updateGlobals(force=False)
+    
 
     _checkAllTimesNotNaive(statuses)
 
     # Check that these statuses concern a single escalator
     escids = set(s['escalator_id'] for s in statuses)
-    if not len(escids)==1:
+    if len(escids) > 1:
         raise RuntimeError('getKeyStatuses: received status list for multiple escalators!')
 
     # Sort statuses by time in descending order
@@ -365,90 +304,6 @@ def doc2Str(doc):
                                  timeStr = str(doc['time']))
     return outputStr
 
-########################################################
-# Determine which escalators that have changed status,
-# and update the database with units have been updated.
-# Return a dictionary of escalator id to status dictionary for escalators
-# which have changed statuses.
-# The status dictionary has keys:
-# - lastFix
-# - lastBreak
-# - lastInspection
-# - lastOp
-# - lastStatus: The status before this tick's update
-# - newStatus: The updated status
-def processIncidents(db, curIncidents, curTime, tickDelta, log=sys.stdout):
-
-    updateGlobals(force=False)
-
-    if isNaive(curTime):
-        raise RuntimeError('curTime cannot be naive datetime')
-
-    log = log.write
-    log('dbUtils.processIncidents: Processing %i incidents\n'%len(curIncidents))
-    log('escalator_statuses has %i documents\n'%(db.escalator_statuses.find().count()))
-    sys.stdout.flush()
-
-    # Add any escalators or symptom codes if we are seeing them for the first time
-    for inc in curIncidents:
-        updateDBFromIncidentData(db, inc, curTime)
-
-    # Create dictionary of escalator to the current status
-    escIdToCurStatus = defaultdict(lambda: opCode)
-    incStatus = lambda inc: (unitToEscId[inc.UnitId], symptomToId[inc.SymptomDescription])
-    escIdToCurStatus.update(incStatus(inc) for inc in curIncidents)
-
-    # Get the last known statuses for all escalators.
-    # Recast escStatuses as a defaultdict
-    escStatusItems = getLatestStatuses(db).items()
-    default_entry = {'lastFix' : None,
-                     'lastBreak' : None,
-                     'lastInspection' : None,
-                     'lastOp' : None,
-                     'lastStatus' : None}
-    escStatuses = defaultdict(lambda: default_entry)
-    escStatuses.update(escStatusItems)
-    escIdToLastStatus = defaultdict(lambda: opCode)
-    escIdToLastStatus.update((escId, escStatus['lastStatus']['symptom_code']) for
-                              escId, escStatus in escStatuses.iteritems())
-
-
-    # Determine those escalators that have changed status
-    escIds = sorted(set(escIdToCurStatus.keys() + escIdToLastStatus.keys()))
-    oldStatuses = (escIdToLastStatus[escId] for escId in escIds)
-    newStatuses = (escIdToCurStatus[escId] for escId in escIds)
-    changedStatus = [(escId, oldStatus, newStatus)
-                     for escId,oldStatus,newStatus in zip(escIds, oldStatuses, newStatuses)
-                     if oldStatus != newStatus]
-
-    # Update the database with escalators that have changed status 
-    docs = []
-    changedStatusDict = {}
-    for escId, oldStatus, newStatus in changedStatus:
-        doc = {'escalator_id' : escId,
-               'time' : curTime,
-               'tickDelta' : tickDelta,
-               'symptom_code' : int(newStatus)}
-        docs.append(doc)
-        changedStatusData = escStatuses[escId]
-        changedStatusData['newStatus'] = doc
-        changedStatusDict[escId] = changedStatusData
-
-        # Mark webpages for regeneration
-        update = {'$set' : {'forceUpdate':True}}
-        escData = escIdToEscData[escId]
-        stationCode = escData['station_code']
-        stationShortName = stations.codeToShortName[stationCode]
-        db.webpages.update({'class' : 'escalator', 'escalator_id' : escId}, update)
-        db.webpages.update({'class' : 'escalatorDirectory'}, update)
-        db.webpages.update({'class' : 'escalatorOutages'}, update)
-        db.webpages.update({'class' : 'stationDirectory'}, update)
-        db.webpages.update({'class' : 'station', 'station_name' : stationShortName}, update)
-
-    if docs:
-        db.escalator_statuses.insert(docs)
-
-    return changedStatusDict
 
 ######################################################################
 def groupStatusesByStationCode(statuses):
@@ -468,9 +323,14 @@ def groupStatusesByEscalator(statuses):
 #####################################################################
 # Determine the current escalator availabilities of the system
 # Also compute the weighted availability and the station availability
-def getSystemAvailability():
+# Exactly one of escalators or elevators must be True
+def getSystemAvailability(escalators=False, elevators=False):
     db = getDB()
-    latestStatuses = getLatestStatuses(db)
+
+    if sum([escalators, elevators]) != 1:
+        raise RuntimeError("escalators or elevators must be True, but not both.")
+
+    latestStatuses = getLatestStatuses(escalators=escalators, elevators=elevators)
     N = len(latestStatuses)
 
     # Compute availability
@@ -534,6 +394,7 @@ def getSystemAvailability():
     return ret
 
 #########################################################
+# ONLY WORKS WITH ESCALATORS, NOT ELEVATORS
 # Get escalator data summary for a single station
 # for a given time period.
 # This returns a dictionary with the sames keys as summarizeStatuses,
@@ -543,8 +404,6 @@ def getSystemAvailability():
 # - escToStatuses
 def getStationSummary(stationCode, startTime = None, endTime = None):
 
-    updateGlobals(force=False)
-
     # Convert startTime and endTime to utcTimeZone, if necessary
     if startTime is not None:
         startTime = toUtc(startTime)
@@ -553,7 +412,7 @@ def getStationSummary(stationCode, startTime = None, endTime = None):
 
     stationData = stations.codeToStationData[stationCode]
     allCodes = set(stationData['allCodes'])
-    escList = [d for d in escIdToEscData.itervalues() if d['station_code'] in allCodes]
+    escList = [d for d in escIdToEscData.itervalues() if d['station_code'] in allCodes and d['unit_type']=='ESCALATOR']
     escUnitIds = [d['unit_id'] for d in escList]
     assert(len(escList) == stationData['numEscalators'])
     curTime = utcnow()
@@ -584,17 +443,20 @@ def getStationSummary(stationCode, startTime = None, endTime = None):
     stationSummary['escToStatuses'] = escToStatuses
     return stationSummary
 
-
 ##################################
 # Get a snapshot of the station right now
 def getStationSnapshot(stationCode):
-    updateGlobals(force=False)
-
+    
     stationData = stations.codeToStationData[stationCode]
     allCodes = set(stationData['allCodes'])
-    escList = [d for d in escIdToEscData.itervalues() if d['station_code'] in allCodes]
-    escUnitIds = [d['unit_id'] for d in escList]
-    assert(len(escList) == stationData['numEscalators'])
+
+    # Get escalator data for escalators in this station
+    escIds = getEscalatorIds()
+    escDataList = (escIdToEscData[escId] for escId in escIds)
+    escDataList = [d for d in escDataList if d['station_code'] in allCodes]
+    escUnitIds = [d['unit_id'] for d in escDataList]
+    assert(len(escDataList) == stationData['numEscalators'])
+
     curTime = utcnow()
 
     def getLatestStatus(escUnitId):
@@ -606,10 +468,10 @@ def getStationSnapshot(stationCode):
         
     escToLatest = dict((escUnitId, getLatestStatus(escUnitId)) for escUnitId in escUnitIds)
     numWorking = sum(1 for s in escToLatest.itervalues() if s['symptomCategory']=='ON')
-    numEscalators = len(escList)
+    numEscalators = len(escDataList)
     availability = float(numWorking)/numEscalators if numEscalators > 0 else 0.0
 
-    ret = {'escalatorList' : escList,
+    ret = {'escalatorList' : escDataList,
            'escUnitIds' : escUnitIds,
            'escUnitIdToLatestStatus' : escToLatest,
            'numEscalators' : numEscalators,
@@ -619,8 +481,6 @@ def getStationSnapshot(stationCode):
     # Tack on the stationData to the return value
     ret.update(stationData)
     return ret
-
-
 
 ########################################
 # Merge a list of escalator summaries produced by summarizeStatuses
@@ -818,8 +678,9 @@ def summarizeStatuses(statusList, startTime, endTime):
 
 ############################################################################
 # Get a summary of all escalators for the specified time period
-def getAllEscalatorSummaries(startTime=None, endTime=None):
-    updateGlobals(force=False)
+def getAllEscalatorSummaries(startTime=None, endTime=None, escalators=False, elevators=False):
+
+    
 
     # Convert startTime and endTime to utcTimeZone, if necessary
     if startTime is not None:
@@ -827,7 +688,14 @@ def getAllEscalatorSummaries(startTime=None, endTime=None):
     if endTime is not None:
         endTime = toUtc(endTime)
 
-    escIds = escIdToUnit.keys()
+    if escalators and not elevators:
+        escIds = getEscalatorIds()
+    elif elevators and not escalators:
+        escIds = getElevatorIds()
+    else:
+        # Get both escalators and elevators
+        escIds = db.escalators.find({}, fields=['_id'])
+
     curTime = utcnow()
 
     escToSummary = {}
@@ -851,7 +719,7 @@ def getAllEscalatorSummaries(startTime=None, endTime=None):
 # Get all escalator statuses.
 # Return a dictionary from escalator to status list, in chronological order
 def getAllEscalatorStatuses():
-    updateGlobals(force=False)
+    
     db = getDB()
 
     statuses = list(db.escalator_statuses.find({}, sort=[('time',pymongo.ASCENDING)]))
@@ -863,4 +731,3 @@ def getAllEscalatorStatuses():
             s['time'] = s['time'].replace(tzinfo=tzutc)
         addStatusAttr(sl[::-1])
     return escIdToStatuses
-updateGlobals()

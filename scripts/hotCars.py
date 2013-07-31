@@ -195,6 +195,12 @@ def getManuallyTaggedTweets(db, log=sys.stderr):
             log.write('Caught TwitterError when trying to get manually tagged tweet %i: %s\n'%(tid, str(e)))
     return tweets
 
+def isRetweet(tweet):
+    txt = tweet.text
+    return (tweet.retweeted_status or ('MT' in txt) or ('RT' in txt))
+    
+
+
 #######################################
 def tick(db, tweetLive = False, log=sys.stderr):
     curTime = utcnow()
@@ -251,7 +257,7 @@ def tick(db, tweetLive = False, log=sys.stderr):
 
     def filterPass(t):
         # Reject retweets
-        if t.retweeted_status:
+        if isRetweet(t):
             return False
         # Ignore tweets from self
         if t.user.screen_name.upper() == ME.upper():
@@ -400,7 +406,7 @@ def tweetIsValid(tweet, hotCarData):
         return False
 
     # Ignore retweets
-    if tweet.retweeted_status is not None:
+    if isRetweet(tweet):
         return False
 
     carNums = hotCarData['cars']

@@ -1,0 +1,227 @@
+G03X01ELEVATOR	G03	ADDISON ROAD-SEAT PLEASANT		Elevator between mezzanine and platform
+G03X02ELEVATOR	G03	ADDISON ROAD-SEAT PLEASANT		Garage elevator
+G03X03ELEVATOR	G03	ADDISON ROAD-SEAT PLEASANT		Garage elevator
+F06S01ELEVATOR	F06	ANACOSTIA	 Howard Road Entrance	Elevator between mezzanine and platform
+F06N01ELEVATOR	F06	ANACOSTIA	 Kiss & Ride Entrance	Elevator between mezzanine and platform
+F02X01ELEVATOR	F02	ARCHIVES-Navy Memorial		Elevator between street entrance and mezzanine, on 7th Street, just north of Pennsylvania Ave
+F02X02ELEVATOR	F02	ARCHIVES-Navy Memorial		Elevator between mezzanine and platform
+C06X01ELEVATOR	C06	ARLINGTON CEMETERY		Elevator between mezzanine and platform to Franconia Springfield
+C06X02ELEVATOR	C06	ARLINGTON CEMETERY		Elevator between mezzanine and platform to Largo Town Center
+K04X01ELEVATOR	K04	BALLSTON-MU		Elevator between street and mezzanine to Vienna
+K04X02ELEVATOR	K04	BALLSTON-MU		Elevator between mezzanine and platform to New Carrollton
+K04X03ELEVATOR	K04	BALLSTON-MU		Elevator between street and mezzanine to Vienna
+K04X04ELEVATOR	K04	BALLSTON-MU		Elevator between street and mezzanine to New Carrollton
+K04X05ELEVATOR	K04	BALLSTON-MU		Elevator between street and mezzanine to New Carrollton
+G01X01ELEVATOR	G01	BENNING ROAD		Elevator between street and mezzanine, north side of Benning Road at 45th Street
+G01X02ELEVATOR	G01	BENNING ROAD		Elevator between mezzanine and platform
+A09X01ELEVATOR	A09	BETHESDA		Elevator between street and mezzanine, corner of Wisconsin Ave. and Montgomery Lane
+A09X02ELEVATOR	A09	BETHESDA		Elevator between mezzanine and platform
+C12X01ELEVATOR	C12	BRADDOCK ROAD		Elevator between mezzanine and platform
+F11X01ELEVATOR	F11	BRANCH AVENUE		Elevator between mezzanine and platform
+B05X01ELEVATOR	B05	BROOKLAND-CUA		Elevator between mezzanine and street at bus terminal
+B05X02ELEVATOR	B05	BROOKLAND-CUA		Elevator between mezzanine and platform
+G02X01ELEVATOR	G02	CAPITOL HEIGHTS		Elevator between street and mezzanine
+G02X02ELEVATOR	G02	CAPITOL HEIGHTS		Elevator between mezzanine and platform
+D05X01ELEVATOR	D05	CAPITOL SOUTH		Elevator between street and mezzanine
+D05X02ELEVATOR	D05	CAPITOL SOUTH		Elevator between mezzanine and platform
+D11X01ELEVATOR	D11	CHEVERLY		Elevator between street and mezzanine
+D11X02ELEVATOR	D11	CHEVERLY		Elevator between mezzanine and platform to New Carrollton
+K02X01ELEVATOR	K02	CLARENDON		Elevator between street and mezzanine
+K02X02ELEVATOR	K02	CLARENDON		Elevator between mezzanine and platform to Vienna
+A05X01ELEVATOR	A05	CLEVELAND PARK		Elevator between street and mezzanine on east side of Connecticut Ave
+A05X02ELEVATOR	A05	CLEVELAND PARK		Elevator between mezzanine and platform
+E09X01ELEVATOR	E09	COLLEGE PARK-U of MD		Elevator between street and mezzanine on west side of station at Post Office
+E09X02ELEVATOR	E09	COLLEGE PARK-U of MD		Elevator between street and mezzanine on east side of station at Kiss & Ride
+E09X03ELEVATOR	E09	COLLEGE PARK-U of MD		Elevator between mezzanine and platform
+E09X04ELEVATOR	E09	COLLEGE PARK-U of MD		Garage elevator
+E09X05ELEVATOR	E09	COLLEGE PARK-U of MD		Garage elevator
+E04X01ELEVATOR	E04	COLUMBIA HEIGHTS		Elevator between street and mezzanine, 14 Street, Southbound Entrance
+F07X01ELEVATOR	F07	CONGRESS HEIGHTS		Elevator between mezzanine and street
+F07X02ELEVATOR	F07	CONGRESS HEIGHTS		Elevator between mezzanine and platform
+K01X01ELEVATOR	K01	COURT HOUSE		Elevator between street and mezzanine
+K01X02ELEVATOR	K01	COURT HOUSE		Elevator between mezzanine and platform
+C09X02ELEVATOR	C09	CRYSTAL CITY		Elevator between mezzanine and platform to Huntington/Franconia-Springfield
+C09X03ELEVATOR	C09	CRYSTAL CITY		Elevator between mezzanine and platform to Mt. Vernon Sq/Largo Town Center
+D10X01ELEVATOR	D10	DEANWOOD		Elevator between street and mezzanine
+D10X02ELEVATOR	D10	DEANWOOD		Elevator between mezzanine and platform
+K07X01ELEVATOR	K07	DUNN LORING-MERRIFIELD		Elevator between mezzanine and platform
+A03N01ELEVATOR	A03	DUPONT CIRCLE	 Q Street Entrance	Elevator between street and mezzanine
+A03N02ELEVATOR	A03	DUPONT CIRCLE	 Q Street Entrance	Elevator between mezzanine and platform to Shady Grove
+A03N03ELEVATOR	A03	DUPONT CIRCLE	 Q Street Entrance	Elevator between mezzanine and platform to Glenmont
+K05X01ELEVATOR	K05	EAST FALLS CHURCH		Elevator between mezzanine and platform
+D06X01ELEVATOR	D06	EASTERN MARKET		Elevator between street and mezzanine
+D06X02ELEVATOR	D06	EASTERN MARKET		Elevator between mezzanine and platform
+C14X01ELEVATOR	C14	EISENHOWER AVENUE		Elevator between mezzanine and platform to Mt.Vernon Sq
+C14X02ELEVATOR	C14	EISENHOWER AVENUE		Elevator between mezzanine and platform to Huntington
+A02S01ELEVATOR	A02	FARRAGUT NORTH	 K Street Entrance	Elevator between street and mezzanine, east side of Connecticut Ave near K Street
+A02S02ELEVATOR	A02	FARRAGUT NORTH	 K Street Entrance	Elevator between mezzanine and platform
+C03W01ELEVATOR	C03	FARRAGUT WEST	 18th Street Entrance	Elevator between street and mezzanine
+C03W02ELEVATOR	C03	FARRAGUT WEST	 18th Street Entrance	Elevator between mezzanine and platform to Vienna/Franconia-Springfield
+C03W03ELEVATOR	C03	FARRAGUT WEST	 18th Street Entrance	Elevator between mezzanine and platform to New Carrollton/Largo Town Center
+D04X01ELEVATOR	D04	FEDERAL CENTER SW		Elevator between street and mezzanine
+D04X02ELEVATOR	D04	FEDERAL CENTER SW		Elevator between mezzanine and platform
+D01X01ELEVATOR	D01	FEDERAL TRIANGLE		Elevator between street and mezzanine
+D01X02ELEVATOR	D01	FEDERAL TRIANGLE		Elevator between mezzanine and platform
+D01X03ELEVATOR	D01	FEDERAL TRIANGLE		Elevator between mezzanine and platform
+C04X01ELEVATOR	C04	FOGGY BOTTOM-GWU		Elevator between street and mezzanine
+C04X02ELEVATOR	C04	FOGGY BOTTOM-GWU		Elevator between mezzanine and platform
+B09X01ELEVATOR	B09	FOREST GLEN		Elevator between mezzanine and platform
+B09X02ELEVATOR	B09	FOREST GLEN		Elevator between mezzanine and platform
+B09X03ELEVATOR	B09	FOREST GLEN		Elevator between mezzanine and platform
+B09X04ELEVATOR	B09	FOREST GLEN		Elevator between mezzanine and platform
+B09X05ELEVATOR	B09	FOREST GLEN		Elevator between mezzanine and platform
+B09X06ELEVATOR	B09	FOREST GLEN		Elevator between mezzanine and platform
+B06X01ELEVATOR	B06	FORT TOTTEN		Elevator between mezzanine, upper platform to Red Line, and lower platform for Green Line
+J03X01ELEVATOR	J03	FRANCONIA-SPRINGFIELD		Elevator between ground and pedestrian bridge
+J03X02ELEVATOR	J03	FRANCONIA-SPRINGFIELD		Elevator between mezzanine and platform
+J03X04ELEVATOR	J03	FRANCONIA-SPRINGFIELD		Garage elevator
+J03X05ELEVATOR	J03	FRANCONIA-SPRINGFIELD		Garage elevator
+J03X06ELEVATOR	J03	FRANCONIA-SPRINGFIELD		Garage elevator
+A08S01ELEVATOR	A08	FRIENDSHIP HEIGHTS	 Jenifer Street Entrance	Elevator between street and mezzanine
+A08S02ELEVATOR	A08	FRIENDSHIP HEIGHTS	 Jenifer Street Entrance	Elevator between street and mezzanine
+A08S03ELEVATOR	A08	FRIENDSHIP HEIGHTS	 Jenifer Street Entrance	Elevator between street and mezzanine
+A08S04ELEVATOR	A08	FRIENDSHIP HEIGHTS	 Jenifer Street Entrance	Elevator between street and mezzanine
+A08S05ELEVATOR	A08	FRIENDSHIP HEIGHTS	 Jenifer Street Entrance	Elevator between mezzanine and platform
+A08N01ELEVATOR	A08	FRIENDSHIP HEIGHTS	 Western Avenue Entrance	Elevator between street and mezzanine
+A08N02ELEVATOR	A08	FRIENDSHIP HEIGHTS	 Western Avenue Entrance	Elevator between mezzanine and platform
+B01E01ELEVATOR	B01	GALLERY PLACE-CHINATOWN	 7th and G Street/Arena Entrance	Elevator between street and platform to Glenmont
+B01E02ELEVATOR	B01	GALLERY PLACE-CHINATOWN	 7th and G Street/Arena Entrance	Elevator between street and platform to Glenmont
+B01E03ELEVATOR	B01	GALLERY PLACE-CHINATOWN	 7th and G Street/Arena Entrance	Elevator between platform for Green/Yellow lines and platform to Glenmont
+B01E04ELEVATOR	B01	GALLERY PLACE-CHINATOWN	 7th and G Street/Arena Entrance	Elevator between platform for Green/Yellow lines and platform to Shady Grove
+E05X01ELEVATOR	E05	GEORGIA AVENUE-PETWORTH		Elevator between street and mezzanine, west side at New Hampshire & Georgia Ave.
+E05X02ELEVATOR	E05	GEORGIA AVENUE-PETWORTH		Elevator between mezzanine and platform
+B11X01ELEVATOR	B11	GLENMONT		Elevator between street and mezzanine, east side of station at bus bay/Kiss & Ride
+B11X02ELEVATOR	B11	GLENMONT		Elevator between street and mezzanine, west side of station at Kiss & Ride
+B11X03ELEVATOR	B11	GLENMONT		Elevator between mezzanine and platform
+B11X04ELEVATOR	B11	GLENMONT		Garage elevator
+B11X05ELEVATOR	B11	GLENMONT		Garage elevator
+B11X06ELEVATOR	B11	GLENMONT		Garage elevator
+B11X08ELEVATOR	B11	GLENMONT		Garage elevator
+E10X01ELEVATOR	E10	GREENBELT		Elevator between mezzanine and platform
+A11X01ELEVATOR	A11	GROSVENOR-STRATHMORE		Elevator between mezzanine and platform
+A11X02ELEVATOR	A11	GROSVENOR-STRATHMORE		Garage elevator
+A11X04ELEVATOR	A11	GROSVENOR-STRATHMORE		Garage elevator
+A11X05ELEVATOR	A11	GROSVENOR-STRATHMORE		Garage elevator
+C15N01ELEVATOR	C15	HUNTINGTON	 Huntington Ave. Entrance	Elevator between mezzanine and platform
+C15S01ELEVATOR	C15	HUNTINGTON	 North Kings Hwy Entrance	Elevator between garage and mezzanine
+C15S03ELEVATOR	C15	HUNTINGTON	 North Kings Hwy Garage	Garage #2 elevator
+C15S04ELEVATOR	C15	HUNTINGTON	 North Kings Hwy Garage	Garage #2 elevator
+C15S02ELEVATOR	C15	HUNTINGTON	 South Kings Hwy Entrance	Inclinator between mezzanine and platform
+B02N01ELEVATOR	B02	JUDICIARY SQUARE	 Building Museum Entrance	Elevator between street and platform to Shady Grove
+B02N02ELEVATOR	B02	JUDICIARY SQUARE	 Building Museum Entrance	Elevator between street and platform to Glenmont
+C13N01ELEVATOR	C13	KING STREET		Elevator between mezzanine and platform
+C13N02ELEVATOR	C13	KING STREET		Elevator between mezzanine and platform
+C13S01ELEVATOR	C13	KING STREET		Elevator between mezzanine and platform
+F03N01ELEVATOR	F03	L'ENFANT PLAZA	 7th St/Maryland Ave./Smithsonian Museums Entrance/VRE trains	Elevator between street and mezzanine
+F03N02ELEVATOR	F03	L'ENFANT PLAZA	 7th St/Maryland Ave./Smithsonian Museums Entrance/VRE trains	Elevator between mezzanine and platform to Branch Ave/Huntington
+F03N03ELEVATOR	F03	L'ENFANT PLAZA	 7th St/Maryland Ave./Smithsonian Museums Entrance/VRE trains	Elevator between mezzanine and platform to Greenbelt/Mt. Vernon Sq
+D12X01ELEVATOR	D12	LANDOVER		Elevator between mezzanine and platform
+G05X01ELEVATOR	G05	LARGO TOWN CENTER		Elevator between street and mezzanine
+G05X02ELEVATOR	G05	LARGO TOWN CENTER		Elevator between mezzanine and platform
+G05X03ELEVATOR	G05	LARGO TOWN CENTER		Elevator between mezzanine and platform
+G05X04ELEVATOR	G05	LARGO TOWN CENTER		Elevator between north garage and mezzanine
+G05X06ELEVATOR	G05	LARGO TOWN CENTER		Elevator between south garage and mezzanine
+G05X07ELEVATOR	G05	LARGO TOWN CENTER		Elevator between south garage and mezzanine
+C02E01ELEVATOR	C02	MCPHERSON SQUARE	 Franklin Square/14th St. Entrance	Elevator between street and mezzanine
+C02E02ELEVATOR	C02	MCPHERSON SQUARE	 Franklin Square/14th St. Entrance	Elevator between mezzanine and platform to New Carrollton/Largo Town Center
+C02E03ELEVATOR	C02	MCPHERSON SQUARE	 Franklin Square/14th St. Entrance	Elevator between mezzanine and platform to Vienna /Franconia
+A10X01ELEVATOR	A10	MEDICAL CENTER		Elevator between street and mezzanine
+A10X02ELEVATOR	A10	MEDICAL CENTER		Elevator between mezzanine and platform
+C01N01ELEVATOR	C01	METRO CENTER		Elevator between street and mezzanine
+C01N02ELEVATOR	C01	METRO CENTER		Elevator between upper platform to Shady Grove and lower platform for Blue/Orange Lines
+C01N03ELEVATOR	C01	METRO CENTER		Elevator between upper platform to Glenmont and lower platform for Blue/Orange Lines
+D09X01ELEVATOR	D09	MINNESOTA AVENUE		Elevator between street and mezzanine
+D09X02ELEVATOR	D09	MINNESOTA AVENUE		Elevator between mezzanine and platform
+D09X04ELEVATOR	D09	MINNESOTA AVENUE		Garage Elevator
+G04X02ELEVATOR	G04	MORGAN BLVD		Elevator between mezzanine and platform
+E01X01ELEVATOR	E01	MT. VERNON SQUARE/7TH STREET-CONVENTION CENTER		Elevator between street and mezzanine
+E01X02ELEVATOR	E01	MT. VERNON SQUARE/7TH STREET-CONVENTION CENTER		Elevator between street and mezzanine
+E01X03ELEVATOR	E01	MT. VERNON SQUARE/7TH STREET-CONVENTION CENTER		Elevator between street and mezzanine
+E01X04ELEVATOR	E01	MT. VERNON SQUARE/7TH STREET-CONVENTION CENTER		Elevator between mezzanine and platform
+E01X05ELEVATOR	E01	MT. VERNON SQUARE/7TH STREET-CONVENTION CENTER		Elevator between mezzanine and platform
+F05E01ELEVATOR	F05	NAVY YARD	 Navy Yard Entrance	Elevator between street and mezzanine
+F05E02ELEVATOR	F05	NAVY YARD	 Navy Yard Entrance	Elevator between mezzanine and platform
+F05W01ELEVATOR	F05	NAVY YARD	 Navy Yard West Entrance	Elevator between street and mezzanine
+F05W02ELEVATOR	F05	NAVY YARD	 Navy Yard West Entrance	Elevator between mezzanine and platform
+F09X01ELEVATOR	F09	NAYLOR ROAD		Elevator between mezzanine and platform
+D13X01ELEVATOR	D13	NEW CARROLLTON		Elevator between mezzanine and platform
+D13X02ELEVATOR	D13	NEW CARROLLTON		Elevator between mezzanine and street at Route 450
+D13X03ELEVATOR	D13	NEW CARROLLTON		Garage elevator
+D13X04ELEVATOR	D13	NEW CARROLLTON		Garage elevator
+D13X05ELEVATOR	D13	NEW CARROLLTON		Garage elevator
+B35N01ELEVATOR	B35	NEW YORK AVENUE	 Florida Avenue Entrance	Elevator between platform and mezzanine
+B35N02ELEVATOR	B35	NEW YORK AVENUE	 Florida Avenue Entrance	Elevator between bike trail and mezzanine
+C07E04ELEVATOR	C07	PENTAGON		Elevator between the lower bus platform and the upper platform
+C07N01ELEVATOR	C07	PENTAGON		Elevator between the bus bay and the mezzanine
+C07N02ELEVATOR	C07	PENTAGON		Elevator between the bus bay and the mezzanine
+C07N03ELEVATOR	C07	PENTAGON		Elevator between upper and lower platforms
+C08X01ELEVATOR	C08	PENTAGON CITY		Elevator between street and mezzanine on west side of Hayes street, at The Fashion Center
+C08X02ELEVATOR	C08	PENTAGON CITY		Elevator between mezzanine and platform to Mt. Vernon Sq/Largo Town Center
+C08X03ELEVATOR	C08	PENTAGON CITY		Elevator between mezzanine and platform to Huntington/Franconia-Springfield
+D07X01ELEVATOR	D07	POTOMAC AVENUE		Elevator between street and mezzanine
+D07X02ELEVATOR	D07	POTOMAC AVENUE		Elevator between mezzanine and platform
+E08X01ELEVATOR	E08	PRINCE GEORGE'S PLAZA		Elevator between mezzanine and platform to Branch Ave
+E08X02ELEVATOR	E08	PRINCE GEORGE'S PLAZA		Elevator between mezzanine and platform to Greenbelt
+E08X03ELEVATOR	E08	PRINCE GEORGE'S PLAZA		Elevator between mezzanine and parking garage
+E08X04ELEVATOR	E08	PRINCE GEORGE'S PLAZA		Elevator between mezzanine and parking garage
+E08X05ELEVATOR	E08	PRINCE GEORGE'S PLAZA		Elevator between mezzanine and parking garage
+B04X01ELEVATOR	B04	RHODE ISLAND AVENUE		Elevator between mezzanine and platform
+A14X01ELEVATOR	A14	ROCKVILLE		Elevator between pedestrian bridge and mezzanine
+A14X02ELEVATOR	A14	ROCKVILLE		Elevator between pedestrian bridge and mezzanine
+A14X03ELEVATOR	A14	ROCKVILLE		Elevator between mezzanine and platform
+C10S01ELEVATOR	C10	RONALD REAGAN WASHINGTON NATIONAL AIRPORT	 South Entrance	Elevator between mezzanine and platform to Huntington/Franconia-Springfield
+C10S02ELEVATOR	C10	RONALD REAGAN WASHINGTON NATIONAL AIRPORT	 South Entrance	Elevator between mezzanine and platform to Mt.Vernon Sq/Largo Town Center
+C05X01ELEVATOR	C05	ROSSLYN		Elevator between skywalk, street, and upper platform
+C05X02ELEVATOR	C05	ROSSLYN		Elevator between upper platform and lower platform
+A15X01ELEVATOR	A15	SHADY GROVE		Elevator between east side parking/Kiss & Ride and mezzanine
+A15X02ELEVATOR	A15	SHADY GROVE		Elevator between mezzanine and platform
+A15X03ELEVATOR	A15	SHADY GROVE		Garage elevator
+A15X04ELEVATOR	A15	SHADY GROVE		Garage elevator
+A15X05ELEVATOR	A15	SHADY GROVE		Garage elevator
+A15X06ELEVATOR	A15	SHADY GROVE		Garage elevator
+E02N01ELEVATOR	E02	SHAW-HOWARD U	 7th and S St. N.W. Entrance	Elevator between street and mezzanine
+E02N02ELEVATOR	E02	SHAW-HOWARD U	 7th and S St. N.W. Entrance	Elevator between mezzanine and platform
+B08S01ELEVATOR	B08	SILVER SPRING	 South Side/Bus Terminal Entrance	Elevator between mezzanine and platform
+D02S01ELEVATOR	D02	SMITHSONIAN	 Independence Avenue Entrance	Elevator between street, mezzanine, and platform to New Carrollton/Largo Town Center
+D02S02ELEVATOR	D02	SMITHSONIAN	 Independence Avenue Entrance	Elevator between mezzanine and platform to Vienna/Franconia-Springfield
+F08X01ELEVATOR	F08	SOUTHERN AVENUE		Elevator between mezzanine and garage
+F08X02ELEVATOR	F08	SOUTHERN AVENUE		Elevator between mezzanine and platform
+D08S01ELEVATOR	D08	STADIUM-ARMORY	 D.C. General Hospital Entrance	Elevator between street and mezzanine
+D08S02ELEVATOR	D08	STADIUM-ARMORY	 D.C. General Hospital Entrance	Elevator between mezzanine and platform
+F10X01ELEVATOR	F10	SUITLAND		Elevator between mezzanine and platform
+F10X02ELEVATOR	F10	SUITLAND		Elevator between mezzanine and pedestrian bridge
+F10X03ELEVATOR	F10	SUITLAND		Elevator between mezzanine and garage
+B07X01ELEVATOR	B07	TAKOMA		Elevator between mezzanine and platform
+A07X01ELEVATOR	A07	TENLEYTOWN-AU		Elevator between street and platform, east side of Wisconsin Avenue
+A13X01ELEVATOR	A13	TWINBROOK		Elevator between mezzanine and platform
+E03W01ELEVATOR	E03	U STREET/AFRICAN-AMERICAN CIVIL WAR MEMORIAL/CARDOZO	 13th and U St Entrance	Elevator between street and mezzanine
+B03N01ELEVATOR	B03	UNION STATION	 1st Street, NW/Amtrak Station Entrance	Elevator between Amtrak station and mezzanine
+B03N02ELEVATOR	B03	UNION STATION	 1st Street, NW/Amtrak Station Entrance	Elevator between platform and mezzanine
+J02X01ELEVATOR	J02	VAN DORN STREET		Elevator between mezzanine and platform
+A06X01ELEVATOR	A06	VAN NESS-UDC		Elevator between street and mezzanine
+A06X02ELEVATOR	A06	VAN NESS-UDC		Elevator between mezzanine and platform
+K08X01ELEVATOR	K08	VIENNA/FAIRFAX-GMU		Elevator between mezzanine and platform
+K08X02ELEVATOR	K08	VIENNA/FAIRFAX-GMU		Garage
+K08X03ELEVATOR	K08	VIENNA/FAIRFAX-GMU		Garage
+K08X04ELEVATOR	K08	VIENNA/FAIRFAX-GMU		Garage
+K03X01ELEVATOR	K03	VIRGINIA SQUARE-GMU		Elevator between street and to mezzanine
+K03X02ELEVATOR	K03	VIRGINIA SQUARE-GMU		Elevator between mezzanine and platform to New Carrolton
+K03X03ELEVATOR	K03	VIRGINIA SQUARE-GMU		Elevator between mezzanine and platform to Vienna
+F04X01ELEVATOR	F04	WATERFRONT-SEU		Elevator between street and mezzanine, north side of M Street, S.W.
+F04X02ELEVATOR	F04	WATERFRONT-SEU		Elevator between mezzanine AND platform
+K06X01ELEVATOR	K06	WEST FALLS CHURCH-VT/UVA		Elevator between mezzanine and platform to New Carrolton
+K06X02ELEVATOR	K06	WEST FALLS CHURCH-VT/UVA		Elevator between mezzanine and platform to Vienna
+K06X03ELEVATOR	K06	WEST FALLS CHURCH-VT/UVA		Elevator between north side bus terminal and mezzanine (Dulles Access Road entrance)
+K06X04ELEVATOR	K06	WEST FALLS CHURCH-VT/UVA		Garage elevator
+K06X05ELEVATOR	K06	WEST FALLS CHURCH-VT/UVA		Garage elevator
+E07X01ELEVATOR	E07	WEST HYATTSVILLE		Elevator between mezzanine and platform to Greenbelt
+E07X02ELEVATOR	E07	WEST HYATTSVILLE		Elevator between mezzanine and platform to Branch Ave
+B10X01ELEVATOR	B10	WHEATON		Elevator between mezzanine and platform
+B10X02ELEVATOR	B10	WHEATON		Garage elevator
+B10X03ELEVATOR	B10	WHEATON		Garage elevator
+B10X04ELEVATOR	B10	WHEATON		Garage elevator
+A12X01ELEVATOR	A12	WHITE FLINT		Elevator between mezzanine and platform
+A12X02ELEVATOR	A12	WHITE FLINT		Garage elevator
+A12X03ELEVATOR	A12	WHITE FLINT		Garage elevator
+A04X01ELEVATOR	A04	WOODLEY PARK-ZOO/ADAMS MORGAN		Elevator between street and mezzanine, SW corner of Woodley Rd. & Connecticut Ave., N.W.
+A04X02ELEVATOR	A04	WOODLEY PARK-ZOO/ADAMS MORGAN		Elevator between mezzanine and platform

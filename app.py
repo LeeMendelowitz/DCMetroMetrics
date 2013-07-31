@@ -44,6 +44,7 @@ from gevent import monkey; monkey.patch_all() # Needed for bottle
 # Import application modules
 sys.path.append(SCRIPT_DIR)
 from runEscalatorApp import EscalatorApp
+from runElevatorApp import ElevatorApp
 from hotCarApp import HotCarApp
 from webPageGenerator import WebPageGenerator
 from restartingGreenlet import RestartingGreenlet
@@ -59,9 +60,13 @@ def run(LIVE=False):
    bottleApp = BottleApp()
    bottleApp.start()
 
-   # Run MetroEsclaators twitter App
+   # Run MetroEscalators twitter App
    escalatorApp = EscalatorApp(LIVE=LIVE)
    escalatorApp.start()
+
+   # Run MetroElevators twitter App
+   elevatorApp = ElevatorApp(LIVE=LIVE)
+   elevatorApp.start()
 
    # Run HotCar twitter app
    hotCarApplication = HotCarApp(LIVE=LIVE)

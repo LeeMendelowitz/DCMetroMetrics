@@ -14,7 +14,8 @@ MAX_TICK_DELTA = 3600
 db = dbUtils.getDB()
 
 def getAllBreaks():
-    escIds = dbUtils.escIdToUnit.keys()
+    
+    escIds = dbUtils.getEscalatorIds()
     breaks = []
     for escId in escIds:
         statuses = dbUtils.getEscalatorStatuses(escId)

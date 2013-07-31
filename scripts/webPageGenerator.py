@@ -87,7 +87,7 @@ def initDB():
     queries.append({'class' : 'home'})
 
     # All escalators get a page.
-    escIds = dbUtils.escIdToUnit.keys()
+    escIds = dbUtils.getEscalatorIds()
     for escId in escIds:
         queries.append({'class' : 'escalator', 'escalator_id' : escId})
 
@@ -308,7 +308,7 @@ def genEscalatorOutages(doc):
 
 
     # Get the availability and weighted availability
-    systemAvailability = dbUtils.getSystemAvailability()
+    systemAvailability = dbUtils.getSystemAvailability(escalators=True)
     kwargs = {'escList' : escalatorList,
               'symptomCounts' : symptomCounts,
               'systemAvailability' : systemAvailability,
@@ -398,7 +398,7 @@ def genGlossaryPage(doc):
     writeContent(filename, content)
 
 def genHotCarPage(doc):
-    carNum = doc['car_number']
+    carNum = int(doc['car_number'])
     data = hotCarsWeb.getHotCarData(carNum)
     reports = data['reports']
     colors = data['colors']

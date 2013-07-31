@@ -60,7 +60,7 @@ def exportHotCarData():
 # Export all escalator statuses
 def exportEscalatorData():
     db = dbUtils.getDB()
-    escIds = dbUtils.escIdToUnit.keys()
+    escIds = dbUtils.getEscalatorIds()
     escIdToStatuses = {}
     for escId in escIds:
         escIdToStatuses[escId] = dbUtils.getEscalatorStatuses(escId)

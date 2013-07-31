@@ -36,12 +36,13 @@ class StatusGroupBase(object):
 
         _checkAllTimesNotNaive(statuses)
 
-        if not statuses:
-            return
-
         timesProvided = (startTime or endTime)
 
         self.allStatuses = statuses
+
+        if not statuses:
+            self.statuses = []
+            return
 
         # The statuses must be sorted in ascending order, and
         # all statuses (except the last) must have end_time defined.
@@ -281,7 +282,9 @@ class StatusGroupBase(object):
     @computeOnce
     def brokenTimePercentage(self):
         brokenTime = self.timeAllocation['BROKEN']
-        brokenTimePercentage = float(brokenTime)/self.metroOpenTime
+        brokenTimePercentage = 0.0
+        if self.metroOpenTime > 0.0:
+            brokenTimePercentage = float(brokenTime)/self.metroOpenTime
         return brokenTimePercentage
 
     def printStatuses(self, handle = sys.stdout):
