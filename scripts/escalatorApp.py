@@ -5,18 +5,22 @@ from time import sleep
 from datetime import datetime, date, time, timedelta
 from metroTimes import utcnow, tzutc, metroIsOpen, toLocalTime
 
+# TEST CODE
+if __name__ == '__main__':
+    import test_setup
+
 # Custom modules
 import stations
 from incident import Incident
 from twitter import TwitterError
 import dbUtils
-from dbUtils import invDict, getDB
+from dbUtils import invDict
 import utils
 import twitterUtils
+from escalatorDefs import OPERATIONAL_CODE as OP_CODE, NUM_ESCALATORS
 from escalatorRequest import getELESIncidents, WMATA_API_ERROR
 from utils import *
 from keys import MetroEscalatorKeys
-from escalatorDefs import symptomToCategory, OPERATIONAL_CODE
 import metroEscalatorsWeb
 from ELESApp import ELESApp
 
@@ -34,28 +38,47 @@ class EscalatorApp(ELESApp):
     def __init__(self, log, LIVE=True, QUIET=False):
         ELESApp.__init__(self, log, LIVE, QUIET)
 
+    def initDB(self, db, curTime):
+
+        # Add the operational code
+        db.symptom_codes.update({'_id' : OP_CODE},
+                                {'$set' : {'symptom_desc' : 'OPERATIONAL'}},
+                                upsert=True)
+
+        # Initialize the escalator/elevator database if necessary
+        escalators = self.dbg.getEscalatorIds()
+        numEscalators = len(escalators)
+
+        if numEscalators < NUM_ESCALATORS:
+            escalatorTsv = os.path.join(os.environ['OPENSHIFT_DATA_DIR'], 'escalators.tsv')
+            escData = utils.readEscalatorTsv(escalatorTsv)
+            for d in escData:
+                d['unit_type'] = 'ESCALATOR'
+            assert(len(escData) == NUM_ESCALATORS)
+            dbUtils.initializeEscalators(db, escData, curTime)
+
+        self.dbg.update()
+
     def getIncidents(self):
         return getEscalatorIncidents(log=self.log)
 
     def getLatestStatuses(self):
-        return dbUtils.getLatestStatuses(escalators=True)
+        return dbUtils.getLatestStatuses(escalators=True, dbg=self.dbg)
 
     def getAppStateCollection(self):
-        db = dbUtils.getDB()
-        return db.escalator_appstate
+        return self.db.escalator_appstate
 
     def getStatusesCollection(self):
-        db = dbUtils.getDB()
-        return db.escalator_statuses
+        return self.db.escalator_statuses
 
     # Trigger webpage regeneration when an escalator changes status
     def statusUpdateCallback(self, doc):
-        db = dbUtils.getDB()
+        db = self.db
         escId = doc['escalator_id']
 
         # Mark webpages for regeneration
         update = {'$set' : {'forceUpdate':True}}
-        escData = dbUtils.escIdToEscData[escId]
+        escData = self.dbg.escIdToEscData[escId]
         stationCode = escData['station_code']
         stationShortName = stations.codeToShortName[stationCode]
         escId = doc['escalator_id']
@@ -70,11 +93,10 @@ class EscalatorApp(ELESApp):
         return MetroEscalatorKeys
 
     def getTweetOutbox(self):
-        db = dbUtils.getDB()
-        return db.escalator_tweet_outbox
+        return self.db.escalator_tweet_outbox
 
     def runDailyStats(self, curTime):
-        db = dbUtils.getDB()
+        db = self.db
         curTimeLocal = toLocalTime(curTime)
         appState = db.escalator_appstate.find_one()
         lastStatsTime = None
@@ -92,7 +114,7 @@ class EscalatorApp(ELESApp):
         if not runStats:
             return
 
-        dailyStatsMsg = dailyStats(curTime, startTime = lastStatsTime)
+        dailyStatsMsg = self.dailyStats(curTime)
         if dailyStatsMsg is not None:
             self.storeTweets([dailyStatsMsg])
 
@@ -100,10 +122,13 @@ class EscalatorApp(ELESApp):
         db.escalator_appstate.update({'_id' : 1}, update, upsert = True)
 
     # Return a str with escalator availability information.
-    @staticmethod
-    def availabilityMaker(escId):
-        availabilityData = dbUtils.getSystemAvailability(escalators=True)
-        escData = dbUtils.getEsc(escId)
+    def availabilityMaker(self, escId):
+        availabilityData = dbUtils.getSystemAvailability(escalators=True, dbg=self.dbg)
+
+        escData = self.db.escalators.find_one({"_id" : escId})
+        if escData is None:
+            raise RuntimeError("Could not find escalator in db.escalators with id %s"%str(escId))
+
         stationCode = escData['station_code']
         sAvail = availabilityData['stationToAvailability'][stationCode]
         aStr = 'A=%.1f%%'%(100.0*availabilityData['availability'])
@@ -111,53 +136,64 @@ class EscalatorApp(ELESApp):
         return '%s %s'%(aStr, sAstr)
 
     # Return a str with the url for the escalator.
-    @staticmethod
-    def urlMaker(escId):
-        unit = dbUtils.escIdToUnit[escId][0:6]
+    def urlMaker(self, escId):
+        unit = self.dbg.escIdToUnit[escId][0:6]
         escUrl = metroEscalatorsWeb.escUnitIdToAbsWebPath(unit)
         return escUrl
 
-#######################################
-# Compute the daily stats for the last 24 hour
-def dailyStats(curTime, startTime = None):
-    
-    escIdToSummary = {}
-    # Generate a summary for each escalator
-    if startTime is None:
-        startTime = curTime - timedelta(hours=24.0)
-    endTime = curTime
+    #######################################
+    # Compute the daily stats for the last 24 hour
+    def dailyStats(self, curTime, startTime = None):
+        
+        escIdToSummary = {}
+        # Generate a summary for each escalator
+        if startTime is None:
+            startTime = curTime - timedelta(hours=24.0)
+        endTime = curTime
 
-    escIds = dbUtils.getEscalatorIds()
-    for escId in escIds:
+        escIds = self.dbg.getEscalatorIds()
+        for escId in escIds:
 
-        # Retrieve data for this escalator and its station
-        escData = dbUtils.escIdToEscData[escId]
-        stationCode = escData['station_code']
-        stationData = stations.codeToStationData[stationCode]
+            # Retrieve data for this escalator and its station
+            escData = self.dbg.escIdToEscData[escId]
+            stationCode = escData['station_code']
+            stationData = stations.codeToStationData[stationCode]
 
-        # Retrieve the latest statuses
-        statuses = dbUtils.getEscalatorStatuses(escId = escId, startTime = startTime, endTime = endTime)
+            # Retrieve the latest statuses
+            statuses = dbUtils.getEscalatorStatuses(escId = escId, startTime = startTime, endTime = endTime, dbg=self.dbg)
 
-        # Summarize the statuses
-        summary = dbUtils.summarizeStatuses(statuses, startTime=startTime, endTime=endTime)
-        summary['escId'] = escId
-        summary['stationCode'] = stationCode
-        summary['escalatorWeight'] = stationData['escalatorWeight']
-        escIdToSummary[escId] = summary
+            # Summarize the statuses
+            summary = dbUtils.summarizeStatuses(statuses, startTime=startTime, endTime=endTime)
+            summary['escId'] = escId
+            summary['stationCode'] = stationCode
+            summary['escalatorWeight'] = stationData['escalatorWeight']
+            escIdToSummary[escId] = summary
 
-    numBreaks = sum(s.get('numBreaks', 0) for s in escIdToSummary.itervalues())
-    numFixes = sum(s.get('numFixes', 0) for s in escIdToSummary.itervalues())
-    numInspections = sum(s.get('numInspections', 0) for s in escIdToSummary.itervalues())
+        numBreaks = sum(s.get('numBreaks', 0) for s in escIdToSummary.itervalues())
+        numFixes = sum(s.get('numFixes', 0) for s in escIdToSummary.itervalues())
+        numInspections = sum(s.get('numInspections', 0) for s in escIdToSummary.itervalues())
 
-    summaries = escIdToSummary.itervalues
-    availabilities = [s['availability'] for s in summaries()]
-    availability = sum(availabilities)/float(len(availabilities))
+        summaries = escIdToSummary.itervalues
+        availabilities = [s['availability'] for s in summaries()]
+        availability = sum(availabilities)/float(len(availabilities))
 
-    # Compute weighted availability
-    denom = float(sum(s['escalatorWeight'] for s in summaries()))
-    wAvailability = sum(s['escalatorWeight']*s['availability'] for s in summaries())/denom
+        # Compute weighted availability
+        denom = float(sum(s['escalatorWeight'] for s in summaries()))
+        wAvailability = sum(s['escalatorWeight']*s['availability'] for s in summaries())/denom
 
-    msg = 'Good Morning DC! #WMATA Escalator #DailyStats: Breaks=%i Fixes=%i Inspections=%i A=%.2f%% wA=%.2f%%' % \
-          (numBreaks, numFixes, numInspections, 100.0*availability, 100.0*wAvailability)
+        msg = 'Good Morning DC! #WMATA Escalator #DailyStats: Breaks=%i Fixes=%i Inspections=%i A=%.2f%% wA=%.2f%%' % \
+              (numBreaks, numFixes, numInspections, 100.0*availability, 100.0*wAvailability)
 
-    return msg
+        return msg
+
+
+# TEST CODE
+if __name__ == "__main__":
+    import time
+    import sys
+    app = EscalatorApp(log=sys.stdout, LIVE=False)
+    while True:
+        msg = '*'*50 + '\nTEST TICK:\n'
+        sys.stdout.write(msg)
+        app.tick()
+        time.sleep(10)

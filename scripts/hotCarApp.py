@@ -1,14 +1,16 @@
+
+# TEST CODE
+if __name__ == "__main__":
+    import test_setup
+
 import gevent
 from restartingGreenlet import RestartingGreenlet
 import hotCars
 import dbUtils
+import dbGlobals
 import os
 import sys
-import argparse
 from datetime import datetime
-
-parser = argparse.ArgumentParser()
-parser.add_argument('--LIVE', action='store_true') # Tweets are live
 
 OUTPUT_DIR = os.environ['OPENSHIFT_DATA_DIR']
 REPO_DIR = os.environ['OPENSHIFT_REPO_DIR']
@@ -20,6 +22,8 @@ class HotCarApp(RestartingGreenlet):
         RestartingGreenlet.__init__(self, LIVE=LIVE)
         self.SLEEP = 40 # Run every 10 seconds
         self.LIVE = LIVE
+        self.dbg = dbGlobals.DBGlobals()
+        self.db = self.dbg.getDB()
 
     # Run forever
     def _run(self):
@@ -50,16 +54,18 @@ class HotCarApp(RestartingGreenlet):
             logFile.flush()
 
             # Run the tick
-            runOnce(tweetLive=self.LIVE, log=logFile)
+            self.runOnce(tweetLive=self.LIVE, log=logFile)
 
             logFile.close()
 
-def runOnce(tweetLive=False, log=sys.stdout):
-    # Establish connection with the database
-    db = dbUtils.getDB()
-    # Run one cycle of the hotcar app
-    hotCars.tick(db, tweetLive=tweetLive, log=log)
+    def runOnce(self, tweetLive=False, log=sys.stdout):
+        # Establish connection with the database
+        # Run one cycle of the hotcar app
+        hotCars.tick(self.db, tweetLive=tweetLive, log=log)
 
 if __name__ == '__main__':
-    args = parser.parse_args()
-    runOnce(tweetLive=args.LIVE)
+    from time import sleep
+    app = HotCarApp(LIVE=False)
+    while True:
+        app.runOnce(tweetLive=False, log=sys.stdout)
+        sleep(40)

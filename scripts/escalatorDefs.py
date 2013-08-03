@@ -3,6 +3,8 @@
 from collections import defaultdict
 
 OPERATIONAL_CODE = -1
+NUM_ESCALATORS = 588
+NUM_ELEVATORS = 238
 
 ###################################################
 # Define symptomToCategory. Consider adding these

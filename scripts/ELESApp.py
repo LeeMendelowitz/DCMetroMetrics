@@ -1,6 +1,7 @@
 # ELESApp.py
 # Base class for EscalatorApp and ElevatorApp, which 
 # drive MetroEscalators and MetroElevators
+####################################################
 
 # python modules
 import os
@@ -15,20 +16,18 @@ from incident import Incident
 from twitter import TwitterError
 
 import dbGlobals
-from dbGlobals import *
 import dbUtils
-from dbUtils import invDict, getDB
+from dbUtils import invDict
 
 import utils
 import twitterUtils
 from escalatorRequest import getELESIncidents, WMATA_API_ERROR
-from utils import *
 from keys import MetroEscalatorKeys
-from escalatorDefs import symptomToCategory, OPERATIONAL_CODE
+from utils import *
+from escalatorDefs import symptomToCategory, OPERATIONAL_CODE as OP_CODE
 import metroEscalatorsWeb
 
 TWEET_LEN = 140
-OP_CODE = OPERATIONAL_CODE
 
 # Silence tweeting if the tick delay is greater than 20 minutes
 SILENCE_GAP = 60*20
@@ -37,45 +36,10 @@ SILENCE_GAP = 60*20
 # the tick is silenced
 MAX_TICK_TWEETS = 10
 
-# Number of escalators in the system
-NUM_ESCALATORS = 588
-NUM_ELEVATORS = 238
-
 OUTPUT_DIR = os.environ.get('OPENSHIFT_DATA_DIR', None)
 if OUTPUT_DIR is None:
     OUTPUT_DIR = os.getcwd()
 
-def initDB(db, curTime):
-
-    # Add the operational code
-    db.symptom_codes.find_and_modify({'_id' : OPERATIONAL_CODE},
-                                     update = {'_id' : OPERATIONAL_CODE,
-                                               'symptom_desc' : 'OPERATIONAL'},
-                                     upsert=True)
-
-    # Initialize the escalator/elevator database if necessary
-    allUnits = list(db.escalators.find())
-    escalators = [d for d in allUnits if 'ESCALATOR' in d['unit_id']]
-    elevators = [d for d in allUnits if 'ELEVATOR' in d['unit_id']]
-    numEscalators = len(escalators)
-    numElevators = len(elevators)
-
-    if numEscalators < NUM_ESCALATORS:
-        escalatorTsv = os.path.join(os.environ['OPENSHIFT_DATA_DIR'], 'escalators.tsv')
-        escData = utils.readEscalatorTsv(escalatorTsv)
-        for d in escData:
-            d['unit_type'] = 'ESCALATOR'
-        assert(len(escData) == NUM_ESCALATORS)
-        dbUtils.initializeEscalators(escData, curTime)
-
-    if numElevators < NUM_ELEVATORS:
-        elevatorTsv = os.path.join(os.environ['OPENSHIFT_DATA_DIR'], 'elevators.tsv')
-        escData = utils.readEscalatorTsv(elevatorTsv)
-        for d in escData:
-            d['unit_type'] = 'ELEVATOR'
-        dbUtils.initializeEscalators(escData, curTime)
-
-    dbGlobals.update()
 
 #############################################
 class ELESApp(object):
@@ -85,9 +49,14 @@ class ELESApp(object):
         self.QUIET = QUIET
         self.twitterApi = None
         self.log = log
+        self.dbg = dbGlobals.DBGlobals()
+        self.db = self.dbg.getDB()
 
     #####################################
     # Methods which should be implemented by child
+    def initDB(self, db, curTime):
+        raise NotImplementedError()
+
     def getIncidents(self):
         raise NotImplementedError()
 
@@ -115,17 +84,14 @@ class ELESApp(object):
     def runDailyStats(curTime):
         pass
 
-    @staticmethod
-    def urlMaker(escId):
+    def urlMaker(self, escId):
         pass
 
-    @staticmethod
-    def availabilityMaker(escId):
+    def availabilityMaker(self, escId):
         pass
 
     def getStatusesCollection(self):
-        db = dbUtils.getDB()
-        return db.escalator_statuses
+        return self.db.escalator_statuses
 
     def getTwitterApi(self):
         if not self.LIVE:
@@ -139,14 +105,13 @@ class ELESApp(object):
 
     def tick(self):
         curTime = utcnow()
-        db = dbUtils.getDB()
-        initDB(db, curTime)
+        self.initDB(self.db, curTime)
 
         # Get current incidents
         inc = self.getIncidents()
 
         # Run the tick
-        self.runTick(db, curTime, inc, log = self.log)
+        self.runTick(self.db, curTime, inc, log = self.log)
 
     # Execute the tick
     def runTick(self, db, curTime, escIncidents, log = sys.stdout):
@@ -168,7 +133,7 @@ class ELESApp(object):
         log.write('%i escalators have changed status\n'%len(changedStatusDict))
 
         # Generate tweets for escalators which have changed status
-        tweetMsgs = generateTweets(changedStatusDict,
+        tweetMsgs = self.generateTweets(changedStatusDict,
                                    availabilityMaker=self.availabilityMaker, 
                                    urlMaker = self.urlMaker
                                    )
@@ -257,23 +222,28 @@ class ELESApp(object):
         if isNaive(curTime):
             raise RuntimeError('curTime cannot be naive datetime')
 
-        db = dbUtils.getDB()
+        db = self.db
+        dbg = self.dbg
 
         log = log.write
         log('processIncidents: Processing %i incidents\n'%len(curIncidents))
 
         # Add any escalators or symptom codes if we are seeing them for the first time
         for inc in curIncidents:
-            dbUtils.updateDBFromIncidentData(inc, curTime)
+            dbUtils.updateDBFromIncidentData(db, inc, curTime)
+
+        # Update our local copy of common database structures
+        dbg.update()
 
         # Create dictionary of escalator to the current status
         escIdToCurStatus = defaultdict(lambda: OP_CODE)
-        incStatus = lambda inc: (unitToEscId[inc.UnitId], symptomToId[inc.SymptomDescription])
+        incStatus = lambda inc: (dbg.unitToEscId[inc.UnitId], dbg.symptomToId[inc.SymptomDescription])
         escIdToCurStatus.update(incStatus(inc) for inc in curIncidents)
 
         # Get the last known statuses for all escalators.
         # Recast escStatuses as a defaultdict
         escStatusItems = self.getLatestStatuses().items()
+
         default_entry = {'lastFix' : None,
                          'lastBreak' : None,
                          'lastInspection' : None,
@@ -281,6 +251,14 @@ class ELESApp(object):
                          'lastStatus' : None}
         escStatuses = defaultdict(lambda: default_entry)
         escStatuses.update(escStatusItems)
+
+        #####################
+        # DEBUG: FIND MISSING ENTRIES
+#        missing = (escId for escId, escStatus in escStatuses.iteritems() if escStatus['lastStatus'] is None)
+#        missing = list(missing)
+#        log("DEBUG: Have %i units that are missing last status!\n"%len(missing))
+#        log("\n".join(missing) + "\n")
+
         escIdToLastStatus = defaultdict(lambda: OP_CODE)
         escIdToLastStatus.update((escId, escStatus['lastStatus']['symptom_code']) for
                                   escId, escStatus in escStatuses.iteritems())
@@ -317,6 +295,115 @@ class ELESApp(object):
 
         return changedStatusDict
 
+    #######################################
+    # Generate tweet msgs using the changedStatusDict
+    # Return a list of tweets
+    def generateTweets(self, changedStatusDict, availabilityMaker=None, urlMaker=None):
+
+        db = self.db
+        dbg = self.dbg
+
+        if not changedStatusDict:
+            return []
+
+        operational_code = dbg.symptomToId['OPERATIONAL']
+        docToStr = lambda d: doc2Str(d, dbg.escIdToUnit, dbg.symptomCodeToSymptom)
+
+        # Extend a tweet by appending another string only if it doesnt violate
+        # tweet legnth
+        def extendTweet(msg1, msg2):
+            if not msg2:
+                return msg1
+            newmsg = '%s %s'%(msg1, msg2)
+            return newmsg if len(newmsg) <= TWEET_LEN else msg1
+
+        def extendTweetUrl(msg1, url):
+            newL = len(msg1) + 23 # 22 for url, plus space
+            newmsg = '%s %s'%(msg1, url)
+            return newmsg if newL <= TWEET_LEN else msg1
+
+        def getSymptomCodeCategory(code):
+            symptom = dbg.symptomCodeToSymptom[code]
+            return symptomToCategory[symptom]
+
+        tweetMsgs = []
+        for escId, statusDict in changedStatusDict.iteritems():
+
+            curStatus = statusDict['newStatus']
+            lastStatus = statusDict['lastStatus']
+            curSymptomCategory = getSymptomCodeCategory(curStatus['symptom_code'])
+            lastSymptomCategory = getSymptomCodeCategory(lastStatus['symptom_code'])
+            curSymptom = dbg.symptomCodeToSymptom[curStatus['symptom_code']]
+            lastSymptom = dbg.symptomCodeToSymptom[lastStatus['symptom_code']]
+           
+            # Get 6 char escalator code
+            unit = dbg.escIdToUnit[escId][0:6]
+            escData = dbg.escIdToEscData[escId]
+            stationCode = escData['station_code']
+            station = stations.codeToShortName[stationCode]
+
+            tweetMsg = ''
+
+            if lastSymptomCategory == 'ON':
+
+                # This unit has broken, or turned off
+                pfx = 'Off' if curSymptomCategory != 'BROKEN' else 'Broken'
+                tweetMsg = '{pfx}! #{station} #{unit}. Status is {symptom}.'
+                tweetMsg = tweetMsg.format(pfx=pfx,
+                                           station=station,
+                                           unit=unit,
+                                           symptom=curSymptom)
+
+                if curSymptomCategory == 'BROKEN':
+                    # Add to tweet "Last broke X days ago."
+                    lastFix = statusDict['lastFix']
+                    timeSinceLastFix = (curStatus['time'] - lastFix['time']).total_seconds() if lastFix else None
+                    lastBrokeStr = makeLastBrokeTimeStr(timeSinceLastFix)
+                    tweetMsg = extendTweet(tweetMsg, lastBrokeStr)
+
+            elif curSymptomCategory == 'ON':
+
+                # This unit is back online. It either represents a transition from a broken state,
+                # turned off state, or inspection state.
+
+                # This unit has broken, or turned off
+                pfx = 'Fixed' if lastSymptomCategory == 'BROKEN' else 'On'
+                tweetMsg = '{pfx}! #{station} #{unit}. Status was {symptom}.'
+                tweetMsg = tweetMsg.format(pfx=pfx,
+                                           station=station,
+                                           unit=unit,
+                                           symptom=lastSymptom)
+
+                # Get the downtime
+                lastOpEndTime = statusDict['lastOp'].get('end_time', None)
+                downTime = (curStatus['time'] - lastOpEndTime).total_seconds() if lastOpEndTime else None
+                if downTime:
+                    downTimeStr = secondsToTimeStrCompact(downTime)
+                    tweetMsg = extendTweet(tweetMsg, 'Downtime %s'%downTimeStr)
+            else:
+                # This represents a transition between non-operational states. Tweet
+                # about the updated state change
+                tweetMsg = 'Updated: #{station} #{unit}. Status now {symptom2}, was {symptom1}.'
+                tweetMsg = tweetMsg.format(station=station, unit=unit,
+                                           symptom1 = lastSymptom  ,
+                                           symptom2 = curSymptom)
+
+            # Tack on availability data
+            if availabilityMaker:
+                availabilityStr = availabilityMaker(escId)
+                if availabilityStr:
+                    tweetMsg = extendTweet(tweetMsg, availabilityStr)
+
+            # Tack on url string
+            if urlMaker:
+                urlStr = urlMaker(escId)
+                if urlStr:
+                    tweetMsg = extendTweetUrl(tweetMsg, urlStr)
+
+            tweetMsgs.append(tweetMsg)
+
+        return tweetMsgs
+
 ####################################################
 # Convert seconds to a time string
 # example: 160 minutes = "2 hrs, 40 min."
@@ -351,113 +438,6 @@ def secondsToTimeStrCompact(sec):
     timeStr = '{hr:0>2d}h{min:0>2d}m'.format(hr=hrs,min=minutes)
     return timeStr
 
-#######################################
-# Generate tweet msgs using the changedStatusDict
-# Return a list of tweets
-def generateTweets(changedStatusDict, availabilityMaker=None, urlMaker=None):
-
-    db = dbUtils.getDB()
-
-    if not changedStatusDict:
-        return []
-
-    operational_code = symptomToId['OPERATIONAL']
-    docToStr = lambda d: doc2Str(d, escIdToUnit, symptomCodeToSymptom)
-
-    # Extend a tweet by appending another string only if it doesnt violate
-    # tweet legnth
-    def extendTweet(msg1, msg2):
-        if not msg2:
-            return msg1
-        newmsg = '%s %s'%(msg1, msg2)
-        return newmsg if len(newmsg) <= TWEET_LEN else msg1
-
-    def extendTweetUrl(msg1, url):
-        newL = len(msg1) + 23 # 22 for url, plus space
-        newmsg = '%s %s'%(msg1, url)
-        return newmsg if newL <= TWEET_LEN else msg1
-
-    def getSymptomCodeCategory(code):
-        symptom = symptomCodeToSymptom[code]
-        return symptomToCategory[symptom]
-
-    tweetMsgs = []
-    for escId, statusDict in changedStatusDict.iteritems():
-
-        curStatus = statusDict['newStatus']
-        lastStatus = statusDict['lastStatus']
-        curSymptomCategory = getSymptomCodeCategory(curStatus['symptom_code'])
-        lastSymptomCategory = getSymptomCodeCategory(lastStatus['symptom_code'])
-        curSymptom = symptomCodeToSymptom[curStatus['symptom_code']]
-        lastSymptom = symptomCodeToSymptom[lastStatus['symptom_code']]
-       
-        # Get 6 char escalator code
-        unit = escIdToUnit[escId][0:6]
-        escData = escIdToEscData[escId]
-        stationCode = escData['station_code']
-        station = stations.codeToShortName[stationCode]
-
-        tweetMsg = ''
-
-        if lastSymptomCategory == 'ON':
-
-            # This unit has broken, or turned off
-            pfx = 'Off' if curSymptomCategory != 'BROKEN' else 'Broken'
-            tweetMsg = '{pfx}! #{station} #{unit}. Status is {symptom}.'
-            tweetMsg = tweetMsg.format(pfx=pfx,
-                                       station=station,
-                                       unit=unit,
-                                       symptom=curSymptom)
-
-            if curSymptomCategory == 'BROKEN':
-                # Add to tweet "Last broke X days ago."
-                lastFix = statusDict['lastFix']
-                timeSinceLastFix = (curStatus['time'] - lastFix['time']).total_seconds() if lastFix else None
-                lastBrokeStr = makeLastBrokeTimeStr(timeSinceLastFix)
-                tweetMsg = extendTweet(tweetMsg, lastBrokeStr)
-
-        elif curSymptomCategory == 'ON':
-
-            # This unit is back online. It either represents a transition from a broken state,
-            # turned off state, or inspection state.
-
-            # This unit has broken, or turned off
-            pfx = 'Fixed' if lastSymptomCategory == 'BROKEN' else 'On'
-            tweetMsg = '{pfx}! #{station} #{unit}. Status was {symptom}.'
-            tweetMsg = tweetMsg.format(pfx=pfx,
-                                       station=station,
-                                       unit=unit,
-                                       symptom=lastSymptom)
-
-            # Get the downtime
-            lastOpEndTime = statusDict['lastOp'].get('end_time', None)
-            downTime = (curStatus['time'] - lastOpEndTime).total_seconds() if lastOpEndTime else None
-            if downTime:
-                downTimeStr = secondsToTimeStrCompact(downTime)
-                tweetMsg = extendTweet(tweetMsg, 'Downtime %s'%downTimeStr)
-        else:
-            # This represents a transition between non-operational states. Tweet
-            # about the updated state change
-            tweetMsg = 'Updated: #{station} #{unit}. Status now {symptom2}, was {symptom1}.'
-            tweetMsg = tweetMsg.format(station=station, unit=unit,
-                                       symptom1 = lastSymptom  ,
-                                       symptom2 = curSymptom)
-
-        # Tack on availability data
-        if availabilityMaker:
-            availabilityStr = availabilityMaker(escId)
-            if availabilityStr:
-                tweetMsg = extendTweet(tweetMsg, availabilityStr)
-
-        # Tack on url string
-        if urlMaker:
-            urlStr = urlMaker(escId)
-            if urlStr:
-                tweetMsg = extendTweetUrl(tweetMsg, urlStr)
-
-        tweetMsgs.append(tweetMsg)
-
-    return tweetMsgs
 
 def makeLastBrokeTimeStr(secs):
     if secs is None:

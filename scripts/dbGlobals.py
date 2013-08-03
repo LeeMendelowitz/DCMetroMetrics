@@ -7,65 +7,85 @@
 # or symptom code is seen for the first time.
 #######################################################
 import pymongo
-from escalatorDefs import OPERATIONAL_CODE
+from escalatorDefs import OPERATIONAL_CODE as OP_CODE
 import os
 
 invDict = lambda d: dict((v,k) for k,v in d.iteritems())
 
-# Global Variables
-db = None
-unitToEscId = None
-escIdToUnit = None
-symptomToId = None
-symptomCodeToSymptom = None
-escIdToEscData = None
-opCode = OPERATIONAL_CODE
-escList = None
-eleList = None
-esc_ids = None
-ele_ids = None
-all_ids = None
-escIdToEscData = None # For escalators and elevators
+class DBGlobals(object):
 
-def update():
-    """
-    Update global variables by querying the database
-    """
-    global db, unitToEscId, escIdToUnit, symptomToId, symptomCodeToSymptom, escIdToEscData,\
-           opCode, esc_ids, ele_ids, all_ids,\
-           escIdToEscData, eleIdToEleData
+    def __init__(self):
+        self.db = None
+        self.unitToEscId = None
+        self.escIdToUnit = None
+        self.symptomToId = None
+        self.symptomCodeToSymptom = None
+        self.escIdToEscData = None
+        self.escList = None
+        self.eleList = None
+        self.esc_ids = None
+        self.ele_ids = None
+        self.all_ids = None
+        self.escIdToEscData = None # For escalators and elevators
+        self.update()
 
-    db = getDB(force=True)
+    def update(self):
+        """
+        Update global variables by querying the database
+        """
 
-    # Add the operational code
-    db.symptom_codes.update({'_id' : OPERATIONAL_CODE},
-                                    {'$set' : {'symptom_desc' : 'OPERATIONAL'} },
-                                     upsert=True)
+        self.db = getDB()
 
-    # Build unitToEscId & escIdToUnit
-    escList = list(db.escalators.find())
-    unitToEscId = dict((d['unit_id'],d['_id']) for d in escList)
-    escIdToUnit = invDict(unitToEscId)
+        # Add the operational code to the database
+        self.db.symptom_codes.update({'_id' : OP_CODE},
+                                        {'$set' : {'symptom_desc' : 'OPERATIONAL'} },
+                                         upsert=True)
 
-    # Build symptomDict, symptomCodeToSymptom
-    symptoms = list(db.symptom_codes.find())
-    symptomToId = dict((d['symptom_desc'],d['_id']) for d in symptoms)
-    opCode = symptomToId['OPERATIONAL']
-    symptomCodeToSymptom = invDict(symptomToId)
+        # Build unitToEscId & escIdToUnit
+        unitList = list(self.db.escalators.find())
+        self.unitToEscId = dict((d['unit_id'],d['_id']) for d in unitList)
+        self.escIdToUnit = invDict(self.unitToEscId)
 
-    # Build escalator/elevator data
-    escList = list(db.escalators.find({'unit_type' : 'ESCALATOR'}))
-    eleList = list(db.escalators.find({'unit_type' : 'ELEVATOR'}))
-    escIdToEscData = dict((d['_id'], d) for d in escList+eleList)
-    esc_ids = db.escalators.find({'unit_type' : 'ESCALATOR'}).distinct('_id')
-    ele_ids = db.escalators.find({'unit_type' : 'ELEVATOR'}).distinct('_id')
-    all_ids = db.escalators.find().distinct('_id')
+        # Build symptomDict, symptomCodeToSymptom
+        symptoms = list(self.db.symptom_codes.find())
+        self.symptomToId = dict((d['symptom_desc'],d['_id']) for d in symptoms)
+        self.symptomCodeToSymptom = invDict(self.symptomToId)
 
+        # Build escalator/elevator data
+        self.escList = [d for d in unitList if d['unit_type']=='ESCALATOR']
+        self.eleList = [d for d in unitList if d['unit_type']=='ELEVATOR']
+        self.escIdToEscData = dict((d['_id'], d) for d in unitList)
+        self.esc_ids = [d['_id'] for d in self.escList]
+        self.ele_ids = [d['_id'] for d in self.eleList]
+        self.all_ids = self.esc_ids + self.ele_ids
 
-def getDB(force=False):
-    global db
-    if (db is not None) and (not force):
-        return db
+    def getEscalatorIds(self):
+        """
+        Return ids for units which are escalators
+        """
+        return self.esc_ids
+
+    def getElevatorIds(self):
+        """
+        Return ids for units which are elevators
+        """
+        return self.ele_ids
+
+    def getUnitIds(self):
+        """
+        Return ids for all units (escalators & elevators)
+        """
+        return self.all_ids
+
+    def getDB(self):
+        """
+        Get the Mongo Database
+        """
+        if self.db is None:
+            self.db = getDB()
+        return self.db
+
+def getDB():
 
     host = os.environ["OPENSHIFT_MONGODB_DB_HOST"]
     port = int(os.environ["OPENSHIFT_MONGODB_DB_PORT"])
@@ -82,38 +102,3 @@ def getDB(force=False):
     db = client.MetroEscalators
     return db
 
-########################################
-# Create dictionary from escalator unit id
-# to the pymongo id
-def getUnitToId():
-    escList = list(db.escalators.find())
-    unitToEscId = dict((d['unit_id'],d['_id']) for d in escList)
-    return unitToEscId
-
-def getEsc(escId):
-    db = getDB()
-    return db.escalators.find_one({'_id' : escId})
-
-#########################################
-def getEscalatorIds():
-    """
-    Return ids for units which are escalators
-    """
-    return esc_ids
-
-def getElevatorIds():
-    """
-    Return ids for units which are elevators
-    """
-    return ele_ids
-
-def getUnitIds():
-    """
-    Return ids for all units (escalators & elevators)
-    """
-    return all_ids
-
-
-
-# Update the global variables
-update()

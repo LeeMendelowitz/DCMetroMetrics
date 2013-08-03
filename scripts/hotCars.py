@@ -10,7 +10,6 @@ from dateutil.tz import tzlocal
 import time
 from collections import defaultdict, Counter
 from operator import itemgetter
-import dbUtils
 
 from metroTimes import utcnow, toLocalTime, UTCToLocalTime, tzutc
 
@@ -227,7 +226,7 @@ def tick(db, tweetLive = False, log=sys.stderr):
         if tweeterDoc is None:
             log.write('Warning: Could not acknowledge unacknowledged tweet %i because user %s could not be found\n'%(doc['_id'], user_id))
             continue
-        response = genResponseTweet(tweeterDoc['handle'], getHotCarData(tweetText))
+        response = genResponseTweet(db, tweeterDoc['handle'], getHotCarData(tweetText))
         tweetResponses.append((doc['_id'], response))
 
     # Remove any tweets returned by Twitter search which mention ME. These
@@ -250,7 +249,7 @@ def tick(db, tweetLive = False, log=sys.stderr):
 
 
     # Get tweets which mention MetroHotCars
-    tweets.extend(getMentions(curTime=curTime))
+    tweets.extend(getMentions(db, curTime=curTime))
 
     tweets = uniqueTweets(tweets)
     log.write('Twitter search returned %i unique tweets\n'%len(tweets))
@@ -272,7 +271,7 @@ def tick(db, tweetLive = False, log=sys.stderr):
 
     tweetData = [(t,getHotCarData(t.text)) for t in filteredTweets]
     tweetData = [(t,hcd) for t,hcd in tweetData if tweetIsValid(t, hcd)]
-    tweetData = filterDuplicateReports(tweetData, log=log)
+    tweetData = filterDuplicateReports(db, tweetData, log=log)
     tweetIds = set(t.id for t,hcd in tweetData)
 
     # Get tweets which have been manually curated. We don't check if
@@ -297,7 +296,7 @@ def tick(db, tweetLive = False, log=sys.stderr):
         # generate a response tweet
         if updated:
             user = tweet.user.screen_name
-            response = genResponseTweet(user, hotCarData)
+            response = genResponseTweet(db, user, hotCarData)
             tweetResponses.append((tweet.id, response))
 
     # Update the app state
@@ -463,11 +462,10 @@ def tweetIsValid(tweet, hotCarData):
 # 30 days.
 #
 # tweetData: List of (tweet, hotCarData) tuples
-def filterDuplicateReports(tweetData, log=sys.stderr):
+def filterDuplicateReports(db, tweetData, log=sys.stderr):
 
     # Build a dictionary from car number to the reporting users/times.
     # This includes all previous reports.
-    db = dbUtils.getDB()
     hotCarReportDict = getAllHotCarReports(db)
 
     # Add the current batch of tweets to the hotCarReportDict
@@ -518,7 +516,7 @@ def filterDuplicateReports(tweetData, log=sys.stderr):
 
 ########################################
 # Generate reponse tweet
-def genResponseTweet(toScreenName, hotCarData):
+def genResponseTweet(db, toScreenName, hotCarData):
     carNums = hotCarData['cars']
     colors = hotCarData['colors']
 
@@ -532,7 +530,6 @@ def genResponseTweet(toScreenName, hotCarData):
         msg = '@wmata @MetroRailInfo Car {car} is a #wmata #hotcar HT @{user}'.format(car=car, user=user)
 
     # Add information about the number of reports for this hot car.
-    db = dbUtils.getDB()
     numReports = db.hotcars.find({'car_number' : int(car)}).count()
     carUrl = getHotCarUrl(car)
     msg2 = ''
@@ -554,8 +551,7 @@ def genResponseTweet(toScreenName, hotCarData):
 # modifies or quotes the non-automated tweet.
 #
 # Returns a set of forbidden car numbers
-def getForbiddenCarsByMention():
-    db = dbUtils.getDB()
+def getForbiddenCarsByMention(db):
     appState = db.hotcars_appstate.find_one({'_id' : 1})
     lastSelfTweetId = appState.get('lastSelfTweetId', 0)
 
@@ -606,8 +602,7 @@ def getForbiddenCarsByMention():
 # Get tweets which mention MetroHotCars
 # since this is rate limited to once per minute,
 # only do this once per 90 sec.
-def getMentions(curTime):
-    db = dbUtils.getDB()
+def getMentions(db, curTime):
     appState = db.hotcars_appstate.find_one({'_id' : 1})
     lastMentionsCheckTime = appState.get('lastMentionsCheckTime', None)
     if lastMentionsCheckTime is not None:
@@ -633,7 +628,7 @@ def getMentions(curTime):
         return count > 0
 
     # Get car numbers which are forbidden to be submitted by mention
-    forbiddenCarNumbers = getForbiddenCarsByMention()
+    forbiddenCarNumbers = getForbiddenCarsByMention(db)
 
     def tweetIsForbidden(tweet):
         carNums = getHotCarData(tweet.text)['cars']
@@ -656,7 +651,7 @@ def countWeekdays(t1, t2):
     numWeekdays = sum(1 for d in dateGen if d.weekday() < 5)
     return numWeekdays
 
-def summarizeReports(reports):
+def summarizeReports(db, reports):
     numReports = len(reports)
     reports = sorted(reports, key = itemgetter('time'))
     firstReport = reports[0]
@@ -665,7 +660,6 @@ def summarizeReports(reports):
     lastReportTime = lastReport['time']
 
     # Count the number of unique reporters
-    db = dbUtils.getDB()
     tweetData = [db.hotcars_tweets.find_one({'_id' : r['tweet_id']}) for r in reports]
     users = set(t['user_id'] for t in tweetData)
 

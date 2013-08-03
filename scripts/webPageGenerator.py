@@ -10,12 +10,14 @@ from collections import defaultdict, Counter
 import __builtin__
 
 import dbUtils
+import dbGlobals
 import stations
 import metroEscalatorsWeb
 import hotCarsWeb
 import hotCars
 from metroTimes import utcnow, toLocalTime, localToUTCTime, tzutc
 from restartingGreenlet import RestartingGreenlet
+
 
 # Set the path to the bottle template directory
 REPO_DIR = os.environ['OPENSHIFT_REPO_DIR']
@@ -49,7 +51,6 @@ classToUpdateInterval = \
 }
 
 
-
 ################################################
 # Reload the essential parts of this module.
 # Useful for testing. Call this after editing
@@ -78,8 +79,9 @@ def makePage(*args, **kwargs):
 
 ###################################################
 # Initialize the webpages collection in the database
-def initDB():
-    db = dbUtils.getDB()
+def initDB(dbg):
+
+    db = dbg.getDB()
 
     queries = []
 
@@ -87,7 +89,7 @@ def initDB():
     queries.append({'class' : 'home'})
 
     # All escalators get a page.
-    escIds = dbUtils.getEscalatorIds()
+    escIds = dbg.getEscalatorIds()
     for escId in escIds:
         queries.append({'class' : 'escalator', 'escalator_id' : escId})
 
@@ -137,22 +139,22 @@ def initDB():
 # from the webpages collection
 
 #########
-def genEscalatorPage(doc):
+def genEscalatorPage(doc, dbg):
     escId = doc['escalator_id']
-    escUnitName = dbUtils.escIdToUnit[escId]
+    escUnitName = dbg.escIdToUnit[escId]
     escUnitShort = escUnitName[0:6]
-    db = dbUtils.getDB()
+    db = dbg.getDB()
     if escId is None:
         return 'No escalator found'
-    statuses = dbUtils.getEscalatorStatuses(escId = escId)
-    dbUtils.addStatusAttr(statuses)
+    statuses = dbUtils.getEscalatorStatuses(escId = escId, dbg=dbg)
+    dbUtils.addStatusAttr(statuses, dbg=dbg)
 
     curTime = utcnow()
     # Set the end_time of the current status to now
     if statuses and 'end_time' not in statuses[0]:
         statuses[0]['end_time'] = curTime
 
-    escData = dbUtils.escIdToEscData[escId]
+    escData = dbg.escIdToEscData[escId]
 
     # Summarize the escalator performance
     startTime =  statuses[-1]['time'] if statuses else localToUTCTime(datetime(2000,1,1))
@@ -166,7 +168,7 @@ def genEscalatorPage(doc):
 
 
 #########
-def genStationPage(doc):
+def genStationPage(doc, dbg):
     # Get the station code
     shortName = doc['station_name']
     codes = [c for c,sn in stations.codeToShortName.iteritems() if sn==shortName]
@@ -175,10 +177,10 @@ def genStationPage(doc):
     stationCode = codes[0]
 
     # Get the summary for this station over all time
-    stationSummary = dbUtils.getStationSummary(stationCode)
+    stationSummary = dbUtils.getStationSummary(stationCode, dbg=dbg)
 
     # Get the current overview of escalators in this station
-    stationSnapshot = dbUtils.getStationSnapshot(stationCode)
+    stationSnapshot = dbUtils.getStationSnapshot(stationCode, dbg=dbg)
     escUnitIds = stationSummary['escUnitIds']
     escToSummary = stationSummary['escToSummary']
     escToStatuses = stationSummary['escToStatuses']
@@ -191,8 +193,8 @@ def genStationPage(doc):
         if not statuses:
             continue
         latestStatus = statuses[0]
-        escId = dbUtils.unitToEscId[escUnitId]
-        escMetaData = dbUtils.escIdToEscData[escId]
+        escId = dbg.unitToEscId[escUnitId]
+        escMetaData = dbg.escIdToEscData[escId]
         shortUnitId = escUnitId[0:6]
         rec = {'unitId' : shortUnitId,
                'stationDesc' : escMetaData['station_desc'],
@@ -219,15 +221,15 @@ def genEscalatorRankings_Old(doc):
     writeContent(filename, content)
 
 ###################################
-def genEscalatorRankings(doc):
+def genEscalatorRankings(doc, dbg):
     now = utcnow()
     rankingArgs = [
-                     #key,  (startTime, endTime),       header value
-                    ('d1', (now - timedelta(days=1), now), '1 day'),
-                    ('d3', (now - timedelta(days=3), now), '3 day'),
-                    ('d7', (now - timedelta(days=7), now), '7 day'),
-                    ('d14', (now - timedelta(days=14), now), '14 day'),
-                    ('d28', (now - timedelta(days=28), now), '28 day'),
+                     #key,  (startTime, endTime, dbg),       header value
+                    ('d1', (now - timedelta(days=1), now, dbg), '1 day'),
+                    ('d3', (now - timedelta(days=3), now, dbg), '3 day'),
+                    ('d7', (now - timedelta(days=7), now, dbg), '7 day'),
+                    ('d14', (now - timedelta(days=14), now, dbg), '14 day'),
+                    ('d28', (now - timedelta(days=28), now, dbg), '28 day'),
                     ('AllTime', (None, None), 'All Time') ]
     def makeEntry(args, header):
         dt = metroEscalatorsWeb.escalatorRankingsTable(*args)
@@ -236,8 +238,8 @@ def genEscalatorRankings(doc):
                 'header' : header}
 
     rankingsDict = dict((k, makeEntry(args, header)) for k,args,header in rankingArgs)
-    dtDailyCounts = metroEscalatorsWeb.makeBreakInspectionTable()
-    stationCodeToSummary = metroEscalatorsWeb.getStationSummaries()
+    dtDailyCounts = metroEscalatorsWeb.makeBreakInspectionTable(dbg=dbg)
+    stationCodeToSummary = metroEscalatorsWeb.getStationSummaries(dbg=dbg)
     dtStationRankings = metroEscalatorsWeb.makeStationRankingGoogleTable(stationCodeToSummary)
 
     # Write html
@@ -251,19 +253,19 @@ def genEscalatorRankings(doc):
     writeContent(filename, content)
 
 #########
-def genHomePage(doc):
+def genHomePage(doc, dbg):
     content = makePage('home')
     filename = 'home.html'
     writeContent(filename, content)
 
 #########
-def genDataPage(doc):
+def genDataPage(doc, dbg):
     content = makePage('data')
     filename = 'data.html'
     writeContent(filename, content)
 
 #########
-def genPressPage(doc):
+def genPressPage(doc, dbg):
     content = makePage('press')
     filename = 'press.html'
     writeContent(filename, content)
@@ -271,7 +273,10 @@ def genPressPage(doc):
 #####################################################
 # Generate the escalator outages page.
 # Doc is the record for this page in the db.webpages collection.
-def genEscalatorOutages(doc):
+def genEscalatorOutages(doc, dbg):
+
+    db = dbg.getDB()
+
     escalatorList = metroEscalatorsWeb.escalatorNotOperatingList()
 
     # Summarize the non-operational escalators by symptom
@@ -308,7 +313,7 @@ def genEscalatorOutages(doc):
 
 
     # Get the availability and weighted availability
-    systemAvailability = dbUtils.getSystemAvailability(escalators=True)
+    systemAvailability = dbUtils.getSystemAvailability(escalators=True, dbg=dbg)
     kwargs = {'escList' : escalatorList,
               'symptomCounts' : symptomCounts,
               'systemAvailability' : systemAvailability,
@@ -328,8 +333,8 @@ def genEscalatorOutages(doc):
     writeContent(filename, content)
 
 #########
-def genEscalatorDirectory(doc):
-    escalatorList = metroEscalatorsWeb.escalatorList()
+def genEscalatorDirectory(doc, dbg):
+    escalatorList = metroEscalatorsWeb.escalatorList(dbg=dbg)
 
     # Group escalators by station
     stationToEsc = defaultdict(list)
@@ -345,7 +350,7 @@ def genEscalatorDirectory(doc):
     writeContent(filename, content)
 
 #########
-def genStationDirectory(doc):
+def genStationDirectory(doc, dbg):
     stationRecs, dtStations = metroEscalatorsWeb.stationList()
 
     # Make HTML
@@ -359,17 +364,19 @@ def genStationDirectory(doc):
     writeContent(filename, content)
 
 #########
-def genHotCars(doc):
+def genHotCars(doc, dbg):
 
-    hotCarData = hotCarsWeb.getAllHotCarData()
+    db = dbg.getDB()
+
+    hotCarData = hotCarsWeb.getAllHotCarData(db)
     dtHotCars = hotCarsWeb.hotCarGoogleTable(hotCarData)
-    dtHotCarsByUser = hotCarsWeb.hotCarByUserGoogleTable()
+    dtHotCarsByUser = hotCarsWeb.hotCarByUserGoogleTable(db)
     allReports = [r for d in hotCarData.itervalues() for r in d['reports']]
-    summary = hotCars.summarizeReports(allReports)
+    summary = hotCars.summarizeReports(db, allReports)
     dtHotCarsBySeries = hotCarsWeb.makeCarSeriesGoogleTable(summary['seriesToCount'])
     dtHotCarsByColorCustom = hotCarsWeb.makeColorCountsGoogleTableCustom(summary['colorToCount'])
     dtHotCarsByColor = hotCarsWeb.makeColorCountsGoogleTable(summary['colorToCount'])
-    dtHotCarsTimeSeries = hotCarsWeb.makeHotCarTimeSeries()
+    dtHotCarsTimeSeries = hotCarsWeb.makeHotCarTimeSeries(db)
     numReports = sum(d['numReports'] for d in hotCarData.itervalues())
 
     kwargs = { 'summary' : summary,
@@ -392,14 +399,16 @@ def genHotCars(doc):
     filename = 'hotCars.js'
     writeContent(filename, content)
 
-def genGlossaryPage(doc):
+def genGlossaryPage(doc, dbg):
     content = makePage('glossary')
     filename = 'glossary.html'
     writeContent(filename, content)
 
-def genHotCarPage(doc):
+def genHotCarPage(doc, dbg):
+    db = dbg.getDB()
+
     carNum = int(doc['car_number'])
-    data = hotCarsWeb.getHotCarData(carNum)
+    data = hotCarsWeb.getHotCarData(db, carNum)
     reports = data['reports']
     colors = data['colors']
     numReports = data['numReports']
@@ -431,6 +440,7 @@ class WebPageGenerator(RestartingGreenlet):
         self.SLEEP = SLEEP
         self.logFileName = os.path.join(DATA_DIR, 'webPageGenerator.log')
         self.logFile = None
+        self.dbg = dbGlobals.DBGlobals()
 
     def _run(self):
         while True:
@@ -447,8 +457,11 @@ class WebPageGenerator(RestartingGreenlet):
 
     def tick(self):
 
-        db = dbUtils.getDB()
-        initDB() # Add any missing documents to the database
+        dbg = self.dbg
+        dbg.update()
+        db = dbg.getDB()
+
+        initDB(dbg) # Add any missing documents to the database
        
         # Get documents that need to be updated 
         docs = list(db.webpages.find({'forceUpdate' : True}))
@@ -481,7 +494,7 @@ class WebPageGenerator(RestartingGreenlet):
         # Make the updates
         for doc in docs:
            gevent.sleep(0.0) # Cooperative yield
-           updatePage(doc, curTimeLocal, self.logFile)
+           updatePage(doc, dbg, curTimeLocal, self.logFile)
            #Update the webpage database
            newDoc = dict(doc)
            newDoc['lastUpdateTime'] = utcnow()
@@ -507,7 +520,7 @@ classToPageGenerator =  \
 ############################################
 # Re-generate a single webpage, specified by the document from
 # the db.webpages collection
-def updatePage(doc, curTimeLocal = None, logFile = sys.stdout):
+def updatePage(doc, dbg, curTimeLocal = None, logFile = sys.stdout):
     """
     Re-generate the webpage given by doc.
     """
@@ -521,7 +534,7 @@ def updatePage(doc, curTimeLocal = None, logFile = sys.stdout):
     tf = '%m/%d/%y %I:%M %p'
     timeStamp = curTimeLocal.strftime(tf)
     logFile.write("%s: Updating webpage: %s\n"%(timeStamp,str(doc)))
-    pageGenerator(doc)
+    pageGenerator(doc, dbg)
 
 #############################################
 # Re-generate all webpages
@@ -530,6 +543,7 @@ def updateAllPages():
     Re-generate all webpages
     """
     reload()
-    db = dbUtils.getDB()
+    dbg = dbGlobals.DBGlobals()
+    db = dbg.getDB()
     for doc in db.webpages.find():
-        updatePage(doc)
+        updatePage(doc, dbg)

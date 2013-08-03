@@ -1,5 +1,4 @@
 import hotCars
-import dbUtils
 from operator import itemgetter
 from collections import defaultdict, Counter
 import gviz_api
@@ -52,8 +51,7 @@ def makeColorString(records):
 # Return a dictionary from hot car number to the list
 # of reports for that hot car.
 # Convert all times to local times.
-def getHotCarToReports():
-    db = dbUtils.getDB()
+def getHotCarToReports(db):
 
     # Car number to reports
     hotCarToReports = hotCars.getAllHotCarReports(db)
@@ -67,17 +65,16 @@ def getHotCarToReports():
 ####################################################
 # Return a list of hot car reports for a single car.
 # Convert all times to local time zone
-def getHotCarReportsForCar(carNum):
-    db = dbUtils.getDB()
+def getHotCarReportsForCar(db, carNum):
     reports = hotCars.getHotCarReportsForCar(db, carNum)
     for r in reports:
         r['time'] = toLocalTime(r['time'])
     return reports
 
-def getAllHotCarData():
+def getAllHotCarData(db):
 
     # Car number to reports
-    hotCarToReports = getHotCarToReports()
+    hotCarToReports = getHotCarToReports(db)
 
 
     # Summarize this data
@@ -143,10 +140,10 @@ def hotCarGoogleTable(hotCarData):
     dtHotCars = gviz_api.DataTable(schema, rowData)
     return dtHotCars
 
-def getHotCarDataByUser():
+def getHotCarDataByUser(db):
 
     # Car number to reports
-    hotCarToReports = getHotCarToReports()
+    hotCarToReports = getHotCarToReports(db)
 
     reportsByUser = defaultdict(list)
     reports = (d for dlist in hotCarToReports.itervalues() for d in dlist)
@@ -171,9 +168,9 @@ def getHotCarDataByUser():
 
     return userToReportData
 
-def hotCarByUserGoogleTable():
+def hotCarByUserGoogleTable(db):
 
-    userHotCarData = getHotCarDataByUser()
+    userHotCarData = getHotCarDataByUser(db)
     
     # Make a DataTable with this data
     schema = [('Handle', 'string', 'Handle'),
@@ -194,12 +191,11 @@ def hotCarByUserGoogleTable():
     return dtHotCarsByUser
 
 # Get web page data for a single hot car
-def getHotCarData(carNum):
+def getHotCarData(db, carNum):
 
-    db = dbUtils.getDB()
 
     # Get all hot car reports for this car num
-    reports = getHotCarReportsForCar(carNum)
+    reports = getHotCarReportsForCar(db, carNum)
 
     # Get the tweet embedding html. Cache the html if it does not exist
     for report in reports:
@@ -289,9 +285,8 @@ def makeColorCountsGoogleTableCustom(colorToCount):
 
 ###############################
 # Get Time Series of Hot Car Report Count and Daily High Temperature
-def makeHotCarTimeSeries():
-    db = dbUtils.getDB()
-    hotCarDict = getHotCarToReports()
+def makeHotCarTimeSeries(db):
+    hotCarDict = getHotCarToReports(db)
     reports = [r for rl in hotCarDict.itervalues() for r in rl]
     reportDates = [r['time'].date() for r in reports]
     dateCounts = Counter(reportDates)
@@ -301,7 +296,7 @@ def makeHotCarTimeSeries():
     numDays = (today-firstDate).days + 1
     days = [firstDate + timedelta(days=i) for i in range(numDays)]
 
-    dailyTemps = dict(getDailyTemps(firstDate, today))
+    dailyTemps = dict(getDailyTemps(db, firstDate, today))
     assert(len(dailyTemps) == len(days))
 
     schema = [('date', 'date', 'date'),
@@ -315,9 +310,8 @@ def makeHotCarTimeSeries():
 # Get the max temperatue for each day between
 # firstDay and lastDay.
 # lastDay should be no greater than today.
-def getDailyTemps(firstDay, lastDay = None):
+def getDailyTemps(db, firstDay, lastDay = None):
 
-    db = dbUtils.getDB()
     W = hotCars.getWundergroundAPI()
     today = date.today()
     if lastDay is None:

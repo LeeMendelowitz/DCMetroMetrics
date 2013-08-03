@@ -1,5 +1,6 @@
 # Functions for the MetroEscalators website
 import stations
+import dbGlobals
 import dbUtils
 from statusGroup import StatusGroup
 from StringIO import StringIO
@@ -98,13 +99,18 @@ def makeEscalatorLink(unitId):
 ########################################
 # Generate the data for the listing of
 # all stations
-def stationList():
+def stationList(dbg = None):
+
+    if dbg is None:
+        dbg = dbGlobals.DBGlobals()
+    db = dbg.getDB()
+
     nameToStationCode = stations.nameToCodes
     codeToStationData = stations.codeToStationData
 
     recs = []
 
-    systemAvailability = dbUtils.getSystemAvailability(escalators=True)
+    systemAvailability = dbUtils.getSystemAvailability(escalators=True, dbg=dbg)
     stationToAvailability = systemAvailability['stationToAvailability']
     stationToStatuses = systemAvailability['stationToStatuses']
     numWorking = lambda sl: sum(1 for s in sl if s['symptomCategory']=='ON')
@@ -143,11 +149,16 @@ def stationList():
 
 ##########################################
 # Generate the listing of all escalators
-def escalatorList():
+def escalatorList(dbg=None):
+
+    if dbg is None:
+        dbg = dbGlobals.DBGlobals()
+    db = dbg.getDB()
+            
     nameToStationCode = stations.nameToCodes
     codeToStationData = stations.codeToStationData
     recs = []
-    systemAvailability = dbUtils.getSystemAvailability(escalators=True)
+    systemAvailability = dbUtils.getSystemAvailability(escalators=True, dbg=dbg)
     numWorking = lambda sl: sum(1 for s in sl if s['symptomCategory']=='ON')
 
     curEscStatuses = systemAvailability['lastStatuses']
@@ -181,18 +192,24 @@ def escalatorNotOperatingList():
     return notOperating
 
 #########################################################
-def getRankings(startTime=None, endTime=None):
+def getRankings(startTime=None, endTime=None, dbg = None):
+
+    if dbg is None:
+        dbg = dbGlobals.DBGlobals()
 
     if endTime is None:
         endTime = utcnow()
-    escToSummary = dbUtils.getAllEscalatorSummaries(startTime=startTime, endTime=endTime, escalators=True)
+    escToSummary = dbUtils.getAllEscalatorSummaries(startTime=startTime,
+                                                    endTime=endTime,
+                                                    escalators=True,
+                                                    dbg=dbg)
 
     def keySort(q):
         def key(k):
             return escToSummary[k][q]
         return key 
 
-    escIds = escToSummary.keys()
+    escIds = dbg.getEscalatorIds()
     mostBreaks = sorted(escIds, key = keySort('numBreaks'), reverse=True)
     mostInspected = sorted(escIds, key = keySort('numInspections'), reverse=True)
     mostUnavailable = sorted(escIds, key = keySort('availability'))
@@ -217,7 +234,11 @@ def getRankings(startTime=None, endTime=None):
 #############################################################
 # Sift through the rankings returned by getRankings and prepare
 # data for HTML display
-def compileRankings(rankingDict, N=20):
+def compileRankings(rankingDict, N=20, dbg=None):
+
+    if dbg is None:
+        dbg = dbGlobals.DBGlobals()
+
     escToSummary = rankingDict['escToSummary']
 
     reportTime = max(s['absTime'] for s in escToSummary.itervalues())
@@ -227,8 +248,8 @@ def compileRankings(rankingDict, N=20):
     mostBrokenTimePercentage = rankingDict['mostBrokenTimePercentage']
 
     def makeRecord(escId, key):
-        unitId = dbUtils.escIdToUnit[escId][0:6]
-        escData = dbUtils.escIdToEscData[escId]
+        unitId = dbg.escIdToUnit[escId][0:6]
+        escData = dbg.escIdToEscData[escId]
         escSummary = escToSummary[escId]
         stationCode = escData['station_code']
         stationName = stations.codeToName[stationCode]
@@ -255,9 +276,12 @@ def compileRankings(rankingDict, N=20):
 
 #########################################
 # Make a Google Table of escalator rankings
-def escalatorRankingsTable(startTime=None, endTime=None):
+def escalatorRankingsTable(startTime=None, endTime=None, dbg=None):
 
-    rankingD = getRankings(startTime, endTime)
+    if dbg is None:
+        dbg = dbGlobals.DBGlobals()
+
+    rankingD = getRankings(startTime, endTime, dbg=dbg)
     escToSummary = rankingD['escToSummary']
 
     schema = [('unitId', 'string','Escalator'),
@@ -269,7 +293,7 @@ def escalatorRankingsTable(startTime=None, endTime=None):
     
     rows = []
     for escId, summaryD in escToSummary.iteritems():
-        escData = dbUtils.escIdToEscData[escId]
+        escData = dbg.escIdToEscData[escId]
         stationCode = escData['station_code']
         escLink = makeEscalatorLink(escData['unit_id'])
         row = [escLink, makeStationLink(stationCode),
@@ -285,13 +309,14 @@ def escalatorRankingsTable(startTime=None, endTime=None):
 #########################################
 # Make a plot of break counts and inspection counts
 # per day
-def makeBreakInspectionTable():
-    escIds = dbUtils.escIdToUnit.keys()
+def makeBreakInspectionTable(dbg=None):
+    if dbg is None:
+        dbg = dbGlobals.DBGlobals()
+    escIds = dbg.getEscalatorIds()
     escToStatuses = {}
-    getEscalatorStatuses = dbUtils.getEscalatorStatuses
     for escId in escIds:
         gevent.sleep(0.0)
-        statuses = getEscalatorStatuses(escId=escId)[::-1] # Put in ascending order
+        statuses = dbUtils.getEscalatorStatuses(escId=escId, dbg=dbg)[::-1] # Put in ascending order
         statusGroup = StatusGroup(statuses)
         breaks = statusGroup.breakStatuses
         inspections = statusGroup.inspectionStatuses
@@ -355,8 +380,10 @@ def makeBreakInspectionTable():
 ###################################
 # Find data outages 
 # Just report the largest outage for a given day
-def getDataOutages():
-    db = dbUtils.getDB()
+def getDataOutages(dbg=None):
+    if dbg is None:
+        dbg = dbGlobals.DBGlobals()
+    db = dbg.getDB()
     allStat = list(db.escalator_statuses.find())
     T = 60*60
     delayed = [s for s in allStat if s['tickDelta'] >= T]
@@ -372,7 +399,7 @@ def getDataOutages():
     return dayToOutage
 
 #####################################
-def getStationSummaries():
+def getStationSummaries(dbg=None):
     nameToStationCodes = stations.nameToCodes
     codeToStationData = stations.codeToStationData
     stationCodes = [codes[0] for codes in nameToStationCodes.itervalues()]
@@ -383,7 +410,7 @@ def getStationSummaries():
     stationCodeToSummary = {}
 
     for sc in stationCodes:
-        summary = dbUtils.getStationSummary(sc)
+        summary = dbUtils.getStationSummary(sc, dbg=dbg)
         stationData = codeToStationData[sc]
         stationName = stationData['name']
         summary['stationName'] = stationName
