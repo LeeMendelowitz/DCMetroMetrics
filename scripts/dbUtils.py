@@ -452,7 +452,7 @@ def getStationSummary(stationCode, startTime = None, endTime = None, dbg=None):
 def getStationSnapshot(stationCode, dbg=None):
 
     if dbg is None:
-        dbg = dbGlobals.DBGlogbals()
+        dbg = dbGlobals.DBGlobals()
     db = dbg.getDB()
 
     stationData = stations.codeToStationData[stationCode]
