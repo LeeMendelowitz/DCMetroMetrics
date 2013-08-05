@@ -111,6 +111,9 @@ def initDB(dbg):
     # The escalator listing gets a page
     queries.append({'class' : 'escalatorDirectory'})
 
+    # The escalator listing gets a page
+    queries.append({'class' : 'elevatorDirectory'})
+
     # The non-operational listing gets a page
     queries.append({'class' : 'escalatorOutages'})
 
