@@ -126,6 +126,21 @@ def escalatorRankings():
     filename = 'escalatorRankings.html'
     return static_file(filename, root=DYNAMIC_DIR)
 
+@bottle.route('/elevators/directory')
+@bottle.route('/elevators/directory/')
+@bottle.route('/elevators')
+@bottle.route('/elevators/')
+def allElevators():
+    filename = 'elevators.html'
+    return static_file(filename, root=DYNAMIC_DIR)
+
+########################################
+@bottle.route('/elevators/<unitId>')
+@bottle.route('/elevators/<unitId>/')
+def genElevatorStatus(unitId):
+    filename = 'elevator_%s.html'%unitId
+    return static_file(filename, root=DYNAMIC_DIR)
+
 ###############################################
 @bottle.route('/stations')
 @bottle.route('/stations/')

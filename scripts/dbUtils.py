@@ -320,7 +320,7 @@ def groupStatusesByEscalator(statuses):
 #####################################################################
 # Determine the current escalator availabilities of the system
 # Also compute the weighted availability and the station availability
-# Exactly one of escalators or elevators must be True
+# Exactly one of escalators or elevators must be True.
 def getSystemAvailability(escalators=False, elevators=False, dbg=None):
 
     if dbg is None:
@@ -360,7 +360,7 @@ def getSystemAvailability(escalators=False, elevators=False, dbg=None):
 
     # Compute overall availability
     availability = computeAvailability(lastStatuses)
-    weightedAvailability = computeWeightedAvailability(lastStatuses)
+    weightedAvailability = computeWeightedAvailability(lastStatuses) if escalators else 0.0
 
     # Compute availability for each station
     # Note: Some stations have multiple codes (Gallery Pl, L'Enfant, MetroCenter, FortTotten)

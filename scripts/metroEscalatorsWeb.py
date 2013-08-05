@@ -79,6 +79,14 @@ def escUnitIdToAbsWebPath(unitId):
     pfx = 'http://www.dcmetrometrics.com%s'%(escUnitIdToWebPath(unitId))
     return pfx
 
+def eleUnitIdToWebPath(unitId):
+   unitId = unitId[0:6]
+   return '/elevators/%s'%unitId
+
+def eleUnitIdToAbsWebPath(unitId):
+    pfx = 'http://www.dcmetrometrics.com%s'%(eleUnitIdToWebPath(unitId))
+    return pfx
+
 ########################################
 # Make a link to the station
 def makeStationLink(code):
@@ -149,7 +157,7 @@ def stationList(dbg = None):
 
 ##########################################
 # Generate the listing of all escalators
-def escalatorList(dbg=None):
+def escalatorList(dbg=None, escalators=False, elevators=False):
 
     if dbg is None:
         dbg = dbGlobals.DBGlobals()
@@ -158,7 +166,7 @@ def escalatorList(dbg=None):
     nameToStationCode = stations.nameToCodes
     codeToStationData = stations.codeToStationData
     recs = []
-    systemAvailability = dbUtils.getSystemAvailability(escalators=True, dbg=dbg)
+    systemAvailability = dbUtils.getSystemAvailability(escalators=escalators, elevators=elevators, dbg=dbg)
     numWorking = lambda sl: sum(1 for s in sl if s['symptomCategory']=='ON')
 
     curEscStatuses = systemAvailability['lastStatuses']
@@ -181,10 +189,11 @@ def escalatorList(dbg=None):
         escalatorListing.append(rec)
     return escalatorListing
 
+
 #########################################################
 # Generate a listing of escalators which are not working
 def escalatorNotOperatingList():
-    escList = escalatorList()
+    escList = escalatorList(escalators=True)
     notOperating = [esc for esc in escList if esc['symptomCategory'] != 'ON']
 
     # Sort not operating escalators by station name

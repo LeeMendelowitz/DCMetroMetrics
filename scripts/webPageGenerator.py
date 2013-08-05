@@ -93,6 +93,10 @@ def initDB(dbg):
     for escId in escIds:
         queries.append({'class' : 'escalator', 'escalator_id' : escId})
 
+    eleIds = dbg.getElevatorIds()
+    for eleId in eleIds:
+        queries.append({'class' : 'elevator', 'elevator_id' : eleId})
+
     # All stations get a page.
     stationShortNames = list(set(sd['shortName'] for sd in stations.codeToStationData.itervalues()))
     for stationName in stationShortNames:
@@ -163,6 +167,33 @@ def genEscalatorPage(doc, dbg):
     # Generate the page
     content = makePage('escalator', unitId = escUnitShort, escData=escData, statuses=statuses, escSummary=escSummary)
     filename = 'escalator_%s.html'%(escUnitShort)
+    writeContent(filename, content)
+
+#######################################
+def genElevatorPage(doc, dbg):
+    escId = doc['elevator_id']
+    escUnitName = dbg.escIdToUnit[escId]
+    escUnitShort = escUnitName[0:6]
+    db = dbg.getDB()
+    if escId is None:
+        return 'No elevator found'
+    statuses = dbUtils.getEscalatorStatuses(escId = escId, dbg=dbg)
+    dbUtils.addStatusAttr(statuses, dbg=dbg)
+
+    curTime = utcnow()
+    # Set the end_time of the current status to now
+    if statuses and 'end_time' not in statuses[0]:
+        statuses[0]['end_time'] = curTime
+
+    escData = dbg.escIdToEscData[escId]
+
+    # Summarize the escalator performance
+    startTime =  statuses[-1]['time'] if statuses else localToUTCTime(datetime(2000,1,1))
+    escSummary = dbUtils.summarizeStatuses(statuses, startTime=startTime, endTime=curTime)
+
+    # Generate the page
+    content = makePage('elevator', unitId = escUnitShort, escData=escData, statuses=statuses, escSummary=escSummary)
+    filename = 'elevator_%s.html'%(escUnitShort)
     writeContent(filename, content)
 
 
@@ -334,7 +365,7 @@ def genEscalatorOutages(doc, dbg):
 
 #########
 def genEscalatorDirectory(doc, dbg):
-    escalatorList = metroEscalatorsWeb.escalatorList(dbg=dbg)
+    escalatorList = metroEscalatorsWeb.escalatorList(dbg=dbg, escalators=True)
 
     # Group escalators by station
     stationToEsc = defaultdict(list)
@@ -347,6 +378,23 @@ def genEscalatorDirectory(doc, dbg):
 
     content = makePage('escalators', stationToEsc=stationToEsc)
     filename = 'escalators.html'
+    writeContent(filename, content)
+
+#########
+def genElevatorDirectory(doc, dbg):
+    elevatorList = metroEscalatorsWeb.escalatorList(elevators=True, dbg=dbg)
+
+    # Group escalators by station
+    stationToEsc = defaultdict(list)
+    for esc in elevatorList:
+        stationToEsc[esc['stationName']].append(esc)
+
+    # Sort each escalators stations in ascending order by code
+    for k,escList in stationToEsc.iteritems():
+        stationToEsc[k] = sorted(escList, key = itemgetter('unitId'))
+
+    content = makePage('elevators', stationToEsc=stationToEsc)
+    filename = 'elevators.html'
     writeContent(filename, content)
 
 #########
@@ -506,6 +554,8 @@ classToPageGenerator =  \
       'escalatorRankings' : genEscalatorRankings,
       'escalatorDirectory': genEscalatorDirectory,
       'escalatorOutages' : genEscalatorOutages,
+      'elevatorDirectory' : genElevatorDirectory,
+      'elevator' : genElevatorPage,
       'stationDirectory' : genStationDirectory,
       'station' : genStationPage,
       'hotcars' : genHotCars,

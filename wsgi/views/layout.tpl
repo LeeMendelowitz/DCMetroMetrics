@@ -47,6 +47,7 @@
               <li><a href="/escalators/rankings">Rankings</a></li>
             </ul>
           </li>
+          <li><a href="/elevators">Elevators</a></li>
           <li><a href="/stations">Stations</a></li>
           <li><a href="/hotcars">Hot Cars</a></li>
           <li><a href="/data">Data</a></li>
