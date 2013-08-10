@@ -1,6 +1,6 @@
 import pymongo
 from keys import HotCarKeys as keys
-from twitter import TwitterError
+from third_party.twitter import TwitterError
 import twitterUtils
 import sys
 import re

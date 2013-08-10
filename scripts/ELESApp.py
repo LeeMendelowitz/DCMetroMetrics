@@ -13,7 +13,7 @@ from metroTimes import utcnow, tzutc, metroIsOpen, toLocalTime, isNaive
 # Custom modules
 import stations
 from incident import Incident
-from twitter import TwitterError
+from third_party.twitter import TwitterError
 
 import dbGlobals
 import dbUtils

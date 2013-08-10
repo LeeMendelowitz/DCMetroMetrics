@@ -7,10 +7,10 @@
 #############################################
 
 import wmataApi
+from keys import WMATA_API_KEY
 import json
 from collections import defaultdict
 import numpy as np
-
 
 class StationEscalatorData(object):
     def __init__(self, codes, numEscalators, numRiders, weight):
@@ -101,7 +101,7 @@ def getStationNames():
 
 def defineVariables():
 
-    api = wmataApi.WMATA_API()
+    api = wmataApi.WMATA_API(key=WMATA_API_KEY)
 
     allStations = json.loads(api.getStations().text)['Stations']
     allStations = [Station(data) for data in allStations]

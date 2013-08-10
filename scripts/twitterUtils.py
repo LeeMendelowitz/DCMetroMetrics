@@ -1,4 +1,5 @@
-import twitter
+from third_party import twitter
+from third_party.twitter import TwitterError
 
 def getApi(keys):
     api = twitter.Api(consumer_key = keys.consumer_key,

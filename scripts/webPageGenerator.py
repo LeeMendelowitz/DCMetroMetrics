@@ -317,7 +317,7 @@ def genEscalatorOutages(doc, dbg):
     symptomCounts = Counter(esc['symptom'] for esc in escalatorList)
 
     # Generate the data for the Google Chart pi chart
-    import gviz_api
+    from third_party import gviz_api
 
     # Get data for the Outage Categories summary
     schema = [('symptom', 'string', 'Outage Symptom' ), ('count', 'number', 'Count')]

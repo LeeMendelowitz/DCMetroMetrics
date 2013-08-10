@@ -7,7 +7,7 @@ from StringIO import StringIO
 from operator import itemgetter
 from datetime import datetime, date, timedelta
 from collections import defaultdict
-import gviz_api
+from third_party import gviz_api
 import gevent
 from metroTimes import UTCToLocalTime, utcnow
 

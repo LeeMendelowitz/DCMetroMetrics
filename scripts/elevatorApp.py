@@ -12,7 +12,7 @@ if __name__ == '__main__':
 # Custom modules
 import stations
 from incident import Incident
-from twitter import TwitterError
+from third_party.twitter import TwitterError
 import dbUtils
 from dbUtils import invDict
 import utils

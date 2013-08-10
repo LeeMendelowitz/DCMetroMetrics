@@ -13,8 +13,9 @@ from datetime import datetime
 # Custom modules
 import stations
 import wmataApi
-api = wmataApi.WMATA_API()
-WMATA_API_ERROR = wmataApi.WMATA_API_ERROR
+from wmataApi import WMATA_API_ERROR
+from keys import WMATA_API_KEY
+api = wmataApi.WMATA_API(key=WMATA_API_KEY)
 from incident import Incident
 
 # Summarize results to standard output

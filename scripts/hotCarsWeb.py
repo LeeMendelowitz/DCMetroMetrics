@@ -1,9 +1,9 @@
 import hotCars
 from operator import itemgetter
 from collections import defaultdict, Counter
-import gviz_api
+from third_party import gviz_api
 import metroEscalatorsWeb
-from twitter import TwitterError
+from third_party.twitter import TwitterError
 from datetime import datetime, date, timedelta
 from metroTimes import toLocalTime, utcnow
 

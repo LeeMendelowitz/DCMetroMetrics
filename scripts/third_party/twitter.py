@@ -16,6 +16,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+######################################################
+# 7/6/2013
+# NOTE: Lee Mendelowitz has modified this file
+# by adding the GetStatusOembed function.
+# Contact: Lee Mendelowitz (Lee.Mendelowitz@gmail.com)
+######################################################
+
 '''A library that provides a Python interface to the Twitter API'''
 
 __author__ = 'python-twitter@googlegroups.com'
