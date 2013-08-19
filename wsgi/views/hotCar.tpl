@@ -1,7 +1,7 @@
 %# Hot Car Page
-%from hotCarsWeb import formatTimeStr
-%from metroEscalatorsWeb import lineToColoredSquares
-%from metroTimes import toLocalTime
+%from dcmetrometrics.web.hotcars import formatTimeStr
+%from dcmetrometrics.web.eles import lineToColoredSquares
+%from dcmetrometrics.common.metroTimes import toLocalTime
 
 %description = "Reports for #wmata #hotcar {0} of the WMATA Metrorail System.".format(carNum)
 

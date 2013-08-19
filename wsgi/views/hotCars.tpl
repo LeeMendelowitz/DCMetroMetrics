@@ -1,10 +1,11 @@
 %# Listing of all stations
+
 %from operator import itemgetter
-%from metroEscalatorsWeb import lineToColoredSquares
-%import hotCarsWeb
-%from hotCarsWeb import tweetLinks, formatTimeStr, recToLinkHtml, makeHotCarLink
-%from operator import itemgetter
-%from metroTimes import toLocalTime
+
+%from dcmetrometrics.web.eles import lineToColoredSquares
+%from dcmetrometrics.web import hotcars as hotCarsWeb
+%from dcmetrometrics.web.hotcars import tweetLinks, formatTimeStr, recToLinkHtml, makeHotCarLink
+%from dcmetrometrics.common.metroTimes import toLocalTime
 
 %description="Compilation of crowdsourced reports of #wmata #hotcar's in the WMATA Metrorail system"
 

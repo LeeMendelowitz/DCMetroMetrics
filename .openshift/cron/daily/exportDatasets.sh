@@ -1,4 +1,4 @@
 #!/bin/bash
-# Export datasets
-SCRIPTS_DIR=$OPENSHIFT_REPO_DIR/scripts
-python $SCRIPTS_DIR/exportData.py
+# Export datasets as .json and .csv files for the
+# DC Metro Metrics data webpage.
+python $OPENSHIFT_REPO_DIR/utils/exportData.py

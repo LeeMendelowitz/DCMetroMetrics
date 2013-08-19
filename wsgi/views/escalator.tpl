@@ -1,6 +1,7 @@
 %# Listing for an escalator
-%from metroEscalatorsWeb import stationCodeToWebPath, symptomCategoryToClass
-%from metroTimes import secondsToDHM, secondsToHMS, toLocalTime
+
+%from dcmetrometrics.web.eles import stationCodeToWebPath, symptomCategoryToClass
+%from dcmetrometrics.common.metroTimes import secondsToDHM, secondsToHMS, toLocalTime
 
 %description = "DC Metro Escalator {0} at {1} station, {2} {3}. Escalator performance history, and more."
 %description = description.format(unitId, escData['station_name'], escData['station_desc'], escData['esc_desc'])

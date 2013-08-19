@@ -1,6 +1,12 @@
 #!/usr/bin/env python
-# WARNING: Only Openshift should run this module as main. DO NOT run this locally.
-# Run test_app for testing purposes.
+"""
+This is the main program run on the Openshift platform.
+Running this module will cause the twitter accounts to 
+live tweet.
+
+For testing purposes, run the test_app.py program, which
+disables live tweeting.
+"""
 
 import imp
 import os
@@ -37,18 +43,16 @@ try:
 except IOError:
    pass
 
-# Import modules
+# Import application modules
+from escalatorApp import EscalatorApp
+from elevatorApp import ElevatorApp
+from hotCarApp import HotCarApp
+
+# Import the web server and web page generator
 import gevent
 from gevent import monkey; monkey.patch_all() # Needed for bottle
-
-# Import application modules
-sys.path.append(SCRIPT_DIR)
-from runEscalatorApp import EscalatorApp
-from runElevatorApp import ElevatorApp
-from hotCarApp import HotCarApp
-from webPageGenerator import WebPageGenerator
-from restartingGreenlet import RestartingGreenlet
-from bottleApp import BottleApp
+from dcmetrometrics.web.server import Server
+from dcmetrometrics.web.WebPageGenerator import WebPageGenerator
 
 def run(LIVE=False):
 
@@ -57,8 +61,8 @@ def run(LIVE=False):
        LIVE=False
 
    # Run the web server
-   bottleApp = BottleApp()
-   bottleApp.start()
+   serverApp = Server()
+   serverApp.start()
 
    # Run MetroEscalators twitter App
    escalatorApp = EscalatorApp(LIVE=LIVE)

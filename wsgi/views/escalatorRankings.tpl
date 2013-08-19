@@ -1,5 +1,5 @@
 %# Get rankings for escalators
-%from metroTimes import toLocalTime
+%from dcmetrometrics.common.metroTimes import toLocalTime
 
 %description = 'Performance rankings of escalators in the WMATA Metrorail system.'
 

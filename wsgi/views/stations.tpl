@@ -1,7 +1,8 @@
 %# Listing of all stations
 %from operator import itemgetter
-%import metroEscalatorsWeb
-%from metroTimes import toLocalTime
+
+%from dcmetrometrics.web import eles as metroEscalatorsWeb
+%from dcmetrometrics.common.metroTimes import toLocalTime
 
 <div class="container">
 <div class="main-content">

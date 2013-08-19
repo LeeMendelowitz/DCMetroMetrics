@@ -1,5 +1,5 @@
 %#Generate javascript for the symptom table
-%from metroEscalatorsWeb import pyDictToJS
+%from dcmetrometrics.web.eles import pyDictToJS
 
 google.load('visualization', '1', {packages: ['corechart', 'table', 'annotatedtimeline']});
 

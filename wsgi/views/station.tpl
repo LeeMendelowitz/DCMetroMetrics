@@ -1,7 +1,7 @@
 %# Page for a station
-%import metroEscalatorsWeb
-%from metroEscalatorsWeb import lineToColoredSquares, escUnitIdToWebPath, symptomCategoryToClass
-%from metroTimes import toLocalTime
+%from dcmetrometrics.web import eles as metroEscalatorsWeb
+%from dcmetrometrics.web.eles import lineToColoredSquares, escUnitIdToWebPath, symptomCategoryToClass
+%from dcmetrometrics.common.metroTimes import toLocalTime
     
 %#station data
 %codeStr = ', '.join(stationSnapshot['allCodes'])

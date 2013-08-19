@@ -1,7 +1,8 @@
-%# Page for a station
-%import metroEscalatorsWeb
-%from metroEscalatorsWeb import lineToColoredSquares, escUnitIdToWebPath, stationCodeToWebPath
-%from metroTimes import toLocalTime
+%# Page for escalator outages
+
+%from dcmetrometrics.web import eles as metroEscalatorsWeb
+%from dcmetrometrics.web.eles import lineToColoredSquares, escUnitIdToWebPath, stationCodeToWebPath
+%from dcmetrometrics.common.metroTimes import toLocalTime
 
 <div class="container">
 <div class="main-content">

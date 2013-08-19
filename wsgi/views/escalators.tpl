@@ -1,7 +1,7 @@
 %# Page for a station
-%import metroEscalatorsWeb
-%from metroEscalatorsWeb import lineToColoredSquares, escUnitIdToWebPath, stationCodeToWebPath, symptomCategoryToClass
-%from metroTimes import toLocalTime
+%from dcmetrometrics.web import eles as metroEscalatorsWeb
+%from dcmetrometrics.web.eles import lineToColoredSquares, escUnitIdToWebPath, stationCodeToWebPath, symptomCategoryToClass
+%from dcmetrometrics.common.metroTimes import toLocalTime
 
 <div class="container">
 <div class="main-content">
