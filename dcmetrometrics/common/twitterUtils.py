@@ -4,7 +4,7 @@ common.twitterUtils
 """
 
 from ..third_party import twitter
-from twitter import TwitterError
+from ..third_party.twitter import TwitterError
 
 def getApi(keys):
     """
