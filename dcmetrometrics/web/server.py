@@ -21,7 +21,6 @@ from collections import defaultdict, Counter
 # Import bottle
 import gevent
 from gevent import monkey; monkey.patch_all() # Needed before importing bottle
-print 'importing bottle'
 import bottle
 from bottle import static_file
 from dcmetrometrics.common.restartingGreenlet import RestartingGreenlet

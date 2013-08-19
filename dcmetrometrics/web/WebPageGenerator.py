@@ -58,7 +58,10 @@ import os
 import sys
 from datetime import datetime, timedelta
 import gevent
+
+from gevent import monkey; monkey.patch_all()
 import bottle
+
 from operator import itemgetter
 from collections import defaultdict, Counter
 import __builtin__
