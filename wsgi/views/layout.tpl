@@ -54,11 +54,21 @@
           <li><a href="/press">Press</a></li>
           <li><a href="mailto:info@dcmetrometrics.com" target="_blank">Contact</a></li>
         </ul>
+
+
       </div><!--/.nav-collapse -->
-    </div>
-  </div>
-</div>
-</div>
+
+        <!-- github ribbon -->
+        <div class="visible-desktop">
+        <a href="https://github.com/LeeMendelowitz/DCMetroMetrics">
+        <img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_gray_6d6d6d.png" alt="Fork me on GitHub"></a>
+        </div>
+
+    </div> <!--/.container -->
+  </div> <!--/.navbar-inner -->
+</div> <!--/.navbar -->
+</div> <!--/.header -->
+
 
 <div id="contentwrapper">
 %#INCLUDE THE MAIN CONTENT
