@@ -22,7 +22,7 @@ dbg = dbGlobals.DBGlobals()
 db = dbg.getDB()
 
 DATA_DIR = os.environ['OPENSHIFT_DATA_DIR']
-SHARED_DATA_DIR = os.path.join(DATA_DIR, 'data_shared')
+SHARED_DATA_DIR = os.path.join(DATA_DIR, 'shared')
 if not os.path.exists(SHARED_DATA_DIR):
     os.mkdir(SHARED_DATA_DIR)
 

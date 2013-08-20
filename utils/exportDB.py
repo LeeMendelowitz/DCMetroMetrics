@@ -1,8 +1,16 @@
-#!/bin/bash
-# Dump MongoDB collections as json files
-import os, sys, subprocess
+#!/usr/bin/env python
+"""
+Dump MongoDB collections as json files.
+Create a DCMetroMetricsData.zip file.
+The zip file is available for download via URL:
+http://www.dcmetrometrics.com/data/DCMetroMetricsData.zip
+"""
+import os, sys, subprocess, shutil
+from glob import glob
 
-#mongoexport -host $OPENSHIFT_MONGODB_DB_HOST -d MetroEscalators -u $OPENSHIFT_MONGODB_DB_USERNAME -p $OPENSHIFT_MONGODB_DB_PASSWORD -c $name > $OPENSHIFT_DATA_DIR/mongoexport/$name.json
+def p(msg):
+    sys.stdout.write(msg + '\n')
+    sys.stdout.flush()
 
 cmd = 'mongoexport -host {host} -d {db} -u {user} -p {password} -c {col}'
 
@@ -10,18 +18,39 @@ HOST = os.environ['OPENSHIFT_MONGODB_DB_HOST']
 USER = os.environ['OPENSHIFT_MONGODB_DB_USERNAME']
 PASS = os.environ['OPENSHIFT_MONGODB_DB_PASSWORD']
 DATA_DIR = os.environ['OPENSHIFT_DATA_DIR']
+OUTPUT_DIR_BASE = os.path.join(DATA_DIR, 'mongoexport')
+JSON_DIR_NAME = 'DCMetroMetricsData'
+JSON_DIR = os.path.join(OUTPUT_DIR_BASE, JSON_DIR_NAME)
+SHARED_DATA_DIR = os.path.join(DATA_DIR, 'shared')
+
+# Making output directories if they do not exist
+def makeDir(path):
+    if not os.path.exists(path):
+        os.mkdir(path)
+
+makeDir(OUTPUT_DIR_BASE)
+makeDir(JSON_DIR)
+makeDir(SHARED_DATA_DIR)
 
 def dump(collection):
-    myCmd = cmd.format(host=HOST, db='MetroEscalators', user=USER, password=PASS, col=collection)
-    outputDir = os.path.join(DATA_DIR, 'mongoexport')
-    if not os.path.exists(outputDir):
-        os.mkdir(outputDir)
-    outFile = os.path.join(outputDir, '%s.json'%collection)
+    """
+    dump a MongoDB collection into a .json file using mongoexport.
+    """
+
+    myCmd = cmd.format(host=HOST, db='MetroEscalators',\
+                       user=USER, password=PASS, col=collection)
+
+    outFile = '%s.json'%collection
+    outFile = os.path.join(JSON_DIR, outFile)
     output = open(outFile, 'w')
-    print 'CMD: ', myCmd
+
+    # Run MongoExport
+    #print 'CMD: ', myCmd
+    p('Exporing collection %s...'%collection)
     myCmd = myCmd.split()
-    p = subprocess.call(myCmd, stdout=output)
+    subprocess.call(myCmd, stdout=output)
     output.close()
+    p('DONE.')
 
 collections = [
 'elevator_appstate',
@@ -41,9 +70,35 @@ collections = [
 'temperatures',
 ]
 
+
 def run():
+
+    # Remove old json and zip files
+    os.chdir(OUTPUT_DIR_BASE)
+    jsonPattern = os.path.join(JSON_DIR, '*.json')
+    oldFiles = glob('*.json')
+    zipPattern = os.path.join(OUTPUT_DIR_BASE, '*.zip')
+    oldFiles.extend(glob(zipPattern))
+    for f in oldFiles:
+        os.unlink(f)
+
+    # Create new json files
     for c in collections:
         dump(c)
+
+    # Zip the json files
+    jsonFiles = ('%s.json'%c for c in collections)
+    jsonFiles = [os.path.join(JSON_DIR_NAME, f) for f in jsonFiles]
+    cmd = ['zip', JSON_DIR_NAME]
+    cmd.extend(jsonFiles)
+    subprocess.call(cmd)
+
+    outputZipFile = '%s.zip'%JSON_DIR_NAME
+
+    # Copy the zip file into the public data directory
+    # By placing in that directory, it is accessible thru:
+    # http://www.dcmetrometrics.com/data/<outputZipFile>
+    shutil.copy(outputZipFile, SHARED_DATA_DIR)
 
 if __name__ == '__main__':
     run()

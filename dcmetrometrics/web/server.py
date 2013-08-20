@@ -4,10 +4,10 @@ server.py
 
 Implementation of the DC Metro Metrics server, using bottle.
 This module defines the routes for web pages,
-and the Bottle.
+and the Bottle Server.
 
-NOTE: Before importing this module, you must call:
-from gevent import monkey; monkey.patch_all()
+NOTE: Before importing this module, you may have to call:
+"from gevent import monkey; monkey.patch_all()"
 Otherwise, the Server will not run correctly.
 """
 
@@ -30,7 +30,8 @@ DATA_DIR = os.environ['OPENSHIFT_DATA_DIR']
 SCRIPT_DIR = os.path.join(REPO_DIR, 'scripts')
 STATIC_DIR = os.path.join(REPO_DIR, 'wsgi', 'static')
 DYNAMIC_DIR = os.path.join(DATA_DIR, 'webpages', 'dynamic')
-SHARED_DATA_DIR = os.path.join(DATA_DIR, 'data_shared')
+SHARED_DATA_DIR = os.path.join(DATA_DIR, 'shared')
+
 bottle.TEMPLATE_PATH.append(os.path.join(REPO_DIR, 'wsgi', 'views'))
 
 ########################################
@@ -69,7 +70,7 @@ def server_static(filename):
 def data():
     filename = 'data.html'
     return static_file(filename, root=DYNAMIC_DIR)
-
+ 
 ########################################
 @bottle.route('/press')
 @bottle.route('/press/')
