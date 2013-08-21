@@ -5,19 +5,12 @@ This includes the web server, the hotcars app, and the
 escalator app
 """
 
-import os
-import sys
-import subprocess
-import imp
+import os, sys, subprocess, imp
 
-# Setup environmental variables
-import dcmetrometrics.test.setup
+# Setup environmental variables and fix the system path
+import setup
 
 from gevent import monkey; monkey.patch_all()
-
-# Run the application
-cwd = os.getcwd()
-REPO_DIR = os.environ['OPENSHIFT_REPO_DIR']
-appPath = os.path.join(REPO_DIR, 'app.py')
+appPath = os.path.join(setup.HOME_DIR, 'app.py')
 appModule = imp.load_source('app', appPath)
 appModule.run(LIVE=False)

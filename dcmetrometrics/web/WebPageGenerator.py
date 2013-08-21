@@ -81,15 +81,10 @@ REPO_DIR = os.environ['OPENSHIFT_REPO_DIR']
 DATA_DIR = os.environ['OPENSHIFT_DATA_DIR']
 STATIC_DIR = os.path.join(REPO_DIR, 'wsgi', 'static')
 WEBPAGE_DIR = os.path.join(DATA_DIR, 'webpages')
-DYNAMIC_DIR = os.path.join(WEBPAGE_DIR, 'dynamic')
 bottle.TEMPLATE_PATH.append(os.path.join(REPO_DIR, 'wsgi', 'views'))
 
 if not os.path.exists(WEBPAGE_DIR):
     os.mkdir(WEBPAGE_DIR)
-
-if not os.path.exists(DYNAMIC_DIR):
-    os.mkdir(DYNAMIC_DIR)
-
 
 # Update time in hours
 classToUpdateInterval = \
@@ -532,7 +527,7 @@ def genHotCarPage(doc, dbg):
 # Write content to the file filename.
 # This takes care of selecting the destination
 def writeContent(filename, content):
-    destDir = DYNAMIC_DIR
+    destDir = WEBPAGE_DIR
     if not os.path.exists(destDir):
         os.mkdir(destDir)
     outFile = os.path.join(destDir, filename)
@@ -654,5 +649,9 @@ def updateAllPages():
     reload()
     dbg = dbGlobals.DBGlobals()
     db = dbg.getDB()
+    count = 0
     for doc in db.webpages.find():
         updatePage(doc, dbg)
+        count += 1
+    sys.stdout.write('Successfully regenerated %i webpages.\n\n'%count)
+    sys.stdout.flush()

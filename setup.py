@@ -1,5 +1,14 @@
 from setuptools import setup
 
+packages = ['dcmetrometrics',
+          'dcmetrometrics.common',
+          'dcmetrometrics.eles',
+          'dcmetrometrics.hotcars',
+          'dcmetrometrics.keys',
+          'dcmetrometrics.test',
+          'dcmetrometrics.third_party',
+          'dcmetrometrics.web']
+
 setup(name='DC Metro Metrics',
       version='1.1',
       description='Collecting and sharing public data related to the DC WMATA Metrorail system.',
@@ -18,12 +27,5 @@ setup(name='DC Metro Metrics',
                            'httplib2',
                            'bottle'
       ],
-      packages = ['dcmetrometrics',
-                  'dcmetrometrics.common',
-                  'dcmetrometrics.eles',
-                  'dcmetrometrics.hotcars',
-                  'dcmetrometrics.keys',
-                  'dcmetrometrics.test',
-                  'dcmetrometrics.third_party',
-                  'dcmetrometrics.web']
+      packages = []
  )

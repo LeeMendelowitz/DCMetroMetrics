@@ -10,7 +10,7 @@ Tweet acknowledgements are posted to the @MetroHotCars twitter account.
 
 # TEST CODE
 if __name__ == "__main__":
-    import dcmetrometrics.test.setup
+    import test.setup
 
 import gevent
 import os

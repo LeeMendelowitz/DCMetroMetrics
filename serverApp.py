@@ -5,7 +5,7 @@ for local testing.
 """
 
 # Local Testing
-import dcmetrometrics.test.setup
+import test.setup
 from gevent import monkey; monkey.patch_all()
 from dcmetrometrics.web.server import Server
 

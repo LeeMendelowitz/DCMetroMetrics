@@ -12,7 +12,7 @@ apps.runElevatorApp
 
 if __name__ == "__main__":
     # Local Testing
-    import dcmetrometrics.test.setup
+    import test.setup
 
 # python imports
 import os

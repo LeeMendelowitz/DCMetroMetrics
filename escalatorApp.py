@@ -12,7 +12,7 @@ apps.runEscalatorApp
 
 if __name__ == "__main__":
     # Local Testing
-    import dcmetrometrics.test.setup
+    import test.setup
 
 import os
 import sys

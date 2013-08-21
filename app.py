@@ -15,21 +15,11 @@ import subprocess
 import argparse
 import copy
 
-# Test if this an openshift environment.
-openshift_envs = [
-        "OPENSHIFT_APP_NAME",
-        "OPENSHIFT_NAMESPACE",
-        "OPENSHIFT_INTERNAL_IP",
-        "OPENSHIFT_PYTHON_VERSION",
-        "OPENSHIFT_CLOUD_DOMAIN",
-        "OPENSHIFT_INTERNAL_PORT"
-        ]
-
 if __name__ == "__main__":
-    for env in openshift_envs:
-        if env not in os.environ:
-            msg = "This does not appear to be an OpenShift environment. Run test_app.py for testing."
-            raise RuntimeError(msg)
+    import utils
+    if not utils.isOpenshiftEnv():
+        msg = "This does not appear to be an OpenShift environment. Run test/test_app.py for testing."
+        raise RuntimeError(msg)
 
 PY_DIR = os.environ['OPENSHIFT_PYTHON_DIR']
 REPO_DIR = os.environ['OPENSHIFT_REPO_DIR']
