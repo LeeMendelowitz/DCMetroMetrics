@@ -1,6 +1,5 @@
-DC Metro Metrics is a project dedicated to collecting, analyzing,
-and sharing publicly available infomration about the Washingt DC Metrorail system.
-Visit us on the web at: http://www.DCMetroMetrics.com.
+[DC Metro Metrics](http://www.dcmetrometrics.com) is a project dedicated to collecting, analyzing,
+and sharing publicly available infomration about the Washington DC Metrorail system.
 
 Check out the 
 [Gettting Started](https://github.com/LeeMendelowitz/DCMetroMetrics/wiki/Getting-Started)
