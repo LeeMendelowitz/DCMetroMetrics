@@ -1,4 +1,5 @@
-from ..common import MissingKeyError
+class MissingKeyError(Exception):
+    pass
 
 class TwitterKeyError(MissingKeyError):
     pass
@@ -27,4 +28,24 @@ class TwitterKeys(object):
             if (not val) or (not isinstance(val, str)):
                 keysAreSet = False
         return keysAreSet
-                
+
+def keyModuleError():
+    """
+    Raise a RuntimeError due to a missing keys module.
+    """
+
+    msg = \
+    """
+
+    Could not import dcmetrometrics.keys module because the file is missing
+    or is malformed.
+
+    You must create the keys module using the provided template:
+
+       cp dcmetrometrics/keys/keys_default.py dcmetrometrics/keys/keys.py
+
+    For more information, see:
+        https://github.com/LeeMendelowitz/DCMetroMetrics/wiki/API-Keys
+
+    """
+    raise RuntimeError(msg)

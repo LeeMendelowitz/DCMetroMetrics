@@ -30,6 +30,8 @@ dir_keys = ['OPENSHIFT_DATA_DIR', 'OPENSHIFT_REPO_DIR', 'OPENSHIFT_MONGODB_DB_LO
 ######################################################
 
 def setupEnv():
+    print 'Setting up testing environmental variables.'
+
     # Update the environmental variables
     os.environ.update(vals)
 
@@ -40,6 +42,7 @@ def setupEnv():
             os.mkdir(d)
 
 def fixSysPath():
+    print 'Setting sys.path to include the dcmetrometrics package at: %s'%HOME_DIR
     sys.path = [HOME_DIR] + sys.path
 
 setupEnv()

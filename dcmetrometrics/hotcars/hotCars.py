@@ -15,7 +15,6 @@ from operator import itemgetter
 
 from ..third_party.twitter import TwitterError
 from ..common import twitterUtils
-from ..keys import HotCarKeys, MissingKeyError
 from ..common.metroTimes import utcnow, toLocalTime, UTCToLocalTime, tzutc
 
 ME = 'MetroHotCars'.upper()
@@ -162,10 +161,24 @@ def getColors(text):
 T = None
 def getTwitterAPI():
     global T
+
     if T is None:
+        from ..keys import HotCarKeys, MissingKeyError
+
         # Check that the HotCar Twitter API Keys have been set.
         if not HotCarKeys.isSet():
-            raise MissingKeyError("Hot Car Twitter Keys are required. Check your keys.py")
+            msg = \
+            """
+
+            The HotCar App requires that the HotCarKeys be set.
+            Check your keys.py.
+
+            For more information, see:
+            https://github.com/LeeMendelowitz/DCMetroMetrics/wiki/API-Keys
+
+            """
+            raise MissingKeyError(msg)
+
         T = twitterUtils.getApi(HotCarKeys)
     return T
 

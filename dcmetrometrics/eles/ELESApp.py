@@ -15,10 +15,9 @@ from collections import defaultdict
 # Custom modules
 from ..common import dbGlobals, twitterUtils, utils, stations
 from ..common.metroTimes import utcnow, tzutc, metroIsOpen, toLocalTime, isNaive
-from ..common import MissingKeyError
-from . import dbUtils
+import dbUtils
 from .dbUtils import invDict
-from ..keys import MetroEscalatorKeys, WMATA_API_KEY
+from ..keys import WMATA_API_KEY
 from ..third_party.twitter import TwitterError
 from .Incident import Incident
 from .WMATA_API import WMATA_API_ERROR, WMATA_API
@@ -42,8 +41,17 @@ def checkWMATAKey():
     Check that the WMATA_API_KEY has been properly set.
     """
     if WMATA_API_KEY is None:
-        msg = 'Missing the WMATA_API_KEY. Check your keys.py.' +\
-              'WMATA_API_KEY is required for the Elevator App and Escalator App.'
+        msg = \
+        """
+
+        WMATA_API_KEY is required for the Elevator App and Escalator App.
+        Check your keys.py
+
+        For more information, see:
+        https://github.com/LeeMendelowitz/DCMetroMetrics/wiki/API-Keys
+
+        """
+        from ..keys import MissingKeyError
         raise MissingKeyError(msg)
 
     if not isinstance(WMATA_API_KEY,str):
