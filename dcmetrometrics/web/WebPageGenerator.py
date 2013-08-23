@@ -2,18 +2,19 @@
 web.webPageGenerator
 
 This module provides functionality to generate webpages as static html
-pages. They are stored in the XXX directory, and served by the bottleApp.
+pages. They are stored in the $OPENSHIFT_DATA_DIR/webpages
+directory, and served by the server application.
 
 DCMetroMetrics webpages are implemented as bottle templates, which are
 documents with html/javascript code with embedded python.
 An effort has been made to keep the bottle templates as simple as possible,
-with most functionality residing in (hotcars), (eles) (POINT TO THE RIGHT MODULES).
+with most functionality residing in in the web.hotcars and web.eles modules.
 
-Each webpage has an entry in the MongoDB webpages collection.
+Each html webpage has an document in the MongoDB webpages collection.
 
 The WebPageGenerator class is an app which periodically looks for webpages which
 need to be updated. A webpage is updated if it goes stale (i.e. has not been updated for X hours),
-or if it's doc['forceUpdate'] == True.
+or if it's database doc['forceUpdate'] is set to True.
 
 The classToUpdateInterval dict specifies how often pages of each class are automatically updated.
 
@@ -44,13 +45,17 @@ If changes are made to the bottle templates, call the reload function
 of this module to reload the bottle module and get the updated templates.
 
 My recipe for local development/testing:
-- Run a local web server by running the bottleApp
-- Make changes to the bottle templates or to this module
-- In ipython:
+1. Run a local web server by running the serverApp
+2. Make changes to the bottle templates or to this module
+3. In ipython:
+    import test.setup # Set up the testing environment.
+    from dcmetrometrics.web import WebPageGenerator
     reload(WebPageGenerator) # Get latest version of module
     WebPageGenerator.reload() # Reload the bottle templates
     WebPageGenerator.updatePage(...) # Regenerate the web pages of interest 
-- Point your browser to: http://localhost:8080/ and view the changes to the site.
+4. Point your browser to: http://localhost:8080/ and view the changes to the site.
+
+You need to call WebPageGenerator.reload() each time you update a bottle template file.
 ====================================================================================
 """
 
