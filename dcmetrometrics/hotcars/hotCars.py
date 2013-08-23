@@ -184,7 +184,12 @@ def getTwitterAPI():
 
 def getWundergroundAPI():
     from .wundergroundAPI import WundergroundAPI
-    from ..keys import WUNDERGROUND_API_KEY
+    try:
+        # Import may fail if keys/keys.py has not been created.
+        from ..keys import WUNDERGROUND_API_KEY
+    except Exception as e:
+        # Import of keys/keys.py failed - set key to None.
+        WUNDERGROUND_API_KEY = None
     return WundergroundAPI(WUNDERGROUND_API_KEY, callsPerMinute=10)
 
 ###########################
