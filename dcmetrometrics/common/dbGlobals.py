@@ -97,12 +97,7 @@ def getDB():
     password = os.environ["OPENSHIFT_MONGODB_DB_PASSWORD"]
     client = pymongo.MongoClient(host, port)
 
-    # Try authenticating with admin
-    db = client.admin
-    #serr('Attempting Authentication\n')
-    res = db.authenticate(user, password)
-    #serr('Authenticate returned: %s\n'%str(res))
-
     db = client.MetroEscalators
-    return db
+    res = db.authenticate(user, password)
 
+    return db

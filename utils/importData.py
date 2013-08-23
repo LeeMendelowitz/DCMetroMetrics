@@ -39,15 +39,16 @@ def run():
         path, name = os.path.split(j)
         print ' - %s'%(name)
 
-    for fname in jsons:
+    for j in jsons:
+        path, fname = os.path.split(j)
         base, ext = os.path.splitext(fname)
         collection = base
         print '*'*50
         print 'Dropping collection %s'%collection
         db[collection].drop()
-        print 'Importing json %s'%fname
+        print 'Importing json %s into collection %s'%(j, collection)
         cmd = 'mongoimport -d MetroEscalators -c {collection} {fname}'
-        cmd = cmd.format(collection=collection, fname=fname)
+        cmd = cmd.format(collection=collection, fname=j)
         call(cmd, shell=True)
 
 if __name__ == '__main__':

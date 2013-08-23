@@ -45,5 +45,30 @@ def fixSysPath():
     print 'Setting sys.path to include the dcmetrometrics package at: %s'%HOME_DIR
     sys.path = [HOME_DIR] + sys.path
 
+
+def setupDB():
+    """
+    Setup the MongoDB with the User/Password
+    """
+    import pymongo
+
+    print 'Adding user to the MetroEscalators MongoDB'
+
+    host = os.environ["OPENSHIFT_MONGODB_DB_HOST"]
+    port = int(os.environ["OPENSHIFT_MONGODB_DB_PORT"])
+
+    user = os.environ["OPENSHIFT_MONGODB_DB_USERNAME"]
+    password = os.environ["OPENSHIFT_MONGODB_DB_PASSWORD"]
+
+    client = pymongo.MongoClient(host, port)
+    db = client.MetroEscalators
+    db.add_user(user, password)
+
+print '*'*50
+print 'Creating testing environment\n\n'
+
 setupEnv()
 fixSysPath()
+setupDB()
+print 'DONE'
+print '*'*50 + '\n\n'
