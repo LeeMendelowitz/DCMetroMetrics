@@ -275,6 +275,8 @@ def genStationPage(doc, dbg):
     escUnitIds = stationSummary['escUnitIds']
     escToSummary = stationSummary['escToSummary']
     escToStatuses = stationSummary['escToStatuses']
+    eleToSummary = stationSummary['eleToSummary']
+    eleToStatuses = stationSummary['eleToStatuses']
 
     # Generate the table listing of escalators
     escalatorListing = []
@@ -295,9 +297,30 @@ def genStationPage(doc, dbg):
                'availability' : escSummary['availability']} 
         escalatorListing.append(rec)
 
+    # Generate the table listing of elevators
+    elevatorListing = []
+    for eleUnitId in stationSummary['eleUnitIds']:
+        eleSummary = eleToSummary.get(eleUnitId, {})
+        statuses = eleToStatuses[eleUnitId]
+        if not statuses:
+            continue
+        latestStatus = statuses[0]
+        eleId = dbg.unitToEscId[eleUnitId]
+        eleMetaData = dbg.escIdToEscData[eleId]
+        shortUnitId = eleUnitId[0:6]
+        rec = {'unitId' : shortUnitId,
+               'stationDesc' : eleMetaData['station_desc'],
+               'escDesc' : eleMetaData['esc_desc'],
+               'curStatus' : latestStatus['symptom'],
+               'curSymptomCategory' : latestStatus['symptomCategory'],
+               'availability' : eleSummary['availability']} 
+        elevatorListing.append(rec)
+
     escalatorListing = sorted(escalatorListing, key = itemgetter('unitId'))
+    elevatorListing = sorted(elevatorListing, key = itemgetter('unitId'))
     content = makePage('station', stationSummary=stationSummary,
-        stationSnapshot=stationSnapshot, escalators=escalatorListing)
+        stationSnapshot=stationSnapshot, escalators=escalatorListing,
+        elevators=elevatorListing)
     filename = 'station_%s.html'%(shortName)
     writeContent(filename, content)
 

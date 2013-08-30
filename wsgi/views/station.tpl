@@ -1,6 +1,6 @@
 %# Page for a station
 %from dcmetrometrics.web import eles as metroEscalatorsWeb
-%from dcmetrometrics.web.eles import lineToColoredSquares, escUnitIdToWebPath, symptomCategoryToClass
+%from dcmetrometrics.web.eles import lineToColoredSquares, escUnitIdToWebPath, eleUnitIdToWebPath, symptomCategoryToClass
 %from dcmetrometrics.common.metroTimes import toLocalTime
     
 %#station data
@@ -24,8 +24,8 @@
 <h3>Escalator Summary</h3>
 <table class="station_escalator_summary table table-hover table-bordered table-striped" style="width:25%; min-width:250px;">
 <tr><td># Escalators</td><td>{{stationSnapshot['numEscalators']}}</td></tr>
-<tr><td># Working Escalators</td><td>{{stationSnapshot['numWorking']}}</td></tr>
-<tr><td>Current Availability</td><td>{{'%.2f%%'%(100.0*stationSnapshot['availability'])}}</td></tr>
+<tr><td># Working Escalators</td><td>{{stationSnapshot['numEscWorking']}}</td></tr>
+<tr><td>Current Availability</td><td>{{'%.2f%%'%(100.0*stationSnapshot['escAvailability'])}}</td></tr>
 <tr><td>Avg. Availability</td><td>{{'%.2f%%'%(100.0*stationSummary['availability'])}}</td></tr>
 </table>
 
@@ -53,6 +53,33 @@
     <td>{{esc['escDesc']}}</td>
     <td>{{esc['curStatus']}}</td>
     <td>{{'%.2f%%'%(100.0*esc['availability'])}}</td>
+</tr>
+%end
+</table>
+
+<h3>Elevators</h3>
+%hasStationDesc = any(e['stationDesc'] for e in elevators)
+<table class="status table table-hover table table-striped">
+<tr>
+    <th>Unit</th>
+    %if hasStationDesc:
+    <th>Entrance</th>
+    %end
+    <th>Description</th>
+    <th>Current Status</th>
+    <th>Avg. Availabilty</th>
+</tr>
+%for ele in elevators:
+%   eleWebPath = eleUnitIdToWebPath(ele['unitId'])
+%   symptomCat = ele['curSymptomCategory'].lower()
+<tr class={{symptomCategoryToClass[symptomCat]}}>
+    <td><a href="{{eleWebPath}}">{{ele['unitId']}}</a></td>
+    %if hasStationDesc:
+    <td>{{ele['stationDesc']}}</td>
+    %end
+    <td>{{ele['escDesc']}}</td>
+    <td>{{ele['curStatus']}}</td>
+    <td>{{'%.2f%%'%(100.0*ele['availability'])}}</td>
 </tr>
 %end
 </table>

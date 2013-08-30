@@ -137,7 +137,7 @@ def defineVariables():
         s = codeToStationData[c]
         s.allLines = allLines
    
-    allCodes = [s.code for c in allStations]
+    allCodes = [s.code for s in allStations]
 
     nameToCodes = defaultdict(list)
     for code,name in codeToName.iteritems():

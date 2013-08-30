@@ -401,8 +401,8 @@ def getSystemAvailability(escalators=False, elevators=False, dbg=None):
     return ret
 
 #########################################################
-# ONLY WORKS WITH ESCALATORS, NOT ELEVATORS
-# Get escalator data summary for a single station
+# LIMITED SUPPORT FOR ELEVATORS. THIS NEEDS TO BE IMPROVED.
+# Get escalator and elevator data summary for a single station
 # for a given time period.
 # This returns a dictionary with the sames keys as summarizeStatuses,
 # with additional keys:
@@ -421,16 +421,26 @@ def getStationSummary(stationCode, startTime = None, endTime = None, dbg=None):
         endTime = toUtc(endTime)
 
     stationData = stations.codeToStationData[stationCode]
-    allCodes = set(stationData['allCodes'])
-    escList = [d for d in dbg.escIdToEscData.itervalues() if d['station_code'] in allCodes and d['unit_type']=='ESCALATOR']
-    escUnitIds = [d['unit_id'] for d in escList]
-    assert(len(escList) == stationData['numEscalators'])
+    stationCodes = set(stationData['allCodes'])
+
+    escIds = dbg.getEscalatorIds()
+    eleIds = dbg.getElevatorIds()
+    escDataList = (dbg.escIdToEscData[escId] for escId in escIds)
+    escDataList = [d for d in escDataList if d['station_code'] in stationCodes]
+    eleDataList = (dbg.escIdToEscData[eleId] for eleId in eleIds)
+    eleDataList = [d for d in eleDataList if d['station_code'] in stationCodes]
+    escUnitIds = [d['unit_id'] for d in escDataList]
+    eleUnitIds = [d['unit_id'] for d in eleDataList]
+    assert(len(escDataList) == stationData['numEscalators'])
     curTime = utcnow()
 
     # First, compute a summary on each escalator in the station
     escToSummary = {}
     escToStatuses = {}
+    eleToSummary = {}
+    eleToStatuses = {}
 
+    # Process escalators
     for escUnitId in escUnitIds:
         statuses = getEscalatorStatuses(escUnitId=escUnitId, startTime = startTime, endTime=endTime, dbg=dbg)
         escToStatuses[escUnitId] = statuses
@@ -446,12 +456,33 @@ def getStationSummary(stationCode, startTime = None, endTime = None, dbg=None):
         escSummary['statuses'] = statuses
         escToSummary[escUnitId] = escSummary
 
+    # Process elevators
+    for eleUnitId in eleUnitIds:
+        statuses = getEscalatorStatuses(escUnitId=eleUnitId, startTime = startTime, endTime=endTime, dbg=dbg)
+        eleToStatuses[eleUnitId] = statuses
+        if not statuses:
+            continue
+
+        # Compute a summary on these statuses.
+        # Remember statuses are sorted in descending order
+        st = startTime if startTime is not None else statuses[-1]['time']
+        et = endTime if endTime is not None else curTime
+
+        eleSummary = summarizeStatuses(statuses, st, et)
+        eleSummary['statuses'] = statuses
+        eleToSummary[eleUnitId] = eleSummary
+
     # Next, compute a summary the group of escalators as whole
     stationSummary = mergeEscalatorSummaries(escToSummary.values())
     stationSummary['escUnitIds'] = escUnitIds
     stationSummary['escToSummary'] = escToSummary
     stationSummary['escToStatuses'] = escToStatuses
+    stationSummary['eleUnitIds'] = eleUnitIds
+    stationSummary['eleToSummary'] = eleToSummary
+    stationSummary['eleToStatuses'] = eleToStatuses
     return stationSummary
+
+
 
 ##################################
 # Get a snapshot of the station right now
@@ -462,13 +493,17 @@ def getStationSnapshot(stationCode, dbg=None):
     db = dbg.getDB()
 
     stationData = stations.codeToStationData[stationCode]
-    allCodes = set(stationData['allCodes'])
+    stationCodes = set(stationData['allCodes'])
 
     # Get escalator data for escalators in this station
     escIds = dbg.getEscalatorIds()
+    eleIds = dbg.getElevatorIds()
     escDataList = (dbg.escIdToEscData[escId] for escId in escIds)
-    escDataList = [d for d in escDataList if d['station_code'] in allCodes]
+    escDataList = [d for d in escDataList if d['station_code'] in stationCodes]
+    eleDataList = (dbg.escIdToEscData[eleId] for eleId in eleIds)
+    eleDataList = [d for d in eleDataList if d['station_code'] in stationCodes]
     escUnitIds = [d['unit_id'] for d in escDataList]
+    eleUnitIds = [d['unit_id'] for d in eleDataList]
     assert(len(escDataList) == stationData['numEscalators'])
 
     curTime = utcnow()
@@ -480,17 +515,30 @@ def getStationSnapshot(stationCode, dbg=None):
         addStatusAttr([status], dbg=dbg)
         return status
         
-    escToLatest = dict((escUnitId, getLatestStatus(escUnitId)) for escUnitId in escUnitIds)
-    numWorking = sum(1 for s in escToLatest.itervalues() if s['symptomCategory']=='ON')
+    escToLatest = dict((uid, getLatestStatus(uid)) for uid in escUnitIds)
+    eleToLatest = dict((uid, getLatestStatus(uid)) for uid in eleUnitIds)
+
+    numEscWorking = sum(1 for s in escToLatest.itervalues() if s['symptomCategory']=='ON')
+    numEleWorking = sum(1 for s in eleToLatest.itervalues() if s['symptomCategory']=='ON')
+
     numEscalators = len(escDataList)
-    availability = float(numWorking)/numEscalators if numEscalators > 0 else 0.0
+    numElevators = len(eleDataList)
+
+    escAvailability = float(numEscWorking)/numEscalators if numEscalators > 0 else 0.0
+    eleAvailability = float(numEleWorking)/numElevators if numElevators > 0 else 0.0
 
     ret = {'escalatorList' : escDataList,
            'escUnitIds' : escUnitIds,
            'escUnitIdToLatestStatus' : escToLatest,
+           'elevatorList' : eleDataList,
+           'eleUnitIds' : eleUnitIds,
+           'eleUnitIdToLatestStatus' : eleToLatest,
            'numEscalators' : numEscalators,
-           'numWorking' : numWorking,
-           'availability' : availability}
+           'numElevators' : numElevators,
+           'numEscWorking' : numEscWorking,
+           'numEleWorking' : numEleWorking,
+           'escAvailability' : escAvailability,
+           'eleAvailability' : eleAvailability}
 
     # Tack on the stationData to the return value
     ret.update(stationData)
