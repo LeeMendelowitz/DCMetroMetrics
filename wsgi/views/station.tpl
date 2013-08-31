@@ -11,7 +11,8 @@
 <div class="container">
 <div class="main-content">
 
-<h2>{{stationSnapshot['name']}}</h2>
+<h1>{{stationSnapshot['name']}}</h1>
+<hr>
 
 <h3>Station Data</h3>
 <table class="station_data table table-hover table-bordered table-striped" style="width:40%; min-width:250px;">
@@ -19,16 +20,22 @@
 <tr> <td>Station Codes</td><td>{{codeStr}}</td> </tr>
 <tr> <td>Station Lines</td><td>{{!lineStr}} </td></tr>
 <tr> <td>Avg. Weekday Ridership (Oct 2012)</td><td>{{numRiderStr}}</td></tr>
+<tr> <td>Num. Escalators</td><td>{{stationSnapshot['numEscalators']}}</td></tr>
+<tr> <td>Num. Elevators</td><td>{{stationSnapshot['numElevators']}}</td></tr>
+<tr><td>Avg. Escalator Availability</td><td>{{'%.2f%%'%(100.0*stationSummary['availability'])}}</td></tr>
 </table>
 
-<h3>Escalator Summary</h3>
+<h3>Current Status</h3>
 <table class="station_escalator_summary table table-hover table-bordered table-striped" style="width:25%; min-width:250px;">
-<tr><td># Escalators</td><td>{{stationSnapshot['numEscalators']}}</td></tr>
-<tr><td># Working Escalators</td><td>{{stationSnapshot['numEscWorking']}}</td></tr>
-<tr><td>Current Availability</td><td>{{'%.2f%%'%(100.0*stationSnapshot['escAvailability'])}}</td></tr>
-<tr><td>Avg. Availability</td><td>{{'%.2f%%'%(100.0*stationSummary['availability'])}}</td></tr>
+%working = lambda n1,n2: '%i / %i'%(n1, n2)
+%ss = stationSnapshot
+%n1,n2 = 'numEscWorking','numEscalators'
+%n1,n2 = ss[n1],ss[n2]
+<tr><td>Working Escalators</td><td>{{working(n1,n2)}}</td></tr>
+%n1,n2 = 'numEleWorking','numElevators'
+%n1,n2 = ss[n1],ss[n2]
+<tr><td>Working Elevators</td><td>{{working(n1,n2)}}</td></tr>
 </table>
-
 
 <h3>Escalators</h3>
 %hasStationDesc = any(e['stationDesc'] for e in escalators)

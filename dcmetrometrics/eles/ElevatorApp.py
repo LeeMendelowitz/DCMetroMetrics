@@ -74,9 +74,21 @@ class ElevatorApp(ELESApp):
     def getStatusesCollection(self):
         return self.db.escalator_statuses
 
-    # Trigger webpage regeneration when an escalator changes status
+    # Trigger webpage regeneration when an elevator changes status
     def statusUpdateCallback(self, doc):
-        pass
+        db = self.db
+        eleId = doc['escalator_id']
+
+        # Mark webpages for regeneration
+        update = {'$set' : {'forceUpdate':True}}
+        eleData = self.dbg.escIdToEscData[eleId]
+        stationCode = eleData['station_code']
+        stationShortName = stations.codeToShortName[stationCode]
+
+        db.webpages.update({'class' : 'elevator', 'elevator_id' : eleId}, update)
+        db.webpages.update({'class' : 'elevatorDirectory'}, update)
+        db.webpages.update({'class' : 'stationDirectory'}, update)
+        db.webpages.update({'class' : 'station', 'station_name' : stationShortName}, update)
 
     def getTwitterKeys(self):
         return MetroElevatorKeys
