@@ -98,6 +98,8 @@ classToUpdateInterval = \
     'escalatorRankings': 6,
     'escalatorDirectory' : 1,
     'escalatorOutages' : 1,
+    'elevator' : 1,
+    'elevatorDirectory' : 1,
     'stationDirectory' : 1,
     'station': 1,
     'hotcars' : 1,
