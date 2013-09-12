@@ -699,7 +699,15 @@ def summarizeStatuses(statusList, startTime, endTime):
                         'availability' : 1.0,
                         'metroOpenTime' : 0.0,
                         'brokenTimePercentage' : 0.0,
-                        'absTime' : 0.0}
+                        'absTime' : 0.0,
+                        'meanTimeToRepair' : 0.0,
+                        'meanAbsTimeToRepair' : 0.0,
+                        'medianTimeToRepair' : 0.0,
+                        'medianAbsTimeToRepair' : 0.0,
+                        'meanTimeBetweenFailures' : 0.0,
+                        'meanAbsTimeBetweenFailures' : 0.0,
+                        'medianTimeBetweenFailures' : 0.0,
+                        'medianAbsTimeBetweenFailures' : 0.0}
         return default_ret
 
     breakStatuses = statusGroup.breakStatuses
@@ -737,7 +745,16 @@ def summarizeStatuses(statusList, startTime, endTime):
             'availability' : availability,
             'brokenTimePercentage' : statusGroup.brokenTimePercentage,
             'metroOpenTime' : metroOpenTime,
-            'absTime' : absTime}
+            'absTime' : absTime,
+            'meanTimeToRepair' : statusGroup.meanTimeToRepair,
+            'meanAbsTimeToRepair' : statusGroup.meanAbsTimeToRepair,
+            'medianTimeToRepair' : statusGroup.medianTimeToRepair,
+            'medianAbsTimeToRepair' : statusGroup.medianAbsTimeToRepair,
+            'meanTimeBetweenFailures' : statusGroup.meanTimeBetweenFailures,
+            'meanAbsTimeBetweenFailures' : statusGroup.meanAbsTimeBetweenFailures,
+            'medianTimeBetweenFailures' : statusGroup.medianTimeBetweenFailures,
+            'medianAbsTimeBetweenFailures' : statusGroup.medianAbsTimeBetweenFailures
+          }
 
     return ret
 

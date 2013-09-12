@@ -19,7 +19,8 @@ offStatuses = ['SAFETY WORK ORDER',
                'SCHEDULED SUPPORT',
                'PREV. MAINT. REPAIRS']
 inspectStatuses = ['SAFETY INSPECTION',
-                   'PREV. MAINT. INSPECTION']
+                   'PREV. MAINT. INSPECTION',
+                   'PREV. MAINT. COMPLIANCE INSPECTION']
 rehabStatuses = ['REHAB/MODERNIZATION']
 symptomToCategory['OPERATIONAL'] = 'ON'
 symptomToCategory.update((status, 'OFF') for status in offStatuses)

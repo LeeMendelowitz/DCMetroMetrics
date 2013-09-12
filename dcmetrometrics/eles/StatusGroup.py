@@ -298,6 +298,11 @@ class StatusGroupBase(object):
             brokenTimePercentage = float(brokenTime)/self.metroOpenTime
         return brokenTimePercentage
 
+
+        
+
+
+
     def printStatuses(self, handle = sys.stdout):
         p = lambda m: handle.write(str(m) + '\n')
         s = self.statuses[0]
@@ -377,6 +382,81 @@ class StatusGroup(StatusGroupBase):
             if outage.startTime >= startTime:
                 yield outage
 
+    ##########################################################################
+    # Compute the time between broken outages
+    @computeOnce
+    def timeBetweenFailures(self):
+        breakOutages = [o for o in self.outageStatuses if o.is_break and not o.is_active]
+        endTimes = [b.endTime for b in breakOutages[:-1]]
+        startTimes = [b.startTime for b in breakOutages[1:]]
+        betweenTimes = [TimeRange(s,e) for s,e in zip(endTimes,startTimes)]
+        assert(all(bt.absTime > 0 for bt in betweenTimes))
+        return betweenTimes
+
+    @computeOnce
+    def meanTimeBetweenFailures(self):
+        import numpy as np
+        if not self.timeBetweenFailures:
+            return 0.0
+        return np.mean([t.metroOpenTime for t in self.timeBetweenFailures])
+
+    @computeOnce
+    def medianTimeBetweenFailures(self):
+        import numpy as np
+        if not self.timeBetweenFailures:
+            return 0.0
+        return np.median([t.metroOpenTime for t in self.timeBetweenFailures])
+
+    @computeOnce
+    def meanAbsTimeBetweenFailures(self):
+        import numpy as np
+        if not self.timeBetweenFailures:
+            return 0.0
+        return np.mean([t.absTime for t in self.timeBetweenFailures])
+
+    @computeOnce
+    def medianAbsTimeBetweenFailures(self):
+        if not self.timeBetweenFailures:
+            return 0.0
+        import numpy as np
+        return np.median([t.absTime for t in self.timeBetweenFailures])
+
+    ##########################################################################
+    # Compute the time to repair
+    @computeOnce
+    def timeToRepair(self):
+        breakOutages = [o for o in self.outageStatuses if o.is_break and not o.is_active]
+        return [b.timeRange for b in breakOutages]
+
+
+    @computeOnce
+    def meanTimeToRepair(self):
+        if not self.timeToRepair:
+            return 0.0
+        import numpy as np
+        return np.mean([t.metroOpenTime for t in self.timeToRepair])
+
+    @computeOnce
+    def medianTimeToRepair(self):
+        if not self.timeToRepair:
+            return 0.0
+        import numpy as np
+        return np.median([t.metroOpenTime for t in self.timeToRepair])
+
+    @computeOnce
+    def meanAbsTimeToRepair(self):
+        if not self.timeToRepair:
+            return 0.0
+        import numpy as np
+        return np.mean([t.absTime for t in self.timeToRepair])
+
+    @computeOnce
+    def medianAbsTimeToRepair(self):
+        if not self.timeToRepair:
+            return 0.0
+        import numpy as np
+        return np.median([t.absTime for t in self.timeToRepair])
+
 ###############################################################################
 # Outage
 # Used to represent an escalator outage (a list of consecutive non-operational statuses)
@@ -390,10 +470,6 @@ class Outage(StatusGroupBase):
         """
         statuses:  A list of consecutive non-operational statuses.
                    Statuses should be sorted in ascending order. 
-        startTime: The start of the time range of interest (as a non-naive datetime).
-                   If None, the time of the first status is used.
-        endTime:   The end of the time range of interest (as a non-naive datetime).
-                   If None, the time of the last status is used.
         """
 
         if isinstance(statuses, dict):
