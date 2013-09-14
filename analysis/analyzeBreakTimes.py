@@ -4,13 +4,14 @@ import pandas
 from datetime import datetime, timedelta, date
 from collections import Counter, defaultdict
 
-import dcmetrometrics.test.setup
+import setup
+import test
 from dcmetrometrics.common import metroTimes, dbGlobals
 from dcmetrometrics.common.metroTimes import nytz, toLocalTime
 from dcmetrometrics.eles import dbUtils
 from dcmetrometrics.eles.StatusGroup import StatusGroup
+from common import getDataOutageDays, MAX_TICK_DELTA
 
-MAX_TICK_DELTA = 3600
 
 dbg = dbGlobals.DBGlobals()
 db = dbg.getDB()
@@ -74,23 +75,6 @@ def writeBreakCsv(fname='breaks.csv'):
     dt.to_csv(fname, index=False)
     return dt
 
-def getDataOutageDays():
-    """
-    Return days which have been impacted by a data outage
-    """
-    delayed = list(db.escalator_statuses.find({'tickDelta' : {"$gt" : MAX_TICK_DELTA}}))
-    daysWithDelay = set()
-    # Get the days impacted by a data outage
-    for d in delayed:
-        endTime = d['time']
-        startTime = endTime - timedelta(seconds=d['tickDelta'])
-        startDay = startTime.date()
-        endDay = endTime.date()
-#        print 'startDay: %s endDay: %s'%(str(startDay), str(endDay))
-        numDays = (endDay - startDay).days
-        days = (startDay + timedelta(days=i) for i in xrange(numDays+1))
-        daysWithDelay.update(days)
-    return daysWithDelay
 
 #################################
 def getOutageStartDurations(fname='outageStartToDuration.csv'):
@@ -134,3 +118,6 @@ def getOutageStartDurations(fname='outageStartToDuration.csv'):
     ret = {'breaks' : breaks,
            'catToOutages' : catToOutages}
     return ret
+
+if __name__ == "__main__":
+    writeBreakCsv()

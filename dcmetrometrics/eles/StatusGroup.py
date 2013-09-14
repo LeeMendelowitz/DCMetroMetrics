@@ -13,10 +13,12 @@ Outage: Class used to summaraize an ordered listing of consecutive non-operation
 from collections import defaultdict, Counter
 from copy import deepcopy
 import sys
+from datetime import timedelta
 
 from ..common.descriptors import setOnce, computeOnce
 from ..common import metroTimes
 from ..common.metroTimes import TimeRange, isNaive
+
 
 ###############################################################################
 # StatusGroupBase: Summarizes a list of consecutive statuses for a single escalator.
@@ -351,7 +353,6 @@ def yieldNothing():
     return 
     yield
 
-
 #######################################################################
 # Class to summarize a list of consecutive statuses for a single escalator.
 class StatusGroup(StatusGroupBase):
@@ -386,9 +387,8 @@ class StatusGroup(StatusGroupBase):
     # Compute the time between broken outages
     @computeOnce
     def timeBetweenFailures(self):
-        breakOutages = [o for o in self.outageStatuses if o.is_break and not o.is_active]
-        endTimes = [b.endTime for b in breakOutages[:-1]]
-        startTimes = [b.startTime for b in breakOutages[1:]]
+        endTimes = [b.endTime for b in self.breakOutages[:-1]]
+        startTimes = [b.startTime for b in self.breakOutages[1:]]
         betweenTimes = [TimeRange(s,e) for s,e in zip(endTimes,startTimes)]
         assert(all(bt.absTime > 0 for bt in betweenTimes))
         return betweenTimes
@@ -421,12 +421,76 @@ class StatusGroup(StatusGroupBase):
         import numpy as np
         return np.median([t.absTime for t in self.timeBetweenFailures])
 
+    @computeOnce
+    def timeBetweenFailuresAll(self):
+        """
+        Compute the time between failures, including these boundary cases:
+             - the time from the first status to the first failure
+             - the time since the last failure
+        """
+        breakOutages = [o for o in self.outageStatuses if o.is_break]
+        if not breakOutages:
+            return [TimeRange(self.startTime, self.endTime)]
+
+        firstBreak = breakOutages[0]
+        lastBreak = breakOutages[-1]
+
+        timeBetweenFailures = list(self.timeBetweenFailures)
+
+        timeToFirstFailure = TimeRange(self.startTime, firstBreak.startTime)
+        timeBetweenFailures.append(timeToFirstFailure)
+
+        if not lastBreak.is_active:
+            timeSinceLastFailure = TimeRange(lastBreak.endTime, self.endTime)
+            timeBetweenFailures.append(timeSinceLastFailure)
+
+        return timeBetweenFailures
+
+
+    @computeOnce
+    def maxAbsTimeBetweenFailures(self):
+        """
+        Compute the maximum time between failures, including these boundary cases:
+             - the time from the first status to the first failure
+             - the time since the last failure
+        """
+        timeBetweenFailures = [t.absTime for t in self.timeBetweenFailuresAll]
+
+        ### DEBUG
+        """
+        for t in self.timeBetweenFailuresAll:
+            print t, t.absTime/3600.0/24.0
+        """
+        return max(timeBetweenFailures) if timeBetweenFailures else None
+
+    @computeOnce
+    def brokenDays(self):
+        return sorted(set(self._genBrokenDays()))
+
+    @computeOnce
+    def numBrokenDays(self):
+        return len(self.brokenDays)
+        
+    def _genBrokenDays(self):
+        for b in self.breakStatuses:
+            if 'end_time' not in b:
+                continue
+            firstDay = b['time'].date()
+            lastDay = b['end_time'].date()
+            numDays = (lastDay - firstDay).days + 1
+            for i in range(numDays):
+                yield firstDay + timedelta(days=i)
+
+    @computeOnce
+    def breakOutages(self):
+        return [o for o in self.outageStatuses if o.is_break and not o.is_active]
+        
+
     ##########################################################################
     # Compute the time to repair
     @computeOnce
     def timeToRepair(self):
-        breakOutages = [o for o in self.outageStatuses if o.is_break and not o.is_active]
-        return [b.timeRange for b in breakOutages]
+        return [b.timeRange for b in self.breakOutages]
 
 
     @computeOnce

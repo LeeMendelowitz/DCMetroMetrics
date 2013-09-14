@@ -2,7 +2,13 @@
 # to this WMATA escalator performance
 # new release:
 # http://wmata.com/about_metro/news/PressReleaseDetail.cfm?ReleaseID=5575
+
+# TO DO: 
+#  - COMPUTE THE NUMBER OF OUTAGES ATTRIBUTED TO PREVENTATIVE MAINTENANCE.
+#  - COMPUTE AVERAGE AVAILABILITY
+
 import sys, os
+import pandas
 
 # Modify system path to include dcmetrometrics module
 _thisDir, _thisFile = os.path.split(os.path.abspath(__file__))
@@ -38,22 +44,53 @@ def run1():
     sout('Minutes of metro open time per break: %f minutes'%minutesPerBreak)
 
     # TO DO:
-    # Fill out a pandas DataFrame with information such as:
-    # - meanTimeBetweenFailures (and rank)
-    # - medianTimeBetweenFailures (and rank)
-    # - longest Break (and rank)
-    # - shortest Break (and rank)
-    # - number of breaks (and rank)
-    # - number of inspections (and rank)
-    # - escalator meta data
-    # - break days (number of metro days with an outage) and rank
-    
     # Make a histogram of mean or median time between failures
     # Make a histogram of break days
     # Make a histogram of outage counts
 
-    # Compute the percentage of outages which are attributed to
-    # scheduled maintenance or inspections.
+    escSummaries = dict((s['unit_id'], s) for s in escSummaries.itervalues())
+    df = pandas.DataFrame(escSummaries).T
+
+    # Make a list of ranks to compute, (key, ascending)
+    ranksToCompute = [('numBreaks', False),
+                      ('numBrokenDays', False),
+                      ('numInspections',False),
+                      ('brokenTimePercentage', False),
+                      ('availability', False),
+                      ('meanAbsTimeBetweenFailures', False),
+                      ('meanAbsTimeToRepair',False),
+                      ('medianAbsTimeBetweenFailures', False),
+                      ('medianAbsTimeToRepair', False),
+                      ('maxAbsTimeBetweenFailures', False)]
+
+    N = df.shape[0]
+    for r, a in ranksToCompute:
+        df['%sRank'%r] = df[r].rank(method='min',ascending=a)
+        df['%sPercentile'%r] = df['%sRank'%r]/float(N)
+
+    # Select and reorder the columns in a meaningful way
+    cols = ['station_name', 'station_code', 'station_desc', 'esc_desc',
+            'availability', 'availabilityRank',
+            'brokenTimePercentage', 'brokenTimePercentageRank', 'brokenTimePercentagePercentile',
+            'numBreaks', 'numBreaksRank', 'numBreaksPercentile',
+            'numInspections', 'numInspectionsRank', 'numInspectionsPercentile',
+            'numFixes',
+            'meanAbsTimeBetweenFailures', 'meanAbsTimeBetweenFailuresRank',
+            'meanAbsTimeBetweenFailuresPercentile',
+            'meanAbsTimeToRepair', 'meanAbsTimeToRepairRank','meanAbsTimeToRepairPercentile',
+            'maxAbsTimeBetweenFailures', 'maxAbsTimeBetweenFailuresRank',
+            'maxAbsTimeBetweenFailuresPercentile',
+            'numBrokenDays', 'numBrokenDaysRank', 'numBrokenDaysPercentile']
+    df = df[cols]
+
+    # Write the dataframe to disk
+    outputPfx = 'escalatorOutageSummary'
+    #df.to_excel('%s.xlsx'%outputPfx)
+    df.to_csv('%s.csv'%outputPfx)
+    df.to_html(open('%s.html'%outputPfx, 'w'))
+
+    return df
+
 
 if __name__ == '__main__':
     run1() 

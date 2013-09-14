@@ -224,10 +224,19 @@ class TimeRange(object):
             dateEnd = dateStart + timedelta(days=1)
             return not ((self.end < dateStart) or (self.start > dateEnd))
         elif isinstance(otherTime, TimeRange):
-            return not ((self.end < otherTime.start) or (self.start > otherTime.end))
+            return not ((self.end <= otherTime.start) or (self.start >= otherTime.end))
         else:
             raise TypeError("otherTime must be date, datetime, or TimeRange")
 
+    def __lt__(self, other):
+        return (self.start < other.start)
+
+    def __eq__(self, other):
+        return (self.start == other.start) and (self.end == other.end)
+
+    def __repr__(self):
+        return 'TimeRange(start=%s, end=%s)'%(self.start, self.end)
+        
 ##################################################
 def secondsToDHM(seconds):
     secondsPerDay = 24 * 3600

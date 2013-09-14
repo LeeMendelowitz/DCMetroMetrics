@@ -545,7 +545,7 @@ def getStationSnapshot(stationCode, dbg=None):
     return ret
 
 ########################################
-# Merge a list of escalator summaries produced by summarizeStatuses
+# Merge a list of escalator summaries produced by eummarizeStatuses
 # into a single summary. This is useful for compiling
 # a summary for a single station
 def mergeEscalatorSummaries(escalatorSummaryList):
@@ -689,6 +689,7 @@ def summarizeStatuses(statusList, startTime, endTime):
 
     if not statusList:
         default_ret = { 'numBreaks' : 0,
+                        'numBrokenDays' : 0,
                         'numFixes' : 0,
                         'numInspections' : 0,
                         'symptomCodeToTime' : {},
@@ -700,6 +701,9 @@ def summarizeStatuses(statusList, startTime, endTime):
                         'metroOpenTime' : 0.0,
                         'brokenTimePercentage' : 0.0,
                         'absTime' : 0.0,
+                        'timeBetweenFailures' : [],
+                        'timeBetweenFailuresAll' : [],
+                        'timeToRepair' : [],
                         'meanTimeToRepair' : 0.0,
                         'meanAbsTimeToRepair' : 0.0,
                         'medianTimeToRepair' : 0.0,
@@ -707,7 +711,9 @@ def summarizeStatuses(statusList, startTime, endTime):
                         'meanTimeBetweenFailures' : 0.0,
                         'meanAbsTimeBetweenFailures' : 0.0,
                         'medianTimeBetweenFailures' : 0.0,
-                        'medianAbsTimeBetweenFailures' : 0.0}
+                        'medianAbsTimeBetweenFailures' : 0.0,
+                        'maxAbsTimeBetweenFailures' : 0.0,
+                        }
         return default_ret
 
     breakStatuses = statusGroup.breakStatuses
@@ -735,6 +741,7 @@ def summarizeStatuses(statusList, startTime, endTime):
     availability = availTime/metroOpenTime if metroOpenTime > 0.0 else 1.0
 
     ret = { 'numBreaks' : numBreaks,
+            'numBrokenDays' : statusGroup.numBrokenDays,
             'numFixes' : numFixes,
             'numInspections' : numInspections,
             'symptomCodeToTime' : symptomCodeToTime,
@@ -746,6 +753,9 @@ def summarizeStatuses(statusList, startTime, endTime):
             'brokenTimePercentage' : statusGroup.brokenTimePercentage,
             'metroOpenTime' : metroOpenTime,
             'absTime' : absTime,
+            'timeBetweenFailures' : statusGroup.timeBetweenFailures,
+            'timeBetweenFailuresAll' : statusGroup.timeBetweenFailuresAll,
+            'timeToRepair' : statusGroup.timeToRepair,
             'meanTimeToRepair' : statusGroup.meanTimeToRepair,
             'meanAbsTimeToRepair' : statusGroup.meanAbsTimeToRepair,
             'medianTimeToRepair' : statusGroup.medianTimeToRepair,
@@ -753,7 +763,8 @@ def summarizeStatuses(statusList, startTime, endTime):
             'meanTimeBetweenFailures' : statusGroup.meanTimeBetweenFailures,
             'meanAbsTimeBetweenFailures' : statusGroup.meanAbsTimeBetweenFailures,
             'medianTimeBetweenFailures' : statusGroup.medianTimeBetweenFailures,
-            'medianAbsTimeBetweenFailures' : statusGroup.medianAbsTimeBetweenFailures
+            'medianAbsTimeBetweenFailures' : statusGroup.medianAbsTimeBetweenFailures,
+            'maxAbsTimeBetweenFailures': statusGroup.maxAbsTimeBetweenFailures
           }
 
     return ret
