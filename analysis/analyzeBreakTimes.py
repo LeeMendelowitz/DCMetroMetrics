@@ -12,12 +12,10 @@ from dcmetrometrics.eles import dbUtils
 from dcmetrometrics.eles.StatusGroup import StatusGroup
 from common import getDataOutageDays, MAX_TICK_DELTA
 
-
 dbg = dbGlobals.DBGlobals()
 db = dbg.getDB()
 
 def getAllBreaks():
-    
     escIds = dbg.getEscalatorIds()
     breaks = []
     for escId in escIds:
@@ -30,11 +28,16 @@ def getAllBreaks():
 
 def getFilteredBreaks():
     breaks = getAllBreaks()
+    breaks = sorted(breaks, key = lambda b: b['time'])
 
     # Do not include days where a data outage occurred
     daysToIgnore = getDataOutageDays()
     daysToIgnore.add(date(2013,6,1)) # This is the first day when data was collected
     daysToIgnore.add(date(2013,7,4)) # 4th of July ran on a different schedule
+
+    # Ignore outages from the last day
+    lastStatus = breaks[-1]
+    daysToIgnore.add(lastStatus['time'].date())
 
     breaks = [d for d in breaks if d['time'].date() not in daysToIgnore]
     assert(all(b['tickDelta'] < MAX_TICK_DELTA for b in breaks))
@@ -62,19 +65,11 @@ def summarizeBreaks(breaks):
 def writeBreakCsv(fname='breaks.csv'):
     breaks = getFilteredBreaks()
 
-    # Do not include days where a data outage occurred
-    daysToIgnore = getDataOutageDays()
-    daysToIgnore.add(date(2013,6,1)) # This is the first day when data was collected
-    daysToIgnore.add(date(2013,7,4)) # 4th of July ran on a different schedule
-
-    breaks = [d for d in breaks if d['time'].date() not in daysToIgnore]
-
     # Turn into a pandas object
     breakGen = ((b['unit_id'], b['time'].isoformat()) for b in breaks)
     dt = pandas.DataFrame(list(breakGen), columns=['escalator', 'breaktime'])
     dt.to_csv(fname, index=False)
     return dt
-
 
 #################################
 def getOutageStartDurations(fname='outageStartToDuration.csv'):

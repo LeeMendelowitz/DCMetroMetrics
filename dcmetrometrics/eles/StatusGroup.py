@@ -18,6 +18,7 @@ from datetime import timedelta
 from ..common.descriptors import setOnce, computeOnce
 from ..common import metroTimes
 from ..common.metroTimes import TimeRange, isNaive
+from . import defs
 
 
 ###############################################################################
@@ -165,6 +166,10 @@ class StatusGroupBase(object):
     def breakStatuses(self):
         return [b for b in self._genBreakStatuses()]
 
+    @property
+    def numBreaks(self):
+        return len(self.breakStatuses)
+
     def _genBreakStatuses(self):
         wasBroken = False
         startTime = self.startTime
@@ -186,6 +191,10 @@ class StatusGroupBase(object):
     def fixStatuses(self):
         return [f for f in self._genFixStatuses()]
 
+    @property
+    def numFixes(self):
+        return len(self.fixStatuses)
+
     def _genFixStatuses(self):
         wasBroken = False
         startTime = self.startTime
@@ -204,6 +213,10 @@ class StatusGroupBase(object):
     @computeOnce
     def inspectionStatuses(self):
         return [s for s in self._genInspectionStatuses()]
+
+    @property
+    def numInspections(self):
+        return len(self.inspectionStatuses)
 
     def _genInspectionStatuses(self):
         wasInspection = False
@@ -239,6 +252,17 @@ class StatusGroupBase(object):
         totalTime = sum(symptomCategoryToTime.values())
         assert(abs(totalTime - self.timeRange.absTime < 1E-3))
         return symptomCategoryToTime
+
+    @property
+    def availability(self):
+        """
+        Compute the fraction of time for which Metro was open that the
+        escalator/elevator was operational.
+        """
+        availTime = self.timeAllocation['ON']
+        metroOpenTime = self.timeRange.metroOpenTime
+        availability = availTime/metroOpenTime if metroOpenTime > 0.0 else 1.0
+        return availability
 
     ######################################
     # Get the amount of metro open time allocated to each symptom code
@@ -366,6 +390,10 @@ class StatusGroup(StatusGroupBase):
     def outageStatuses(self):
         return [o for o in self._genOutageStatuses()]
 
+    @property
+    def numOutages(self):
+        return len(self.outageStatuses)
+
     def _genOutageStatuses(self):
         outageStatuses = []
         startTime = self.startTime
@@ -397,27 +425,27 @@ class StatusGroup(StatusGroupBase):
     def meanTimeBetweenFailures(self):
         import numpy as np
         if not self.timeBetweenFailures:
-            return 0.0
+            return None
         return np.mean([t.metroOpenTime for t in self.timeBetweenFailures])
 
     @computeOnce
     def medianTimeBetweenFailures(self):
         import numpy as np
         if not self.timeBetweenFailures:
-            return 0.0
+            return None
         return np.median([t.metroOpenTime for t in self.timeBetweenFailures])
 
     @computeOnce
     def meanAbsTimeBetweenFailures(self):
         import numpy as np
         if not self.timeBetweenFailures:
-            return 0.0
+            return None
         return np.mean([t.absTime for t in self.timeBetweenFailures])
 
     @computeOnce
     def medianAbsTimeBetweenFailures(self):
         if not self.timeBetweenFailures:
-            return 0.0
+            return None
         import numpy as np
         return np.median([t.absTime for t in self.timeBetweenFailures])
 
@@ -496,28 +524,28 @@ class StatusGroup(StatusGroupBase):
     @computeOnce
     def meanTimeToRepair(self):
         if not self.timeToRepair:
-            return 0.0
+            return None
         import numpy as np
         return np.mean([t.metroOpenTime for t in self.timeToRepair])
 
     @computeOnce
     def medianTimeToRepair(self):
         if not self.timeToRepair:
-            return 0.0
+            return None
         import numpy as np
         return np.median([t.metroOpenTime for t in self.timeToRepair])
 
     @computeOnce
     def meanAbsTimeToRepair(self):
         if not self.timeToRepair:
-            return 0.0
+            return None
         import numpy as np
         return np.mean([t.absTime for t in self.timeToRepair])
 
     @computeOnce
     def medianAbsTimeToRepair(self):
         if not self.timeToRepair:
-            return 0.0
+            return None
         import numpy as np
         return np.median([t.absTime for t in self.timeToRepair])
 
@@ -558,6 +586,7 @@ class Outage(StatusGroupBase):
     def breakStatuses(self):
         return list(self._genBreakStatuses())
 
+
     def _genBreakStatuses(self):
         return (b for b in self.allStatuses if b['symptomCategory']=='BROKEN')
 
@@ -580,6 +609,7 @@ class Outage(StatusGroupBase):
     def inspectionStatuses(self):
         return list(self._genInspectionStatuses())
 
+
     def _genInspectionStatuses(self):
         return (s for s in self.statuses if s['symptomCategory']=='INSPECTION')
 
@@ -599,6 +629,16 @@ class Outage(StatusGroupBase):
     @computeOnce
     def is_rehab(self):
         return 'REHAB' in self.categories
+
+    @computeOnce
+    def is_planned(self):
+        """
+        Return True if the outage contains a status in the planned
+        outage category.
+        """
+        plannedOutageSymptoms = set(defs.plannedOutageSymptoms)
+        return any(s['symptom'] in plannedOutageSymptoms\
+                   for s in self.statuses)
 
     @computeOnce
     def categories(self):

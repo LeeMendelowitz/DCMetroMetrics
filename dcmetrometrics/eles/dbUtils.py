@@ -666,6 +666,7 @@ def getEscalatorStatuses(escId=None, escUnitId=None, startTime = None, endTime =
 # - time spent in each status code
 # - metro open time spent in each status code
 # startTime and endTime must be provided to properly compute the times.
+# TO DO: Consider returning a statusGroup instance instead of a dictionary. This makes more sense.
 def summarizeStatuses(statusList, startTime, endTime):
 
     _checkAllTimesNotNaive(statusList)
@@ -692,6 +693,7 @@ def summarizeStatuses(statusList, startTime, endTime):
                         'numBrokenDays' : 0,
                         'numFixes' : 0,
                         'numInspections' : 0,
+                        'outages': [],
                         'symptomCodeToTime' : {},
                         'symptomCodeToAbsTime' : {},
                         'symptomCategoryToTime' : {},
@@ -704,15 +706,15 @@ def summarizeStatuses(statusList, startTime, endTime):
                         'timeBetweenFailures' : [],
                         'timeBetweenFailuresAll' : [],
                         'timeToRepair' : [],
-                        'meanTimeToRepair' : 0.0,
-                        'meanAbsTimeToRepair' : 0.0,
-                        'medianTimeToRepair' : 0.0,
-                        'medianAbsTimeToRepair' : 0.0,
-                        'meanTimeBetweenFailures' : 0.0,
-                        'meanAbsTimeBetweenFailures' : 0.0,
-                        'medianTimeBetweenFailures' : 0.0,
-                        'medianAbsTimeBetweenFailures' : 0.0,
-                        'maxAbsTimeBetweenFailures' : 0.0,
+                        'meanTimeToRepair' : None,
+                        'meanAbsTimeToRepair' : None,
+                        'medianTimeToRepair' : None,
+                        'medianAbsTimeToRepair' : None,
+                        'meanTimeBetweenFailures' : None,
+                        'meanAbsTimeBetweenFailures' : None,
+                        'medianTimeBetweenFailures' : None,
+                        'medianAbsTimeBetweenFailures' : None,
+                        'maxAbsTimeBetweenFailures' : None,
                         }
         return default_ret
 
@@ -729,30 +731,23 @@ def summarizeStatuses(statusList, startTime, endTime):
             raise RuntimeError('summarizeStatuses: status is missing end_time field')
 
     # Summarize the time allocation to various symptoms for this time window
-    symptomCodeToTime = statusGroup.symptomCodeTimeAllocation
-    symptomCodeToAbsTime = statusGroup.symptomCodeAbsTimeAllocation
-    symptomCategoryToTime = statusGroup.timeAllocation
-    symptomCategoryToAbsTime = statusGroup.absTimeAllocation
 
-    availTime = symptomCategoryToTime['ON']
-    timeRange = statusGroup.timeRange
-    metroOpenTime = timeRange.metroOpenTime
-    absTime = timeRange.absTime
-    availability = availTime/metroOpenTime if metroOpenTime > 0.0 else 1.0
+    availTime = statusGroup.timeAllocation['ON']
 
-    ret = { 'numBreaks' : numBreaks,
+    ret = { 'numBreaks' : statusGroup.numBreaks,
             'numBrokenDays' : statusGroup.numBrokenDays,
-            'numFixes' : numFixes,
-            'numInspections' : numInspections,
-            'symptomCodeToTime' : symptomCodeToTime,
-            'symptomCodeToAbsTime' : symptomCodeToAbsTime,
-            'symptomCategoryToTime' : symptomCategoryToTime,
-            'symptomCategoryToAbsTime' : symptomCategoryToAbsTime,
+            'numFixes' : statusGroup.numFixes,
+            'numInspections' : statusGroup.numInspections,
+            'outages' : statusGroup.outageStatuses,
+            'symptomCodeToTime' : statusGroup.symptomCodeTimeAllocation,
+            'symptomCodeToAbsTime' : statusGroup.symptomCodeAbsTimeAllocation,
+            'symptomCategoryToTime' : statusGroup.timeAllocation,
+            'symptomCategoryToAbsTime' : statusGroup.absTimeAllocation,
             'availableTime' : availTime,
-            'availability' : availability,
+            'availability' : statusGroup.availability,
             'brokenTimePercentage' : statusGroup.brokenTimePercentage,
-            'metroOpenTime' : metroOpenTime,
-            'absTime' : absTime,
+            'metroOpenTime' : statusGroup.metroOpenTime,
+            'absTime' : statusGroup.absTime,
             'timeBetweenFailures' : statusGroup.timeBetweenFailures,
             'timeBetweenFailuresAll' : statusGroup.timeBetweenFailuresAll,
             'timeToRepair' : statusGroup.timeToRepair,

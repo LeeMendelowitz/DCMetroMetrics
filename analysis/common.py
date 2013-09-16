@@ -2,7 +2,7 @@ import setup
 import test
 from dcmetrometrics.common import dbGlobals
 from dcmetrometrics.common.metroTimes import tzutc, TimeRange
-import interval
+import Interval
 
 from datetime import timedelta
 
@@ -17,15 +17,14 @@ def getDataOutageDays():
     """
     Return days which have been impacted by a data outage
     """
-    delayed = list(db.escalator_statuses.find({'tickDelta' : {"$gt" : MAX_TICK_DELTA}}))
+    outageIntervals = getDataOutageIntervals()
     daysWithDelay = set()
     # Get the days impacted by a data outage
-    for d in delayed:
-        endTime = d['time']
-        startTime = endTime - timedelta(seconds=d['tickDelta'])
+    for o in outageIntervals:
+        startTime = o.start
+        endTime = o.end
         startDay = startTime.date()
         endDay = endTime.date()
-#        print 'startDay: %s endDay: %s'%(str(startDay), str(endDay))
         numDays = (endDay - startDay).days
         days = (startDay + timedelta(days=i) for i in xrange(numDays+1))
         daysWithDelay.update(days)
@@ -44,7 +43,7 @@ def getDataOutageIntervals():
         startTime = endTime - timedelta(seconds=s['tickDelta'])
         tickDeltaIntervals.append(TimeRange(startTime, endTime))
     
-    tickDeltaIntervals = interval.union(tickDeltaIntervals)
+    tickDeltaIntervals = Interval.union(tickDeltaIntervals)
 
     staleStatusIntervals = []
     allStatuses = db.escalator_statuses.find({}, sort=[('time',1)])
@@ -57,10 +56,10 @@ def getDataOutageIntervals():
                 endTime = s['time'].replace(tzinfo=tzutc)
                 staleStatusIntervals.append(TimeRange(startTime, endTime))
         last = s
-    staleStatusIntervals = interval.union(staleStatusIntervals)
+    staleStatusIntervals = Interval.union(staleStatusIntervals)
 
     allIntervals = tickDeltaIntervals + staleStatusIntervals
-    allIntervals = interval.union(allIntervals)
+    allIntervals = Interval.union(allIntervals)
     return allIntervals
 
 def adjustStatusListForOutages(statuses, outages):
