@@ -19,6 +19,7 @@ import gevent
 # custom imports
 from ..common import dbGlobals, stations
 from ..common.metroTimes import TimeRange, utcnow, isNaive, toUtc, tzutc
+from ..common.DictWrap import DictWrap
 from .defs import symptomToCategory, OPERATIONAL_CODE as OP_CODE
 from .StatusGroup import StatusGroup, _checkAllTimesNotNaive
 
@@ -808,6 +809,41 @@ def getAllEscalatorSummaries(startTime=None, endTime=None, escalators=False, ele
         escToSummary[escId] = summary
 
     return escToSummary
+
+def getEscalatorSummary(escId = None, unitId = None, startTime = None, endTime = None, dbg = None):
+    """
+    Get summary for a single escalator
+    """
+    if dbg is None:
+        dbg = dbGlobals.DBGlobals()
+    db = dbg.getDB()
+
+    if escId is None and unitId is None:
+        raise RuntimeError('escId or unitId must be given.')
+
+    if escId is None:
+        escId = dbg.unitToEscId[unitId]
+
+    # Convert startTime and endTime to utcTimeZone, if necessary
+    if startTime is not None:
+        startTime = toUtc(startTime)
+    if endTime is not None:
+        endTime = toUtc(endTime)
+
+    curTime = utcnow()
+
+    statuses = getEscalatorStatuses(escId=escId, startTime = startTime, endTime = endTime, dbg=dbg)
+    et = endTime if endTime is not None else curTime
+    st = startTime if startTime is not None else min(s['time'] for s in statuses)
+    summary = summarizeStatuses(statuses, st, et)
+    summary['statuses'] = statuses
+
+    # Add escalator meta-data to the summary
+    escData = dbg.escIdToEscData[escId]
+    summary.update(escData)
+
+    return DictWrap(summary)
+
 
 ###############################################################################
 # Get all escalator statuses.

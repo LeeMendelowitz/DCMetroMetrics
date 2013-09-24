@@ -3,14 +3,12 @@
 # new release:
 # http://wmata.com/about_metro/news/PressReleaseDetail.cfm?ReleaseID=5575
 
-# TO DO: 
-#  - COMPUTE THE NUMBER OF OUTAGES ATTRIBUTED TO PREVENTATIVE MAINTENANCE.
-#  - COMPUTE AVERAGE AVAILABILITY
-
 import sys, os
 import pandas
 from collections import Counter
 from datetime import date, time, datetime, timedelta
+
+END_TIME = datetime(2013, 9, 23, 12, tzinfo=nytz)
 
 # Modify system path to include dcmetrometrics module
 _thisDir, _thisFile = os.path.split(os.path.abspath(__file__))
@@ -19,7 +17,7 @@ sys.path = [_parentDir] + sys.path
 
 import test
 from dcmetrometrics.common import dbGlobals
-from dcmetrometrics.common.metroTimes import tzutc, nytz, TimeRange
+from dcmetrometrics.common.metroTimes import tzutc, nytz, TimeRange, secondsToDHM
 from dcmetrometrics.eles import dbUtils
 dbg = dbGlobals.DBGlobals()
 db = dbg.getDB()
@@ -30,7 +28,7 @@ def sout(msg):
 
 def run1():
 
-    endTime = datetime(2013, 9, 15, 12, tzinfo=nytz)
+    endTime = END_TIME
 
     sout('Computing escalator summaries...')
     escSummaries = dbUtils.getAllEscalatorSummaries(escalators=True, endTime = endTime)
@@ -55,11 +53,6 @@ def run1():
     sout('Metro Open Time: %f days'%(openTime/3600.0/24.0))
     minutesPerBreak = openTime/60.0/float(numBreaks)
     sout('Minutes of metro open time per break: %f minutes'%minutesPerBreak)
-
-    # TO DO:
-    # Make a histogram of mean or median time between failures
-    # Make a histogram of break days
-    # Make a histogram of outage counts
 
     escSummaries = dict((s['unit_id'], s) for s in escSummaries.itervalues())
     df = pandas.DataFrame(escSummaries).T
@@ -165,15 +158,125 @@ def run1():
     newEscalators = ['%sESCALATOR'%esc for esc in newEscalators]
     outputPfx = 'metroForwardEscalatorSummary'
     dfNewEscalators = df.ix[newEscalators].copy()
-    columns = ['station_name', 'availability', 'availabilityRank', 'numBreaks', 'numBreaksRank', 'meanAbsTimeBetweenFailures', 'meanAbsTimeBetweenFailuresRank']
+    columns = ['station_name', 'availability', 'availabilityRank', 'numBreaks', 'numBreaksRank', 'meanAbsTimeBetweenFailures', 'meanAbsTimeBetweenFailuresRank', 'maxAbsTimeBetweenFailures', 'maxAbsTimeBetweenFailuresRank', 'numBrokenDays', 'numBrokenDaysRank']
     dfNewEscalators = dfNewEscalators[columns]
     dfNewEscalators.availability = dfNewEscalators.availability * 100.0
+
+    # Convert time to days
     dfNewEscalators['meanDaysBetweenFailures'] = dfNewEscalators.meanAbsTimeBetweenFailures/3600.0/24.0
     dfNewEscalators['meanDaysBetweenFailuresRank'] = dfNewEscalators['meanAbsTimeBetweenFailuresRank']
+    dfNewEscalators['maxAbsTimeBetweenFailures'] = dfNewEscalators.maxAbsTimeBetweenFailures/3600.0/24.0
     dfNewEscalators.to_csv('%s.csv'%outputPfx)
     dfNewEscalators.to_html(open('%s.html'%outputPfx, 'w'))
 
     return df
+
+def timeBetweenFailures(fout=sys.stdout):
+    """
+    Print the time between failures of the MetroForward escalators
+    """
+    newEscalators = ['A03S01', 'A03S02', 'A03S03', 'C04X01', 'C04X02', 'C04X03']
+    newEscalators = ['%sESCALATOR'%esc for esc in newEscalators]
+
+    #newEscalators = ['A03S02ESCALATOR']
+
+    def p(msg):
+        fout.write(msg + '\n')
+        fout.flush()
+
+    def printRanges(trs):
+        for i, t in enumerate(trs):
+            startStr = t.start.strftime('%a %m/%d/%y %H:%M')
+            durationStr = secondsToDHM(t.absTime)
+            msg = '%i\t%s:\t%s'%(i, startStr, durationStr)
+            p(msg)
+
+    for esc in newEscalators:   
+        p('\n\n\n')
+        p('*'*50)
+        s = dbUtils.getEscalatorSummary(unitId=esc, endTime=END_TIME)
+
+        p('%s Time between failures'%esc)
+        tbfs = s.timeBetweenFailuresAll
+        printRanges(tbfs)
+
+        p('\n' + '-'*10 + '\n')
+        p('%s Time between failures (sorted by duration)'%esc)
+        p('\n')
+        tbfs = sorted(tbfs, key=lambda t: t.absTime, reverse=True)
+        printRanges(tbfs)
+
+
+def monthlyAverages():
+    """ 
+    Compute monthly availability averages for MetroForward escalators
+    """
+
+    edges = [ datetime(2013,6,1,0,tzinfo=nytz),
+              datetime(2013,7,1,0,tzinfo=nytz),
+              datetime(2013,8,1,0,tzinfo=nytz),
+              datetime(2013,9,1,0,tzinfo=nytz),
+              datetime(2013,9,23,12,tzinfo=nytz)]
+    months = ['June', 'July', 'August', 'September']
+    startTimes = edges[0:-1]
+    endTimes = edges[1:]
+    allData = {}
+
+    escIds = dbg.getEscalatorIds()
+    for escId in escIds:
+        unit = dbg.escIdToUnit[escId]
+        data = {}
+        for label, st, et in zip(months, startTimes, endTimes):
+            S = dbUtils.getEscalatorSummary(unitId=unit, startTime = st, endTime = et)
+            data[label] = S.availability
+        allData[unit] = pandas.Series(data)
+    df = pandas.DataFrame(allData).T
+    for month in months:
+        df['%sRank'%month] = df[month].rank(method='min', ascending=False)
+
+    # Write the dataframe to disk
+    outputPfx = 'escalatorAvailabilityMonthlySummary'
+    df.to_csv('%s.csv'%outputPfx)
+
+    # Get the recently replaced escalators
+    newEscalators = ['A03S01', 'A03S02', 'A03S03', 'C04X01', 'C04X02', 'C04X03']
+    newEscalators = ['%sESCALATOR'%esc for esc in newEscalators]
+    outputPfx = 'escalatorAvailabilityMonthlySummaryNewEscalators'
+    dfNewEscalators = df.ix[newEscalators].copy()
+    dfNewEscalators.to_csv('%s.csv'%outputPfx)
+
+    return df
+
+
+def addEscalatorMetadata(df):
+    """
+    Add escalator metadata to a dataframe.
+    Rows should be unit ids, like 'A03N03ESCALATOR'
+    """
+    rowIndex = df.index
+    rowEscIds = [dbg.unitToEscId[i] for i in rowIndex]
+
+    stationName = [dbg.escIdToEscData[escId]['station_name'] for escId in rowEscIds]
+    escDesc = [dbg.escIdToEscData[escId]['esc_desc'] for escId in rowEscIds]
+    stationDesc = [dbg.escIdToEscData[escId]['station_desc'] for escId in rowEscIds]
+
+    d = {'station_name' : stationName,
+         'esc_desc' : escDesc,
+         'station_desc' : stationDesc}
+
+    metaDataDf = pandas.DataFrame(data=d, index=rowIndex)
+    mergedDf = pandas.concat([metaDataDf, df], axis=1)
+    months = ['June', 'July', 'August', 'September']
+    ranks = ['%sRank'%s for s in months]
+    monthCols = [c for m,r in zip(months,ranks) for c in (m,r)]
+    columns = ['station_name', 'station_desc', 'esc_desc'] + monthCols
+    mergedDf = mergedDf[columns]
+    return mergedDf
+
+
+
+
+
 
 
 if __name__ == '__main__':
