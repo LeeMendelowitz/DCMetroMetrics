@@ -101,3 +101,12 @@ def getDB():
     res = db.authenticate(user, password)
 
     return db
+
+def connect():
+    from mongoengine import connect
+    host = os.environ["OPENSHIFT_MONGODB_DB_HOST"]
+    port = int(os.environ["OPENSHIFT_MONGODB_DB_PORT"])
+    user = os.environ["OPENSHIFT_MONGODB_DB_USERNAME"]
+    password = os.environ["OPENSHIFT_MONGODB_DB_PASSWORD"]
+    connect('MetroEscalators', host=host, port=port, username=user, password=password)
+
