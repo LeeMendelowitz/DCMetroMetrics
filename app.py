@@ -21,10 +21,10 @@ if __name__ == "__main__":
         msg = "This does not appear to be an OpenShift environment. Run test/test_app.py for testing."
         raise RuntimeError(msg)
 
-PY_DIR = os.environ['OPENSHIFT_PYTHON_DIR']
-REPO_DIR = os.environ['OPENSHIFT_REPO_DIR']
+PY_DIR = os.environ['PYTHON_DIR']
+REPO_DIR = os.environ['REPO_DIR']
 SCRIPT_DIR = os.path.join(REPO_DIR, 'scripts')
-DATA_DIR = os.environ['OPENSHIFT_DATA_DIR']
+DATA_DIR = os.environ['DATA_DIR']
 
 # Activate the OpenShift VirtualEnv
 try:

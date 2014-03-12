@@ -23,17 +23,16 @@ from gevent import Greenlet
 
 from dcmetrometrics.common.restartingGreenlet import RestartingGreenlet
 from dcmetrometrics.eles.EscalatorApp import EscalatorApp as App
+from dcmetrometrics.common.globals import DATA_DIR, REPO_DIR
 
-OUTPUT_DIR = os.environ.get('OPENSHIFT_DATA_DIR', None)
+OUTPUT_DIR = DATA_DIR
 if OUTPUT_DIR is None:
     OUTPUT_DIR = os.getcwd()
 
-REPO_DIR = os.environ.get('OPENSHIFT_REPO_DIR', None)
 if REPO_DIR is None:
     SCRIPT_DIR = os.getcwd()
 else:
     SCRIPT_DIR = os.path.join(REPO_DIR, 'scripts')
-DATA_DIR = os.environ['OPENSHIFT_DATA_DIR']
 
 SLEEP = 30
 

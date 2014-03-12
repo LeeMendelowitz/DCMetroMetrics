@@ -15,6 +15,7 @@ from collections import defaultdict
 # Custom modules
 from ..common import dbGlobals, twitterUtils, utils, stations
 from ..common.metroTimes import utcnow, tzutc, metroIsOpen, toLocalTime, isNaive
+from ..common.globals import DATA_DIR
 import dbUtils
 from .dbUtils import invDict
 from ..keys import WMATA_API_KEY
@@ -32,7 +33,7 @@ SILENCE_GAP = 60*20
 # the tick is silenced
 MAX_TICK_TWEETS = 10
 
-OUTPUT_DIR = os.environ.get('OPENSHIFT_DATA_DIR', None)
+OUTPUT_DIR = DATA_DIR
 if OUTPUT_DIR is None:
     OUTPUT_DIR = os.getcwd()
 

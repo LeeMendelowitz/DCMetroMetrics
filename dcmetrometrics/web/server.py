@@ -24,9 +24,8 @@ from gevent import monkey; monkey.patch_all() # Needed before importing bottle
 import bottle
 from bottle import static_file
 from dcmetrometrics.common.restartingGreenlet import RestartingGreenlet
+from dcmetrometrics.common.globals import REPO_DIR, DATA_DIR, INTERNAL_SERVE_IP, INTERNAL_SERVE_PORT
 
-REPO_DIR = os.environ['OPENSHIFT_REPO_DIR']
-DATA_DIR = os.environ['OPENSHIFT_DATA_DIR']
 SCRIPT_DIR = os.path.join(REPO_DIR, 'scripts')
 STATIC_DIR = os.path.join(REPO_DIR, 'wsgi', 'static')
 WEBPAGE_DIR = os.path.join(DATA_DIR, 'webpages')
@@ -160,11 +159,9 @@ class Server(RestartingGreenlet):
     def _run(self):
         try:
             # Run the server.
-            ip   = os.environ['OPENSHIFT_INTERNAL_IP']
-            port = 8080
             bottleApp = bottle.default_app()
             # This call blocks
-            bottle.run(host=ip, port=port, server='gevent')
+            bottle.run(host=INTERNAL_SERVE_IP, port=INTERNAL_SERVE_PORT, server='gevent')
 
         except Exception as e:
             logName = os.path.join(DATA_DIR, 'server.log')

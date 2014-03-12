@@ -25,7 +25,8 @@ setup(name='DC Metro Metrics',
                            'pymongo',
                            'simplejson',
                            'httplib2',
-                           'bottle'
+                           'bottle',
+                           'mongoengine'
       ],
       packages = []
  )

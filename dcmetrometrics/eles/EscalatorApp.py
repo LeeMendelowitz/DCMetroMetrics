@@ -22,6 +22,7 @@ if __name__ == '__main__':
 # Custom modules
 from ..common import dbGlobals, twitterUtils, utils, stations
 from ..common.metroTimes import toLocalTime, tzutc
+from ..common.globals import DATA_DIR
 from ..third_party.twitter import TwitterError
 from . import dbUtils
 from .dbUtils import invDict
@@ -57,7 +58,7 @@ class EscalatorApp(ELESApp):
         numEscalators = len(escalators)
 
         if numEscalators < NUM_ESCALATORS:
-            escalatorTsv = os.path.join(os.environ['OPENSHIFT_DATA_DIR'], 'escalators.tsv')
+            escalatorTsv = os.path.join(DATA_DIR, 'escalators.tsv')
             escData = utils.readEscalatorTsv(escalatorTsv)
             for d in escData:
                 d['unit_type'] = 'ESCALATOR'

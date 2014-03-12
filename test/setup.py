@@ -14,19 +14,18 @@ HOME_DIR = os.path.split(TEST_DIR)[0]
 #####################################################
 # Define environmental variables
 vals = [
-    ('OPENSHIFT_DATA_DIR', os.path.join(HOME_DIR, 'data')),
-    ('OPENSHIFT_REPO_DIR', HOME_DIR),
-    ('OPENSHIFT_MONGODB_DB_USERNAME', "LMM"),
-    ('OPENSHIFT_MONGODB_DB_LOG_DIR', os.path.join(HOME_DIR, 'mongodb')),
-    ('OPENSHIFT_MONGODB_DB_PASSWORD', "123456"),
-    ('OPENSHIFT_MONGODB_DB_HOST', 'localhost'),
-    ('OPENSHIFT_MONGODB_DB_PORT', '27017'),
-    ('OPENSHIFT_PYTHON_DIR', ''),
-    ('OPENSHIFT_HOME_DIR', HOME_DIR),
-    ('OPENSHIFT_INTERNAL_IP', 'localhost')
+    ('DATA_DIR', os.path.join(HOME_DIR, 'data')),
+    ('REPO_DIR', HOME_DIR),
+    ('MONGODB_USERNAME', "LMM"),
+    ('MONGODB_PASSWORD', "123456"),
+    ('MONGODB_HOST', 'localhost'),
+    ('MONGODB_PORT', '27017'),
+    ('INTERNAL_SERVE_IP', '127.0.0.1'),
+    ('INTERNAL_SERVE_PORT', '8000'),
+    ('PYTHON_DIR', ''),
 ]
 
-dir_keys = ['OPENSHIFT_DATA_DIR', 'OPENSHIFT_REPO_DIR', 'OPENSHIFT_MONGODB_DB_LOG_DIR']
+dir_keys = ['DATA_DIR', 'REPO_DIR']
 ######################################################
 
 def setupEnv():
@@ -54,11 +53,11 @@ def setupDB():
 
     print 'Adding user to the MetroEscalators MongoDB'
 
-    host = os.environ["OPENSHIFT_MONGODB_DB_HOST"]
-    port = int(os.environ["OPENSHIFT_MONGODB_DB_PORT"])
+    host = os.environ["MONGODB_HOST"]
+    port = int(os.environ["MONGODB_PORT"])
 
-    user = os.environ["OPENSHIFT_MONGODB_DB_USERNAME"]
-    password = os.environ["OPENSHIFT_MONGODB_DB_PASSWORD"]
+    user = os.environ["MONGODB_USERNAME"]
+    password = os.environ["MONGODB_PASSWORD"]
 
     client = pymongo.MongoClient(host, port)
     db = client.MetroEscalators

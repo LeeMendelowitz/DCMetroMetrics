@@ -13,6 +13,7 @@ import pymongo
 import os
 
 from ..eles.defs import OPERATIONAL_CODE as OP_CODE
+from .globals import MONGODB_HOST, MONGODB_PORT, MONGODB_USERNAME, MONGODB_PASSWORD
 
 invDict = lambda d: dict((v,k) for k,v in d.iteritems())
 
@@ -90,23 +91,15 @@ class DBGlobals(object):
         return self.db
 
 def getDB():
-
-    host = os.environ["OPENSHIFT_MONGODB_DB_HOST"]
-    port = int(os.environ["OPENSHIFT_MONGODB_DB_PORT"])
-    user = os.environ["OPENSHIFT_MONGODB_DB_USERNAME"]
-    password = os.environ["OPENSHIFT_MONGODB_DB_PASSWORD"]
-    client = pymongo.MongoClient(host, port)
-
+    client = pymongo.MongoClient(MONGODB_HOST, MONGODB_PORT)
+    
     db = client.MetroEscalators
-    res = db.authenticate(user, password)
+    if MONGODB_USERNAME and MONGODB_PASSWORD:
+        res = db.authenticate(MONGODB_USERNAME, MONGODB_PASSWORD)
 
     return db
 
 def connect():
     from mongoengine import connect
-    host = os.environ["OPENSHIFT_MONGODB_DB_HOST"]
-    port = int(os.environ["OPENSHIFT_MONGODB_DB_PORT"])
-    user = os.environ["OPENSHIFT_MONGODB_DB_USERNAME"]
-    password = os.environ["OPENSHIFT_MONGODB_DB_PASSWORD"]
-    connect('MetroEscalators', host=host, port=port, username=user, password=password)
+    connect('MetroEscalators', host=MONGDB_HOST, port=MONGODB_PORT, username=MONGODB_USERNAME, password=MONGODB_PASSWORD)
 

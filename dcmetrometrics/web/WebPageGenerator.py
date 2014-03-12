@@ -74,6 +74,7 @@ import __builtin__
 from ..common import dbGlobals, stations
 from ..common.metroTimes import utcnow, toLocalTime, localToUTCTime, tzutc
 from ..common.restartingGreenlet import RestartingGreenlet
+from ..common.globals import REPO_DIR, DATA_DIR
 from ..eles import dbUtils
 from . import eles as elesWeb
 from . import hotcars as hotCarsWeb
@@ -82,8 +83,6 @@ from ..third_party import gviz_api
 
 
 # Set the path to the bottle template directory
-REPO_DIR = os.environ['OPENSHIFT_REPO_DIR']
-DATA_DIR = os.environ['OPENSHIFT_DATA_DIR']
 STATIC_DIR = os.path.join(REPO_DIR, 'wsgi', 'static')
 WEBPAGE_DIR = os.path.join(DATA_DIR, 'webpages')
 bottle.TEMPLATE_PATH.append(os.path.join(REPO_DIR, 'wsgi', 'views'))

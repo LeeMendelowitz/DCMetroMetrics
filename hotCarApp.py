@@ -20,10 +20,9 @@ from datetime import datetime
 from dcmetrometrics.common.restartingGreenlet import RestartingGreenlet
 from dcmetrometrics.common import dbGlobals
 from dcmetrometrics.hotcars import hotCars
+from dcmetrometrics.common.globals import DATA_DIR, REPO_DIR, DATA_DIR
 
-OUTPUT_DIR = os.environ['OPENSHIFT_DATA_DIR']
-REPO_DIR = os.environ['OPENSHIFT_REPO_DIR']
-SCRIPT_DIR = os.path.join(REPO_DIR, 'scripts')
+OUTPUT_DIR = DATA_DIR
 
 class HotCarApp(RestartingGreenlet):
 
