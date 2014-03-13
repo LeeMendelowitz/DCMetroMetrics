@@ -1,6 +1,7 @@
 bottle==0.12.5
 gevent==1.0
 greenlet==0.4.2
+gunicorn==18.0
 httplib2==0.8
 mongoengine==0.8.7
 oauth2==1.5.211

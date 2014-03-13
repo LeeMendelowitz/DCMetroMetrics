@@ -1,8 +1,7 @@
 #!/usr/bin/env python
 """
-This is the main program run on the Openshift platform.
-Running this module will cause the twitter accounts to 
-live tweet.
+This is the main program. Running this module will cause
+the twitter accounts to live tweet.
 
 For testing purposes, run the test_app.py program, which
 disables live tweeting.
@@ -15,11 +14,13 @@ import subprocess
 import argparse
 import copy
 
+"""
 if __name__ == "__main__":
     import utils
     if not utils.isOpenshiftEnv():
         msg = "This does not appear to be an OpenShift environment. Run test/test_app.py for testing."
         raise RuntimeError(msg)
+"""
 
 PY_DIR = os.environ['PYTHON_DIR']
 REPO_DIR = os.environ['REPO_DIR']
@@ -51,8 +52,10 @@ def run(LIVE=False):
        LIVE=False
 
    # Run the web server
-   serverApp = Server()
-   serverApp.start()
+   # Update: Do not run let the bottle app act as the webserver.
+   # Instead, gunicorn is used to run bottle as a WSGI app.
+   #serverApp = Server()
+   #serverApp.start()
 
    # Run MetroEscalators twitter App
    escalatorApp = EscalatorApp(LIVE=LIVE)

@@ -33,118 +33,120 @@ SHARED_DATA_DIR = os.path.join(DATA_DIR, 'shared')
 
 bottle.TEMPLATE_PATH.append(os.path.join(REPO_DIR, 'wsgi', 'views'))
 
+app = bottle.Bottle()
+
 ########################################
-@bottle.route('/')
+@app.route('/')
 def index():
     filename = 'home.html'
     return static_file(filename, root=WEBPAGE_DIR)
 
 ########################################
-@bottle.route('/hotcars')
-@bottle.route('/hotcars/')
+@app.route('/hotcars')
+@app.route('/hotcars/')
 def hotCars():
     filename = 'hotcars.html'
     return static_file(filename, root=WEBPAGE_DIR)
 
 ########################################
-@bottle.route('/hotcars/<carNum>')
-@bottle.route('/hotcars/<carNum>/')
+@app.route('/hotcars/<carNum>')
+@app.route('/hotcars/<carNum>/')
 def hotCar(carNum):
     filename = 'hotcar_%s.html'%carNum
     return static_file(filename, root=WEBPAGE_DIR)
 
 ########################################
-@bottle.route('/static/<filename>')
+@app.route('/static/<filename>')
 def server_static(filename):
     return static_file(filename, root=STATIC_DIR)
 
 ########################################
-@bottle.route('/js/<filename>')
+@app.route('/js/<filename>')
 def server_static(filename):
     return static_file(filename, root=WEBPAGE_DIR)
 
 ########################################
-@bottle.route('/data')
-@bottle.route('/data/')
+@app.route('/data')
+@app.route('/data/')
 def data():
     filename = 'data.html'
     return static_file(filename, root=WEBPAGE_DIR)
  
 ########################################
-@bottle.route('/press')
-@bottle.route('/press/')
+@app.route('/press')
+@app.route('/press/')
 def press():
     filename = 'press.html'
     return static_file(filename, root=WEBPAGE_DIR)
 
 #########################################
-@bottle.route('/data/<filename>')
+@app.route('/data/<filename>')
 def serve_data(filename):
     return static_file(filename, root=SHARED_DATA_DIR, download=True)
 
 ########################################
-@bottle.route('/escalators/<unitId>')
-@bottle.route('/escalators/<unitId>/')
+@app.route('/escalators/<unitId>')
+@app.route('/escalators/<unitId>/')
 def genEscalatorStatus(unitId):
     filename = 'escalator_%s.html'%unitId
     return static_file(filename, root=WEBPAGE_DIR)
 
 ###############################################
-@bottle.route('/stations/<shortName>')
-@bottle.route('/stations/<shortName>/')
+@app.route('/stations/<shortName>')
+@app.route('/stations/<shortName>/')
 def stationStatus(shortName):
     filename = 'station_%s.html'%shortName
     return static_file(filename, root=WEBPAGE_DIR)
 
 ###############################################
-@bottle.route('/escalators/directory')
-@bottle.route('/escalators/directory/')
+@app.route('/escalators/directory')
+@app.route('/escalators/directory/')
 def allEscalators():
     filename = 'escalators.html'
     return static_file(filename, root=WEBPAGE_DIR)
 
 ###############################################
-@bottle.route('/escalators')
-@bottle.route('/escalators/')
-@bottle.route('/escalators/outages')
-@bottle.route('/escalators/outages/')
+@app.route('/escalators')
+@app.route('/escalators/')
+@app.route('/escalators/outages')
+@app.route('/escalators/outages/')
 def escalatorOutages():
     filename = 'escalatorOutages.html'
     return static_file(filename, root=WEBPAGE_DIR)
 
 ###############################################
-@bottle.route('/escalators/rankings')
-@bottle.route('/escalators/rankings/')
+@app.route('/escalators/rankings')
+@app.route('/escalators/rankings/')
 def escalatorRankings():
     filename = 'escalatorRankings.html'
     return static_file(filename, root=WEBPAGE_DIR)
 
-@bottle.route('/elevators/directory')
-@bottle.route('/elevators/directory/')
-@bottle.route('/elevators')
-@bottle.route('/elevators/')
+@app.route('/elevators/directory')
+@app.route('/elevators/directory/')
+@app.route('/elevators')
+@app.route('/elevators/')
 def allElevators():
     filename = 'elevators.html'
     return static_file(filename, root=WEBPAGE_DIR)
 
 ########################################
-@bottle.route('/elevators/<unitId>')
-@bottle.route('/elevators/<unitId>/')
+@app.route('/elevators/<unitId>')
+@app.route('/elevators/<unitId>/')
 def genElevatorStatus(unitId):
     filename = 'elevator_%s.html'%unitId
     return static_file(filename, root=WEBPAGE_DIR)
 
 ###############################################
-@bottle.route('/stations')
-@bottle.route('/stations/')
+@app.route('/stations')
+@app.route('/stations/')
 # Listing of all stations
 def stationListing():
     filename = 'stations.html'
     return static_file(filename, root=WEBPAGE_DIR)
 
 ########################################
-@bottle.route('/glossary')
-@bottle.route('/glossary/')
+@app.route('/glossary')
+@app.route('/glossary/')
 def glossary():
     filename = 'glossary.html'
     return static_file(filename, root=WEBPAGE_DIR)
@@ -159,9 +161,11 @@ class Server(RestartingGreenlet):
     def _run(self):
         try:
             # Run the server.
-            bottleApp = bottle.default_app()
+            #root_app = bottle.default_app()
+            root_app = app
+
             # This call blocks
-            bottle.run(host=INTERNAL_SERVE_IP, port=INTERNAL_SERVE_PORT, server='gevent')
+            root_app.run(host=INTERNAL_SERVE_IP, port=INTERNAL_SERVE_PORT, server='gevent')
 
         except Exception as e:
             logName = os.path.join(DATA_DIR, 'server.log')
