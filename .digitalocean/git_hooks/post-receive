@@ -1,0 +1,12 @@
+#!/bin/bash
+
+REPO_DIR=/home/lmendelo/dcmetrometrics/repo
+
+echo "Repo dir: $REPO_DIR"
+git --work-tree=$REPO_DIR --git-dir=/var/repo/dcmetrometrics.git checkout -f
+
+# Restart the dcmetrometrics background process
+sudo service dcmetrometrics restart
+
+# Restart the gunicorn server which is deploying the app
+sudo service gunicorn restart
