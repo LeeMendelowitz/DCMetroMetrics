@@ -78,4 +78,5 @@ def run(LIVE=False):
        gevent.sleep(10)
 
 if __name__ == '__main__':
-   run(LIVE=True)
+   #run(LIVE=True)
+   run(LIVE=False)
