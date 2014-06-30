@@ -17,7 +17,7 @@ from ..common import dbGlobals, twitterUtils, utils, stations
 from ..common.metroTimes import utcnow, tzutc, metroIsOpen, toLocalTime, isNaive
 from ..common.globals import DATA_DIR
 import dbUtils
-from .dbUtils import invDict
+from .dbUtils import invert_dict
 from ..keys import WMATA_API_KEY
 from ..third_party.twitter import TwitterError
 from .Incident import Incident
@@ -92,8 +92,7 @@ class ELESApp(object):
         self.checkWMATAKey()
 
         self.log = log
-        self.dbg = dbGlobals.DBGlobals()
-        self.db = self.dbg.getDB()
+        self.dbg = dbGlobals.DBG
 
     #####################################
     # Methods which should be implemented by child
@@ -107,6 +106,13 @@ class ELESApp(object):
         raise NotImplementedError()
 
     def getTwitterKeys(self):
+        raise NotImplementedError()
+
+    def get_unit_ids(self):
+        """
+        Return Unit ids. For EscalatorApp, this will be escalator units.
+        For ElevatorApp, this will be elevator units.
+        """
         raise NotImplementedError()
 
     # Wrap a call to dbUtils.getLatestStatuses
@@ -258,7 +264,8 @@ class ELESApp(object):
 
     ########################################################
     # Determine which escalators that have changed status,
-    # and update the database with units have been updated.
+    # and update the database with units have been changed status.
+    #
     # Return a dictionary of escalator id to status dictionary for escalators
     # which have changed statuses.
     # The status dictionary has keys:
@@ -270,11 +277,17 @@ class ELESApp(object):
     # - newStatus: The updated status
     ########################################################
     def processIncidents(self, curIncidents, curTime, tickDelta, log=sys.stdout):
+        """
+        Determine which units have changed status since the last tick,
+        and create new UnitStatus records.
+        """
+        # This method needs to be updated to work with KeyStatuses object!
+        
+        raise RuntimeError("Needs updating!")
 
         if isNaive(curTime):
             raise RuntimeError('curTime cannot be naive datetime')
 
-        db = self.db
         dbg = self.dbg
 
         log = log.write
@@ -282,70 +295,58 @@ class ELESApp(object):
 
         # Add any escalators or symptom codes if we are seeing them for the first time
         for inc in curIncidents:
-            dbUtils.updateDBFromIncidentData(db, inc, curTime)
+            dbUtils.update_db_from_incident(inc, curTime)
 
         # Update our local copy of common database structures
         dbg.update()
 
-        # Create dictionary of escalator to the current status
-        escIdToCurStatus = defaultdict(lambda: OP_CODE)
-        incStatus = lambda inc: (dbg.unitToEscId[inc.UnitId], dbg.symptomToId[inc.SymptomDescription])
-        escIdToCurStatus.update(incStatus(inc) for inc in curIncidents)
+        # Get the unit ids of interest
+        unit_ids = self.get_unit_ids()
 
-        # Get the last known statuses for all escalators.
-        # Recast escStatuses as a defaultdict
-        escStatusItems = self.getLatestStatuses().items()
+        # Create dictionary of unit to the current status
+        unit_id_to_current_symptom = defaultdict(lambda: 'OPERATIONAL')
+        _make_record = lambda inc: (dbg.unitToEscId[inc.UnitId], inc.SymptomDescription)
+        unit_id_to_current_symptom.update(_make_record(inc) for inc in curIncidents)
+        unit_id_to_last_symptom = dict(KeyStatuses.get_last_statuses())
 
-        default_entry = {'lastFix' : None,
-                         'lastBreak' : None,
-                         'lastInspection' : None,
-                         'lastOp' : None,
-                         'lastStatus' : None}
-        escStatuses = defaultdict(lambda: default_entry)
-        escStatuses.update(escStatusItems)
+        # Determine those units that have changed status
+        old_statuses = (unit_id_to_last_symptom[unit_id] for unit_id in unit_ids)
+        new_statuses = (unit_id_to_current_symptom[unit_id] for unit_id in unit_ids)
+        changed_status = [(unit_id, old_status, new_status)
+                         for unit_id,old_status,new_status in zip(unit_ids, old_statuses, new_statuses)
+                         if old_status != new_status]
 
-        #####################
-        # DEBUG: FIND MISSING ENTRIES
-#        missing = (escId for escId, escStatus in escStatuses.iteritems() if escStatus['lastStatus'] is None)
-#        missing = list(missing)
-#        log("DEBUG: Have %i units that are missing last status!\n"%len(missing))
-#        log("\n".join(missing) + "\n")
+        # Update the database with units that have changed status 
+        changed_status_dict = {}
 
-        escIdToLastStatus = defaultdict(lambda: OP_CODE)
-        escIdToLastStatus.update((escId, escStatus['lastStatus']['symptom_code']) for
-                                  escId, escStatus in escStatuses.iteritems())
-
-        # Determine those escalators that have changed status
-        escIds = sorted(set(escIdToCurStatus.keys() + escIdToLastStatus.keys()))
-        oldStatuses = (escIdToLastStatus[escId] for escId in escIds)
-        newStatuses = (escIdToCurStatus[escId] for escId in escIds)
-        changedStatus = [(escId, oldStatus, newStatus)
-                         for escId,oldStatus,newStatus in zip(escIds, oldStatuses, newStatuses)
-                         if oldStatus != newStatus]
-
-        # Update the database with escalators that have changed status 
-        changedStatusDict = {}
         statusCollection = self.getStatusesCollection()
-        for escId, oldStatus, newStatus in changedStatus:
+        for unit_id, old_status, new_status in changed_status:
 
-            doc = {'escalator_id' : escId,
-                   'time' : curTime,
-                   'tickDelta' : tickDelta,
-                   'symptom_code' : int(newStatus)}
+            try:
+                key_status_record = KeyStatuses.get(unit = unit_id)
+            except DoesNotExist:
+                key_status_record = None
 
-            # Add the new status to the database
-            statusCollection.insert(doc)
-            
-            # Add entry to the changedStatusDict
-            statusDict = escStatuses[escId]
+            symptom_code = dbg.symptomToId[new_status]
+
+            # Save new UnitStatus
+            new_status_doc = UnitStatus(unit = unit_id, 
+                                        time = curTime,
+                                        tickDelta = tickDelta,
+                                        symptom = symptom_code)
+            new_status_doc.denormalize()
+            new_status_doc.save()
+
+            # Add entry to the changed_status_dict
+            statusDict = escStatuses[unit_id]
             statusDict['newStatus'] = doc
-            changedStatusDict[escId] = statusDict
+            changed_status_dict[unit_id] = statusDict
 
             # Trigger any additional changes due to this updated status
             self.statusUpdateCallback(doc)
 
 
-        return changedStatusDict
+        return changed_status_dict
 
     #######################################
     # Generate tweet msgs using the changedStatusDict

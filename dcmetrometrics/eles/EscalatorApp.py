@@ -25,7 +25,7 @@ from ..common.metroTimes import toLocalTime, tzutc
 from ..common.globals import DATA_DIR
 from ..third_party.twitter import TwitterError
 from . import dbUtils
-from .dbUtils import invDict
+from .dbUtils import invert_dict
 from ..keys import MetroEscalatorKeys
 from .Incident import Incident
 from .defs import symptomToCategory, OPERATIONAL_CODE as OP_CODE, NUM_ESCALATORS
@@ -33,8 +33,10 @@ from .ELESApp import ELESApp, getELESIncidents
 from ..web import eles as elesWeb
 
 #############################################
-# Get escalator incidents
 def getEscalatorIncidents(log=sys.stdout):
+    """
+    Get escalator incidents from the WMATA API
+    """
     escIncidents = getELESIncidents()['incidents'] # This will throw an exception
                                                    # if the request fails
     escIncidents = [i for i in escIncidents if i.isEscalator()]
@@ -47,11 +49,13 @@ class EscalatorApp(ELESApp):
         ELESApp.__init__(self, log, LIVE, QUIET)
 
     def initDB(self, db, curTime):
+        """
+        Initialize escalator data in the database, if nesessary.
+        """
 
         # Add the operational code
-        db.symptom_codes.update({'_id' : OP_CODE},
-                                {'$set' : {'symptom_desc' : 'OPERATIONAL'}},
-                                upsert=True)
+        operation_symptom = SymptomCode(_id = OP_CODE, description="OPERATIONAL")
+        operation_symptom.save()
 
         # Initialize the escalator/elevator database if necessary
         escalators = self.dbg.getEscalatorIds()
@@ -63,15 +67,22 @@ class EscalatorApp(ELESApp):
             for d in escData:
                 d['unit_type'] = 'ESCALATOR'
             assert(len(escData) == NUM_ESCALATORS)
-            dbUtils.initializeEscalators(db, escData, curTime)
+            docs = [Unit(**d) for d in escData]
+            for doc in docs:
+                doc.add(curTime = curTime)
 
         self.dbg.update()
 
+    def get_unit_ids(self):
+        return self.dbg.getElevatorIds()
+        
     def getIncidents(self):
         return getEscalatorIncidents(log=self.log)
 
     def getLatestStatuses(self):
-        return dbUtils.getLatestStatuses(escalators=True, dbg=self.dbg)
+        esc_ids = self.dbg.getEscalatorIds()
+        key_statuses = KeyStatuses.objects(unit__in = esc_ids).select_related()
+        return dict((ks.unit.pk, ks) for ks in key_statuses)
 
     def getAppStateCollection(self):
         return self.db.escalator_appstate

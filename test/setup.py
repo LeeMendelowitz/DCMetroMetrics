@@ -10,6 +10,7 @@ serr = sys.stderr.write
 filePath = os.path.abspath(__file__)
 TEST_DIR, fn = os.path.split(filePath)
 HOME_DIR = os.path.split(TEST_DIR)[0]
+DATA_DIR = os.path.join(HOME_DIR, 'data')
 
 #####################################################
 # Define environmental variables

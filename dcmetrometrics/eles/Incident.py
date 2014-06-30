@@ -47,12 +47,18 @@ class Incident(object):
         self.addAttr()
 
     def addAttr(self):
+        """
+        Add additional attributes that are not in the MetroAPI:
+            - StationName
+            - StationDesc
+        Split the station name into astation name and station description.
+        The station description has information about which entrance the escalator/elevator
+        is located.
+        """
         self.UnitId = self.UnitName + self.UnitType
         self.cleanTimes()
 
-        # Split the station name into a station name and station description.
-        # The station description has information about which entrance the escalator/elevator
-        # is located.
+
         self.StationDesc = ''
         stationName = self.StationName
         if ',' in stationName:
@@ -96,3 +102,4 @@ class Incident(object):
 
     def __getitem__(self, k):
         return getattr(self, k)
+

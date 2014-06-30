@@ -17,6 +17,7 @@ import sys
 from ..common.descriptors import setOnce, computeOnce
 from ..common import metroTimes
 from ..common.metroTimes import TimeRange, isNaive
+from .misc_utils import *
 
 ###############################################################################
 # StatusGroupBase: Summarizes a list of consecutive statuses for a single escalator.
@@ -30,24 +31,24 @@ class StatusGroupBase(object):
     # These attributes can be set once, and are read-only thereafter
     statuses = setOnce('statuses') # This will hold statuses constrained to the specified time period
     allStatuses = setOnce('allStatuses') # This will hold the statuses passed to __init__
-    startTime = setOnce('startTime')
-    endTime = setOnce('endTime')
+    start_time = setOnce('start_time')
+    end_time = setOnce('end_time')
 
-    def __init__(self, statuses, startTime = None, endTime = None):
+    def __init__(self, statuses, start_time = None, end_time = None):
         """
         statuses:  A list of statuses. To properly count the number of break statuses,
                    and inspection statuses, the statuses should include the statuses
                    that preceed and follow in order to provide context.
                    Statuses should be sorted in ascending order. 
-        startTime: The start of the time range of interest (as a non-naive datetime).
+        start_time: The start of the time range of interest (as a non-naive datetime).
                    If None, the time of the first status is used.
-        endTime:   The end of the time range of interest (as a non-naive datetime).
+        end_time:   The end of the time range of interest (as a non-naive datetime).
                    If None, the time of the last status is used.
         """
 
-        _checkAllTimesNotNaive(statuses)
+        checkAllTimesNotNaive(statuses)
 
-        timesProvided = (startTime or endTime)
+        timesProvided = (start_time or end_time)
 
         self.allStatuses = statuses
 
@@ -60,50 +61,53 @@ class StatusGroupBase(object):
         lastTime = None
         numStatuses = len(statuses)
         for i, s in enumerate(statuses):
-            if lastTime and s['time'] < lastTime:
+            if lastTime and s.time < lastTime:
                 raise RuntimeError('StatusGroup: statuses are not sorted in ascending order')
-            lastTime = s['time']
+            lastTime = s.time
 
         for i,s in enumerate(statuses):
-            if i < (numStatuses - 1) and 'end_time' not in s:
+            end_time = getattr(s, 'end_time', None)
+            if i < (numStatuses - 1) and not end_time:
                 raise RuntimeError('Status must have end_time defined')
 
-        startTime = startTime or statuses[0]['time']
-        endTime = endTime or statuses[-1].get('end_time', None) or statuses[-1]['time']
+        start_time = start_time or statuses[0].time
+        end_time = end_time or getattr(statuses[-1], 'end_time', None) or getattr(statuses[-1], 'time')
 
         # If the last status is missing end_time, then it is still current. Mark
         # it as active so we know that the status is still ongoing.
         if 'end_time' not in statuses[-1]:
             lastStatus = deepcopy(statuses[-1])
-            lastStatus['isActive'] = True
+            lastStatus.is_active = True
             statuses[-1] = lastStatus
         
-        # Adjust the startTime or endTime bounds if they are too loose
-        if startTime < statuses[0]['time']:
-            startTime = statuses[0]['time']
-        if 'end_time' in statuses[-1] and endTime > statuses[-1]['end_time']:
-            endTime = statuses[-1]['end_time']
+        # Adjust the start_time or end_time bounds if they are too loose
+        if start_time < statuses[0].time:
+            start_time = statuses[0].time
 
-        self.startTime = startTime
-        self.endTime = endTime
+        last_status_end_time = getattr(statuses[-1], 'end_time', None)
+        if last_status_end_time and end_time > last_status_end_time:
+            end_time = last_status_end_time
 
-        if (self.endTime < self.startTime):
+        self.start_time = start_time
+        self.end_time = end_time
+
+        if (self.end_time < self.start_time):
             raise RuntimeError('Start time must be less than end time')
 
-        # Trim the status list to the specified startTime and endTime
+        # Trim the status list to the specified start_time and end_time
         duringTimePeriod = None
         if timesProvided:
-            beforeTimePeriod = [s for s in self.allStatuses if s['time'] < startTime]
+            beforeTimePeriod = [s for s in self.allStatuses if s.time < start_time]
             duringTimePeriod = [s for s in self.allStatuses if
-                                (s['time'] >= startTime) and (s['time'] <= endTime)]
-            afterTimePeriod = [s for s in self.allStatuses if s['time'] > endTime]
+                                (s.time >= start_time) and (s.time <= end_time)]
+            afterTimePeriod = [s for s in self.allStatuses if s.time > end_time]
             assert(len(beforeTimePeriod) + len(duringTimePeriod) + len(afterTimePeriod) == len(self.allStatuses))
 
             # The last status which starts before the time period may overlap the
             # time period, in which case it should be included.
             if beforeTimePeriod:
                 lastStatusBefore = beforeTimePeriod[-1]
-                if (not duringTimePeriod) or (duringTimePeriod[0]['time'] > startTime):
+                if (not duringTimePeriod) or (duringTimePeriod[0].time > start_time):
                     duringTimePeriod = [lastStatusBefore] + duringTimePeriod
             
             # Trim the starting time of the first status and the ending time of the last
@@ -112,9 +116,9 @@ class StatusGroupBase(object):
             # Take care only to change a copy of the status,
             # and not the status itself.
             firstStatus = duringTimePeriod[0] if duringTimePeriod else None
-            if firstStatus and  startTime > firstStatus['time']:
+            if firstStatus and  start_time > firstStatus.time:
                 firstStatus = deepcopy(firstStatus) 
-                firstStatus['time'] = startTime
+                firstStatus.time = start_time
                 duringTimePeriod = [firstStatus] + duringTimePeriod[1:]
         else:
             duringTimePeriod = self.allStatuses
@@ -124,7 +128,7 @@ class StatusGroupBase(object):
             # Take care only to change a copy of the status,
             # and not the status itself.
             lastStatus = deepcopy(lastStatus)
-            lastStatus['end_time'] = endTime
+            lastStatus['end_time'] = end_time
             duringTimePeriod = duringTimePeriod[:-1] + [lastStatus]
 
         _checkStatusListSane(duringTimePeriod)
@@ -132,11 +136,11 @@ class StatusGroupBase(object):
 
     @computeOnce
     def statusTimeRanges(self):
-        return [TimeRange(s['time'], s['end_time']) for s in self.statuses]
+        return [TimeRange(s.time, s.end_time) for s in self.statuses]
 
     @computeOnce
     def timeRange(self):
-        return TimeRange(self.startTime, self.endTime)
+        return TimeRange(self.start_time, self.end_time)
 
     @computeOnce
     def absTime(self):
@@ -148,11 +152,11 @@ class StatusGroupBase(object):
 
     @computeOnce
     def symptomCategoryCounts(self):
-        return Counter(s['symptomCategory'] for s in self.statuses)
+        return Counter(s.symptom_category for s in self.statuses)
 
     @computeOnce
     def symptomCounts(self):
-        return Counter(s['symptom'] for s in self.statuses)
+        return Counter(s.symptom for s in self.statuses)
 
     ###################################################################
     # Count the number of transitions to a broken state within
@@ -165,13 +169,13 @@ class StatusGroupBase(object):
 
     def _genBreakStatuses(self):
         wasBroken = False
-        startTime = self.startTime
-        endTime = self.endTime
+        start_time = self.start_time
+        end_time = self.end_time
         for s in self.allStatuses:
-            if s['symptomCategory'] == 'ON':
+            if s.symptom_category == 'ON':
                 wasBroken = False
-            elif s['symptomCategory'] == 'BROKEN':
-                if not wasBroken and s['time'] >= startTime and s['time'] <= endTime:
+            elif s.symptom_category == 'BROKEN':
+                if not wasBroken and s.time >= start_time and s.time <= end_time:
                     yield s
                 wasBroken = True
 
@@ -186,13 +190,13 @@ class StatusGroupBase(object):
 
     def _genFixStatuses(self):
         wasBroken = False
-        startTime = self.startTime
-        endTime = self.endTime
+        start_time = self.start_time
+        end_time = self.end_time
         for s in self.allStatuses:
-            if s['symptomCategory'] == 'BROKEN':
+            if s.symptom_category == 'BROKEN':
                 wasBroken = True
-            elif s['symptomCategory'] == 'ON':
-                if wasBroken and s['time'] >= startTime and s['time'] <= endTime:
+            elif s.symptom_category == 'ON':
+                if wasBroken and s.time >= start_time and s.time <= end_time:
                     yield s
                 wasBroken = False
 
@@ -205,14 +209,14 @@ class StatusGroupBase(object):
 
     def _genInspectionStatuses(self):
         wasInspection = False
-        startTime = self.startTime
-        endTime = self.endTime
+        start_time = self.start_time
+        end_time = self.end_time
         for s in self.statuses:
-            if s['symptomCategory'] == 'INSPECTION':
-                if not wasInspection and s['time'] >= startTime and s['time'] <= endTime:
+            if s.symptom_category == 'INSPECTION':
+                if not wasInspection and s.time >= start_time and s.time <= end_time:
                     yield s
                 wasInspection = True
-            elif s['symptomCategory'] == 'ON':
+            elif s.symptom_category == 'ON':
                 wasInspection = False
 
 
@@ -277,7 +281,7 @@ class StatusGroupBase(object):
     @computeOnce
     def symptomCodeToTimeRanges(self):
         sympCodeToTimeRanges = defaultdict(list)
-        symptomCodes = [s['symptom_code'] for s in self.statuses]
+        symptomCodes = [s.symptom_category for s in self.statuses]
         for sc, tr in zip(symptomCodes, self.statusTimeRanges):
             sympCodeToTimeRanges[sc].append(tr)
         return sympCodeToTimeRanges
@@ -285,7 +289,7 @@ class StatusGroupBase(object):
     @computeOnce
     def symptomCategoryToTimeRanges(self):
         sympCatToTimeRanges = defaultdict(list)
-        symptomCategories = [s['symptomCategory'] for s in self.statuses]
+        symptomCategories = [s.symptom_category for s in self.statuses]
         for sc, tr in zip(symptomCategories, self.statusTimeRanges):
             sympCatToTimeRanges[sc].append(tr)
         return sympCatToTimeRanges
@@ -301,16 +305,16 @@ class StatusGroupBase(object):
     def printStatuses(self, handle = sys.stdout):
         p = lambda m: handle.write(str(m) + '\n')
         s = self.statuses[0]
-        p(s['unit_id'] + ' - ' + s['station_name'])
+        p(s.unit_id + ' - ' + s.station_name)
         tfmt = "%m/%d/%y %I:%M %p"
         for s in self.statuses:
             try:
-                totalSeconds = (s['end_time'] - s['time']).total_seconds()
+                totalSeconds = (s.end_time - s.time).total_seconds()
             except KeyError:
                 totalSeconds = 0.0
             msg = '\t'.join([
-                            s['time'].strftime(tfmt),
-                            s['symptom'], 
+                            s.time.strftime(tfmt),
+                            s.symptom_description, 
                             metroTimes.secondsToHMS(totalSeconds)
                             ])
             p(msg)
@@ -318,41 +322,15 @@ class StatusGroupBase(object):
     
 
 
-#############################################################  
-def _checkAllTimesNotNaive(statusList):
-    for s in statusList:
-        if isNaive(s['time']):
-            raise RuntimeError('Times cannot be naive')
-        if 'end_time' in s and isNaive(s['end_time']):
-            raise RuntimeError('Times cannot be naive')
 
-#############################################################            
-# Check that each status has a 'time' and 'end_time' defined
-# and that the list is sorted            
-def _checkStatusListSane(statusList):
-    lastTime = None
-    for s in statusList:
-        if 'end_time' not in s:
-            raise RuntimeError('Status missing end_time')
-        if 'time' not in s:
-            raise RuntimeError('Status missing time')
-        if s['time'] > s['end_time']:
-            raise RuntimeError('Status has bad starting/ending time')
-        if lastTime and s['time'] < lastTime:
-            raise RuntimeError('Status not sorted properly')
-        lastTime = s['time']
-
-def yieldNothing():
-    return 
-    yield
 
 
 #######################################################################
 # Class to summarize a list of consecutive statuses for a single escalator.
 class StatusGroup(StatusGroupBase):
 
-    def __init__(self, statuses, startTime = None, endTime = None):
-        StatusGroupBase.__init__(self, statuses, startTime, endTime)
+    def __init__(self, statuses, start_time = None, end_time = None):
+        StatusGroupBase.__init__(self, statuses, start_time, end_time)
 
     ##############################
     # Return outages which start in the specified time period
@@ -362,19 +340,19 @@ class StatusGroup(StatusGroupBase):
 
     def _genOutageStatuses(self):
         outageStatuses = []
-        startTime = self.startTime
+        start_time = self.start_time
         for s in self.statuses:
-            if s['symptomCategory'] == 'ON':
+            if s.symptom_category == 'ON':
                 if outageStatuses:
                     outage = Outage(outageStatuses)
-                    if outage.startTime >= startTime:
+                    if outage.start_time >= start_time:
                         yield outage
                     outageStatuses = []
             else:
                 outageStatuses.append(s)
         if outageStatuses:
             outage = Outage(outageStatuses)
-            if outage.startTime >= startTime:
+            if outage.start_time >= start_time:
                 yield outage
 
 ###############################################################################
@@ -390,19 +368,19 @@ class Outage(StatusGroupBase):
         """
         statuses:  A list of consecutive non-operational statuses.
                    Statuses should be sorted in ascending order. 
-        startTime: The start of the time range of interest (as a non-naive datetime).
+        start_time: The start of the time range of interest (as a non-naive datetime).
                    If None, the time of the first status is used.
-        endTime:   The end of the time range of interest (as a non-naive datetime).
+        end_time:   The end of the time range of interest (as a non-naive datetime).
                    If None, the time of the last status is used.
         """
 
         if isinstance(statuses, dict):
             statuses = [statuses]
 
-        if any(s['symptomCategory']=='ON' for s in statuses):
+        if any(s.symptom_category == 'ON' for s in statuses):
             raise RuntimeError('Outage should not have an OPERATIONAL status')
 
-        StatusGroupBase.__init__(self, statuses, startTime=None, endTime=None)
+        StatusGroupBase.__init__(self, statuses, start_time=None, end_time=None)
 
     ##########################
     @computeOnce
@@ -410,7 +388,7 @@ class Outage(StatusGroupBase):
     # if the last status of the outage is still active, meaning it has not yet
     # been followed by an 'ON' status.
     def is_active(self):
-        return self.statuses[-1].get('isActive', False)
+        return getattr(self.statuses[-1], 'is_active', False)
 
     ###################################################################
     # Return the broken statuses in this outage.
@@ -419,7 +397,7 @@ class Outage(StatusGroupBase):
         return list(self._genBreakStatuses())
 
     def _genBreakStatuses(self):
-        return (b for b in self.allStatuses if b['symptomCategory']=='BROKEN')
+        return (b for b in self.allStatuses if b.symptom_category=='BROKEN')
 
     ######################################################################
     # Count the number of resolved broken states.
@@ -441,7 +419,7 @@ class Outage(StatusGroupBase):
         return list(self._genInspectionStatuses())
 
     def _genInspectionStatuses(self):
-        return (s for s in self.statuses if s['symptomCategory']=='INSPECTION')
+        return (s for s in self.statuses if s.symptom_category == 'INSPECTION')
 
     #############################
     @computeOnce
@@ -462,4 +440,4 @@ class Outage(StatusGroupBase):
 
     @computeOnce
     def categories(self):
-        return set(s['symptomCategory'] for s in self.allStatuses)
+        return set(s.symptom_category for s in self.allStatuses)

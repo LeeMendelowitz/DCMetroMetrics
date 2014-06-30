@@ -277,10 +277,19 @@ def localToUTCTime(localDateTime):
     return utcDt
 
 #################################################
-# Convert a non-naive datetime to UTC
-def toUtc(dt):
-    if isNaive(dt):
+# Convert a non-naive datetime to UTC.
+# If allow_naive is True, allow the timezone to be naive.
+def toUtc(dt, allow_naive = False):
+
+    is_naive = isNaive(dt)
+
+    if not allow_naive and is_naive:
         raise RuntimeError('toUtc: datetime cannot be naive')
+
+    if is_naive:
+        dt = dt.replace(tzinfo = tzutc)
+        return dt
+    
     dt = dt.astimezone(tzutc)
     return dt
 

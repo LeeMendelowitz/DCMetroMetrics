@@ -22,7 +22,7 @@ from ..common import dbGlobals, twitterUtils, utils, stations
 from ..common.metroTimes import utcnow, tzutc, metroIsOpen, toLocalTime
 from ..common.globals import DATA_DIR
 from . import dbUtils
-from .dbUtils import invDict
+from .dbUtils import invert_dict
 from ..third_party.twitter import TwitterError
 from ..keys import MetroElevatorKeys
 from .Incident import Incident
@@ -46,9 +46,8 @@ class ElevatorApp(ELESApp):
     def initDB(self, db, curTime):
 
         # Add the operational code
-        db.symptom_codes.update({'_id' : OP_CODE},
-                                {'$set' : {'symptom_desc' : 'OPERATIONAL'}},
-                                upsert=True)
+        operation_symptom = SymptomCode(_id = OP_CODE, description="OPERATIONAL")
+        operation_symptom.save()
 
         # Initialize the escalator/elevator database if necessary
         elevators = self.dbg.getElevatorIds()
@@ -59,9 +58,14 @@ class ElevatorApp(ELESApp):
             escData = utils.readEscalatorTsv(elevatorTsv)
             for d in escData:
                 d['unit_type'] = 'ELEVATOR'
-            dbUtils.initializeEscalators(db, escData, curTime)
+            docs = [Unit(**d) for d in escData]
+            for doc in docs:
+                doc.add(curTime = curTime)
 
         self.dbg.update()
+
+    def get_unit_ids(self):
+        return self.dbg.getElevatorIds()
 
     def getIncidents(self):
         return getElevatorIncidents(log=self.log)

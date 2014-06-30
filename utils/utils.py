@@ -15,4 +15,7 @@ def isOpenshiftEnv():
     return len(openshift_envs) >= MIN_ENV_COUNT
 
 def fixSysPath():
+  if ROOT_DIR not in sys.path:
     sys.path = [ROOT_DIR] + sys.path
+
+fixSysPath()
