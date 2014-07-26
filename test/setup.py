@@ -17,8 +17,8 @@ DATA_DIR = os.path.join(HOME_DIR, 'data')
 vals = [
     ('DATA_DIR', os.path.join(HOME_DIR, 'data')),
     ('REPO_DIR', HOME_DIR),
-    ('MONGODB_USERNAME', "LMM"),
-    ('MONGODB_PASSWORD', "123456"),
+    #('MONGODB_USERNAME', "LMM"),
+    #('MONGODB_PASSWORD', "123456"),
     ('MONGODB_HOST', 'localhost'),
     ('MONGODB_PORT', '27017'),
     ('INTERNAL_SERVE_IP', '127.0.0.1'),
@@ -46,29 +46,29 @@ def fixSysPath():
     sys.path = [HOME_DIR] + sys.path
 
 
-def setupDB():
-    """
-    Setup the MongoDB with the User/Password
-    """
-    import pymongo
+# def setupDB():
+#     """
+#     Setup the MongoDB with the User/Password
+#     """
+#     import pymongo
 
-    print 'Adding user to the MetroEscalators MongoDB'
+#     print 'Adding user to the MetroEscalators MongoDB'
 
-    host = os.environ["MONGODB_HOST"]
-    port = int(os.environ["MONGODB_PORT"])
+#     host = os.environ["MONGODB_HOST"]
+#     port = int(os.environ["MONGODB_PORT"])
 
-    user = os.environ["MONGODB_USERNAME"]
-    password = os.environ["MONGODB_PASSWORD"]
+#     user = os.environ["MONGODB_USERNAME"]
+#     password = os.environ["MONGODB_PASSWORD"]
 
-    client = pymongo.MongoClient(host, port)
-    db = client.MetroEscalators
-    db.add_user(user, password)
+#     client = pymongo.MongoClient(host, port)
+#     db = client.MetroEscalators
+#     db.add_user(user, password)
 
 print '*'*50
 print 'Creating testing environment\n\n'
 
 setupEnv()
 fixSysPath()
-setupDB()
+#setupDB()
 print 'DONE'
 print '*'*50 + '\n\n'

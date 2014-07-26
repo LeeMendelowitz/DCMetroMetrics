@@ -12,12 +12,10 @@ def p(msg):
     sys.stdout.write(msg + '\n')
     sys.stdout.flush()
 
-cmd = 'mongoexport -host {host} -d {db} -u {user} -p {password} -c {col}'
+cmd = 'mongoexport -host {host} -d {db} -c {col}'
 
-HOST = os.environ['OPENSHIFT_MONGODB_DB_HOST']
-USER = os.environ['OPENSHIFT_MONGODB_DB_USERNAME']
-PASS = os.environ['OPENSHIFT_MONGODB_DB_PASSWORD']
-DATA_DIR = os.environ['OPENSHIFT_DATA_DIR']
+HOST = os.environ['MONGODB_HOST']
+DATA_DIR = os.environ['DATA_DIR']
 OUTPUT_DIR_BASE = os.path.join(DATA_DIR, 'mongoexport')
 JSON_DIR_NAME = 'DCMetroMetricsData'
 JSON_DIR = os.path.join(OUTPUT_DIR_BASE, JSON_DIR_NAME)
@@ -37,8 +35,7 @@ def dump(collection):
     dump a MongoDB collection into a .json file using mongoexport.
     """
 
-    myCmd = cmd.format(host=HOST, db='MetroEscalators',\
-                       user=USER, password=PASS, col=collection)
+    myCmd = cmd.format(host=HOST, db='MetroEscalators', col=collection)
 
     outFile = '%s.json'%collection
     outFile = os.path.join(JSON_DIR, outFile)
