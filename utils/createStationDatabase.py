@@ -99,9 +99,9 @@ def getStationNames():
     import os
     import pandas
     cwd = os.getcwd()
-    dataFile = os.path.join(REPO_DIR,'data', 'stationNames.csv')
-    stationData = pandas.read_table(dataFile, sep=',', names=['code', 'name', 'short_name'])
-    codeToName = dict(zip(stationData['code'], stationData['name']))
+    dataFile = os.path.join(REPO_DIR,'data', 'station.names.csv')
+    stationData = pandas.read_table(dataFile, sep=',')
+    codeToName = dict(zip(stationData['code'], stationData['long_name']))
     codeToShortName = dict(zip(stationData['code'], stationData['short_name']))
     return (codeToName, codeToShortName)
 
@@ -115,17 +115,18 @@ def defineVariables():
     codeToStationData = dict((s.code, s) for s in allStations)
 
     codeToName, codeToShortName = getStationNames()
-    codeToEscalatorData = getStationEscalatorData()
 
-    assert(set(codeToName.keys()) == set(codeToEscalatorData.keys()) == set(codeToShortName.keys()))
+    # 7/26: Removing Escalator Data because it is missing for new Silver Line Stations
+    # codeToEscalatorData = getStationEscalatorData()
+    # assert(set(codeToName.keys()) == set(codeToEscalatorData.keys()) == set(codeToShortName.keys()))
 
     # Adjust the station names and add escalator data
     for code in codeToName.iterkeys():
         s = codeToStationData[code]
         s.name = codeToName[code]
         s.shortName = codeToShortName[code]
-        escD = codeToEscalatorData[code]
-        s.addEscalatorData(escD)
+        #escD = codeToEscalatorData[code]
+        #s.addEscalatorData(escD)
 
     # Set the allLines attribute for each station
     codeToAllLines = defaultdict(list)
@@ -169,7 +170,8 @@ def defineVariables():
             'nameToCodes': nameToCodes,
             'lineToCodes' : lineToCodes,
             'allCodes' : allCodes,
-            'codeToEscalatorData' : codeToEscalatorData}
+            #'codeToEscalatorData' : codeToEscalatorData
+        }
     return res
 
 def writeModule(moduleName, varDict):
@@ -185,7 +187,7 @@ def writeModule(moduleName, varDict):
 
 
 def run():
-    moduleName = 'stations.py'
+    moduleName = 'stations2.py'
     varDict = defineVariables()
     writeModule(moduleName, varDict)
 

@@ -104,8 +104,8 @@ def get_latest_statuses(escalators=False, elevators=False):
     for esc_id in esc_ids:
         # Find latest 1000 statuses for this escalator
         sort_params = [('time', pymongo.DESCENDING)]
-
-        statuses = get_unit_statuses(esc_id)
+        unit = Unit.objects(pk = esc_id).get()
+        statuses = unit.get_statuses()
         keyStatuses = get_key_statuses(statuses)
         keyStatuses['statuses'] = statuses
         escToStatuses[esc_id] = keyStatuses
@@ -123,7 +123,7 @@ def set_unit_key_statuses():
     KeyStatuses.drop_collection()
 
     for unit in Unit.objects:
-        statuses = get_unit_statuses(unit.pk)
+        statuses = unit.get_statuses()
         sys.stderr.write('Getting key statuses record for %s\n'%(unit.unit_id))
         ks = get_key_statuses(statuses)
         sys.stderr.write('Writing key statuses record for %s\n'%(unit.unit_id))
@@ -320,7 +320,8 @@ def get_station_summary(stationCode, start_time = None, end_time = None):
 
     # Process escalators
     for escUnitId in escUnitIds:
-        statuses = get_unit_statuses(escUnitId=escUnitId, start_time = start_time, end_time=end_time)
+        unit = Unit.objects(pk = escUnitId).get()
+        statuses = unit.get_statuses(start_time = start_time, end_time=end_time)
         escToStatuses[escUnitId] = statuses
         if not statuses:
             continue
@@ -336,7 +337,8 @@ def get_station_summary(stationCode, start_time = None, end_time = None):
 
     # Process elevators
     for eleUnitId in eleUnitIds:
-        statuses = get_unit_statuses(escUnitId=eleUnitId, start_time = start_time, end_time=end_time)
+        unit = Unit.objects(pk = escUnitId).get()
+        statuses = unit.get_statuses(start_time = start_time, end_time=end_time)
         eleToStatuses[eleUnitId] = statuses
         if not statuses:
             continue
@@ -571,7 +573,9 @@ def get_all_unit_summaries(start_time=None, end_time=None, escalators=False, ele
     # aggregating.
     for oid in oids:
         gevent.sleep(0.0)
-        statuses = get_unit_statuses(object_id = oid, start_time = start_time, end_time = end_time)
+        unit = Unit.objects(pk = oid).get()
+        statuses = unit.get_statuses(start_time = start_time, end_time = end_time)
+        #statuses = get_unit_statuses(object_id = oid, start_time = start_time, end_time = end_time)
         et = end_time if end_time is not None else curTime
         st = start_time if start_time is not None else min(s['time'] for s in statuses)
         summary = summarize_statuses(statuses, st, et)
