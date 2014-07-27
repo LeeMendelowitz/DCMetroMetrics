@@ -4,10 +4,18 @@ Models for eles data.
 
 from mongoengine import *
 from operator import attrgetter
-
 from ..common.metroTimes import TimeRange, UTCToLocalTime, toUtc
 from .defs import symptomToCategory, SYMPTOM_CHOICES
 from .misc_utils import *
+
+class WebJSONMixin(object):
+
+  def to_web_json(self):
+    
+    fields = getattr(self, 'web_json_fields', [])
+
+    return dict((k, getattr(self, k, None)) for k in fields)
+
 
 class SymptomCode(Document):
   """
@@ -33,7 +41,126 @@ class SymptomCode(Document):
     code.save()
     return code
 
-class Unit(Document):
+class Station(WebJSONMixin, Document):
+  """
+  A WMATA Station
+  """
+  code = StringField(required = True, primary_key = True)
+  long_name = StringField(required = True)
+  medium_name = StringField(required = True)
+  short_name = StringField(required = True)
+
+  meta = {'collection' : 'stations',
+          'indexes': ['long_name']}
+
+  web_json_fields = ['code', 'long_name', 'short_name',
+                     'medium_name']
+
+
+  def get_shared_stations(self):
+    """Get stations that are shared with this one. Return as a list,
+    including this station.
+    """
+    shared = list(Station.objects(long_name = self.long_name))
+    return shared
+
+  @classmethod
+  def add(cls, code, long_name, medium_name, short_name):
+    station = Station(code, long_name, medium_name, short_name)
+    station.save()
+    return station
+
+  def _get_units(self, shared = True, escalators = True, elevators = True):
+    """Get units for a station.
+    By default this gets all shared units (i.e. all stations with the same name, even if code
+      differs)
+    """
+    if shared:
+      shared_stations = self.get_shared_stations()
+      all_codes = [s.code for s in shared_stations]
+    else:
+      all_codes = [self.code]
+
+    ret_units = []
+
+    units = Unit.objects(station_code__in = all_codes)
+    escalator_units = (u for u in units if u.unit_type == "ESCALATOR")
+    elevator_units = (u for u in units if u.unit_type == "ELEVATOR")
+
+    if escalators:
+      ret_units.extend(escalator_units)
+
+    if elevators:
+      ret_units.extend(elevator_units)
+
+    return ret_units
+
+  def get_shared_units(self, **kwargs):
+    """
+    Get units for all stations that share this name. Transfer stations
+    with multiple platforms (i.e. Fort Totten, Gallery Place, L'Enfant, MetroCenter, etc.)
+    will have multiple station docs.
+    """
+    return self._get_units(shared = True, **kwargs)
+
+  def get_units(self, **kwargs):
+    return self._get_units(shared = False, **kwargs)
+
+  def get_escalators(self):
+    return self._get_units(shared = False, escalators = True, elevators = False)
+
+  def get_elevators(self):
+    return self._get_units(shared = False, escalators = False, elevators = True)
+
+  @classmethod
+  def get_station_directory(cls):
+
+    """Form the station directory. Merge stations that share the same name 
+    (i.e. both platforms at Fort Totten, Gallery Place, etc.)
+    """
+    all_stations = list(cls.objects)  
+    code_to_name = dict((s.code, s.long_name) for s in all_stations)
+    code_to_station = dict((s.code, s) for s in all_stations)
+    all_units = list(Unit.objects)
+    # for u in all_units:
+    #   u.key_statuses = u.get_key_statuses()
+
+    # Collection units by station names
+    station_to_data = {}
+    for u in all_units:
+
+      station_name = code_to_name[u.station_code]
+      station = code_to_station[u.station_code]
+      station_data = station_to_data.get(station_name, None)
+
+      if not station_data:
+
+        rec = {'stations' : [ station ] ,
+          'escalators' : [u] if u.is_elevator() else [],
+          'elevators' : [u] if u.is_escalator() else []
+          }
+        station_to_data[station_name] = rec
+
+      else:
+
+        # Add the station (if necessary)
+        station_codes = [s.code for s in station_data['stations']]
+        if station.code not in station_codes:
+          station_data['stations'].append(station)
+
+        # Add the unit
+        if u.is_escalator():
+          station_data['escalators'].append(u)
+        elif u.is_elevator():
+          station_data['elevators'].append(u)
+
+        station_to_data[station_name] = station_data
+
+    return station_to_data
+
+
+
+class Unit(WebJSONMixin, Document):
   """
   An escalator or an elevator.
   """
@@ -45,7 +172,11 @@ class Unit(Document):
   unit_type = StringField(required=True, choices=('ESCALATOR', 'ELEVATOR'))
 
   meta = {'collection' : 'escalators',
-          'indexes': ['unit_id']}
+          'indexes': ['unit_id', 'station_code']}
+
+  web_json_fields = ['unit_id', 'station_code', 'station_name',
+                     'station_desc', 'esc_desc', 'unit_type',
+                     'key_statuses']
 
   def is_elevator(self):
     return self.unit_type == 'ELEVATOR'
@@ -205,8 +336,22 @@ class Unit(Document):
       key_statuses.save()
       return key_statuses
 
+  def get_key_statuses(self):
+      """Return the KeyStatus for this unit by database lookup.
+      """
+      try:
+        key_statuses = KeyStatuses.objects(unit = self).get().select_related()
+        return key_statuses
+      except DoesNotExist:
+        return None
 
-class UnitStatus(Document):
+  @property
+  def key_statuses(self):
+    return self.get_key_statuses()
+  
+
+
+class UnitStatus(WebJSONMixin, Document):
   """
   Escalator or elevator status.
   """
@@ -228,10 +373,15 @@ class UnitStatus(Document):
   symptom_description = StringField()
   symptom_category = StringField(choices=SYMPTOM_CHOICES)
 
+
+
   #######################
 
   meta = {'collection' : 'escalator_statuses',
           'index' : [('escalator_id', '-time')]}
+
+  web_json_fields = ['unit_id', 'time', 'end_time', 'metro_open_time',
+    'tickDelta', 'symptom_description', 'symptom_category']
 
   def clean(self):
     """
@@ -295,6 +445,7 @@ class UnitStatus(Document):
     if end_time:
       self.end_time = toUtc(self.end_time, allow_naive = True)
 
+
 class ElevatorAppState(Document):
   """
   State of the MetroElevators app.
@@ -321,7 +472,7 @@ class EscalatorAppState(Document):
     kwargs['id'] = 1
     super(self, EscalatorAppState).__init__(*args, **kwargs)
 
-class KeyStatuses(Document):
+class KeyStatuses(WebJSONMixin, Document):
 
   """
   This record summarizes the most recent key statuses for a Unit.
@@ -363,7 +514,13 @@ class KeyStatuses(Document):
   lastOperationalStatus = ReferenceField(UnitStatus) # Most recent operational status
   currentBreakStatus = ReferenceField(UnitStatus) # The oldest broken status which is more recent than the lastOperationalStatus.
   lastStatus = ReferenceField(UnitStatus, required = True) # The most recent status
+  
+  #################################
   meta = {'collection' : 'key_statuses'}
+
+  web_json_fields = ['lastFixStatus', 'lastBreakStatus', 'lastInspectionStatus',
+  'lastOperationalStatus', 'currentBreakStatus']
+
 
   def update(self, unit_status):
     """
@@ -442,7 +599,7 @@ class KeyStatuses(Document):
       # then the lastBreak status is that of the CALLBACK/REPAIR, since it is the
       # first broken status in the stretch of brokeness.
 
-    Return a UnitStatus record, without saving.
+    Return a KeyStatuses record, without saving.
     """
 
     checkAllTimesNotNaive(statuses)

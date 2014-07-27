@@ -65,7 +65,8 @@ def update_db_from_incident(inc, curTime):
     # Add the escalator to the database
     doc = { 'unit_id' : inc.UnitId,
           'station_code' : inc.StationCode,
-          'station_name' : inc.StationName,
+          'station_name' : inc.StationName, # Use the station name from stations.py
+          'station_name' : stations.codeToName[inc.StationCode], # Use the station name from stations.py
           'esc_desc' : inc.LocationDescription,
           'station_desc' : inc.StationDesc,
           'unit_type' : inc.UnitType
@@ -123,19 +124,21 @@ def set_unit_key_statuses():
     KeyStatuses.drop_collection()
 
     for unit in Unit.objects:
-        statuses = unit.get_statuses()
-        sys.stderr.write('Getting key statuses record for %s\n'%(unit.unit_id))
-        ks = get_key_statuses(statuses)
-        sys.stderr.write('Writing key statuses record for %s\n'%(unit.unit_id))
+        print "Computing key statuses for unit: %s"%(unit.unit_id)
+        unit.compute_key_statuses()
+        # statuses = unit.get_statuses()
+        # sys.stderr.write('Getting key statuses record for %s\n'%(unit.unit_id))
+        # ks = get_key_statuses(statuses)
+        # sys.stderr.write('Writing key statuses record for %s\n'%(unit.unit_id))
 
-        data = { 'lastFixStatus' : ks['lastFix'],
-                 'lastBreakStatus' : ks['lastBreak'],
-                 'lastInspectionStatus': ks['lastInspection'],
-                 'lastOperationalStatus': ks['lastOp'],
-                 'currentBreakStatus': ks['currentBreak'],
-                 'lastStatus': ks['lastStatus']}
-        key_statuses = KeyStatuses(unit=unit, **data)
-        key_statuses.save()
+        # data = { 'lastFixStatus' : ks['lastFix'],
+        #          'lastBreakStatus' : ks['lastBreak'],
+        #          'lastInspectionStatus': ks['lastInspection'],
+        #          'lastOperationalStatus': ks['lastOp'],
+        #          'currentBreakStatus': ks['currentBreak'],
+        #          'lastStatus': ks['lastStatus']}
+        # key_statuses = KeyStatuses(unit=unit, **data)
+        # key_statuses.save()
 
 ###############################################
 # Add attributes to each escalator_status doc

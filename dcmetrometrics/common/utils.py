@@ -144,3 +144,15 @@ def unitsFileToTsv(fname, fout=sys.stdout):
     for d in escData:
         fields = [d[k] for k in fieldNames]
         fout.write('\t'.join(fields) + '\n')
+
+import os, errno
+def mkdir_p(path):
+    """
+    Recursively make the directory pointed to by path.
+    """
+    try:
+        os.makedirs(path)
+    except OSError as exc: # Python >2.5
+        if exc.errno == errno.EEXIST and os.path.isdir(path):
+            pass
+        else: raise
