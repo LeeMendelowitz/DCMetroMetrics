@@ -1,0 +1,36 @@
+<h1>{{ stationData.stations[0].long_name }}</h1>
+
+<h2>Escalators</h2>
+
+<table class = "table table-bordered">
+  <tr>
+    <th>Unit</th>
+    <th ng-show = "escalators_have_station_descriptions">Entrance</th>
+    <th>Description</th>
+    <th>Status</th>
+  </tr>
+  <tr ng-repeat = "unit in stationData.escalators" ng-class = "getSymptomClass(unit)">
+    <td>{{ unit.unit_id }} </td>
+    <td ng-show = "escalators_have_station_descriptions">{{ unit.station_desc }} </td>
+    <td>{{ unit.esc_desc }} </td>
+    <td>{{ unit.key_statuses.lastStatus.symptom_description}}
+  </tr>
+</table>
+
+<h2>Elevators</h2>
+
+<table class = "table table-bordered">
+  <tr>
+    <th>Unit</th>
+    <th ng-show = "elevators_have_station_descriptions">Entrance</th>
+    <th>Description</th>
+    <th>Status</th>
+  </tr>
+  <tr ng-repeat = "unit in stationData.elevators" ng-class = "getSymptomClass(unit)">
+    <td>{{ unit.unit_id }} </td>
+    <td ng-show = "elevators_have_station_descriptions">{{ unit.station_desc }} </td>
+    <td>{{ unit.esc_desc }} </td>
+    <td>{{ unit.key_statuses.lastStatus.symptom_description}}
+  </tr>
+</table>
+

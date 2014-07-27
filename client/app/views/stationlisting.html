@@ -1,0 +1,29 @@
+
+<!-- Make a table of stations -->
+<h1> Station Directory </h1>
+
+<table class="table table-striped table-bordered table-hover">
+
+  <tr>
+    <th>Station</th>
+    <th>Lines</th>
+    <th>Escalators</th>
+    <th>Elevators</th>
+  </tr>
+
+  <tr ng-repeat="station in stationDirectory">
+    <td><a href="#/stations/{{station.stations[0].short_name}}">{{ station.stations[0].long_name }}</a></td>
+    <td>TO DO</td>
+    <td>{{ station.escalators.length }}</td>
+    <td>{{ station.elevators.length }}</td>
+  </tr>
+
+</table>
+
+<div>
+
+  <pre>
+  {{ directory_data | json }}
+  </pre>
+
+</div>

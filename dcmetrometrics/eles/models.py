@@ -136,8 +136,8 @@ class Station(WebJSONMixin, Document):
       if not station_data:
 
         rec = {'stations' : [ station ] ,
-          'escalators' : [u] if u.is_elevator() else [],
-          'elevators' : [u] if u.is_escalator() else []
+          'escalators' : [u] if u.is_escalator() else [],
+          'elevators' : [u] if u.is_elevator() else []
           }
         station_to_data[station_name] = rec
 
@@ -519,7 +519,7 @@ class KeyStatuses(WebJSONMixin, Document):
   meta = {'collection' : 'key_statuses'}
 
   web_json_fields = ['lastFixStatus', 'lastBreakStatus', 'lastInspectionStatus',
-  'lastOperationalStatus', 'currentBreakStatus']
+  'lastOperationalStatus', 'currentBreakStatus', 'lastStatus']
 
 
   def update(self, unit_status):
