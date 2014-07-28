@@ -9,11 +9,11 @@
     <th>Description</th>
     <th>Status</th>
   </tr>
-  <tr ng-repeat = "unit in stationData.escalators" ng-class = "getSymptomClass(unit)">
-    <td>{{ unit.unit_id }} </td>
+  <tr ng-repeat = "unit in stationData.escalators" class = "{{statusTableUtils.getRowClass(unit.key_statuses.lastStatus)}}">
+    <td><a ng-href="#/units/{{unit.unit_id}}">{{ unit.unit_id.substring(0,6) }}</a></td>
     <td ng-show = "escalators_have_station_descriptions">{{ unit.station_desc }} </td>
     <td>{{ unit.esc_desc }} </td>
-    <td>{{ unit.key_statuses.lastStatus.symptom_description}}
+    <td>{{ unit.key_statuses.lastStatus.symptom_description}}</td>
   </tr>
 </table>
 
@@ -26,11 +26,11 @@
     <th>Description</th>
     <th>Status</th>
   </tr>
-  <tr ng-repeat = "unit in stationData.elevators" ng-class = "getSymptomClass(unit)">
-    <td>{{ unit.unit_id }} </td>
-    <td ng-show = "elevators_have_station_descriptions">{{ unit.station_desc }} </td>
-    <td>{{ unit.esc_desc }} </td>
-    <td>{{ unit.key_statuses.lastStatus.symptom_description}}
+  <tr ng-repeat = "unit in stationData.elevators" class = "{{statusTableUtils.getRowClass(unit.key_statuses.lastStatus)}}">
+    <td><a ng-href="#/units/{{unit.unit_id}}">{{ unit.unit_id.substring(0,6) }}</a></td>
+    <td ng-show = "elevators_have_station_descriptions">{{ unit.station_desc }}</td>
+    <td>{{ unit.esc_desc }}</td>
+    <td>{{ unit.key_statuses.lastStatus.symptom_description}}</td>
   </tr>
 </table>
 

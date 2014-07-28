@@ -35,6 +35,10 @@ angular
         templateUrl: 'views/station.html',
         controller: 'StationCtrl'
       })
+      .when('/units/:unitId', {
+        templateUrl: 'views/unit.html',
+        controller: 'UnitCtrl'
+      })
       .otherwise({
         redirectTo: '/'
       });

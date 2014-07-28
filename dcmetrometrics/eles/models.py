@@ -49,24 +49,29 @@ class Station(WebJSONMixin, Document):
   long_name = StringField(required = True)
   medium_name = StringField(required = True)
   short_name = StringField(required = True)
+  lines = ListField(StringField(choices = ('RD', 'OR', 'YL', 'GR', 'BL', 'SV'))) # Lines for this station platform
+  all_lines = ListField(StringField(choices = ('RD', 'OR', 'YL', 'GR', 'BL', 'SV'))) # Lines for all platforms at this station
+  all_codes = ListField(StringField()) # Station codes for all the platforms at this station
+  
 
   meta = {'collection' : 'stations',
           'indexes': ['long_name']}
 
   web_json_fields = ['code', 'long_name', 'short_name',
-                     'medium_name']
+                     'medium_name', 'lines', 'all_lines', 'all_codes']
 
 
   def get_shared_stations(self):
     """Get stations that are shared with this one. Return as a list,
     including this station.
     """
-    shared = list(Station.objects(long_name = self.long_name))
+    #shared = list(Station.objects(long_name = self.long_name))
+    shared = list(Station.objects(code__in = self.all_codes))
     return shared
 
   @classmethod
-  def add(cls, code, long_name, medium_name, short_name):
-    station = Station(code, long_name, medium_name, short_name)
+  def add(cls, code, long_name, medium_name, short_name, lines, all_lines, all_codes):
+    station = Station(code, long_name, medium_name, short_name, lines, all_lines, all_codes)
     station.save()
     return station
 
@@ -127,27 +132,26 @@ class Station(WebJSONMixin, Document):
 
     # Collection units by station names
     station_to_data = {}
+    for station in all_stations:
+      station_name = station.long_name
+      station_data = station_to_data.get(station_name, None)
+      if not station_data:
+        station_data = {'stations': [station], 
+                        'escalators': [],
+                        'elevators': []}
+      else:
+        station_data['stations'].append(station)
+      station_to_data[station_name] = station_data
+
+
     for u in all_units:
 
       station_name = code_to_name[u.station_code]
       station = code_to_station[u.station_code]
       station_data = station_to_data.get(station_name, None)
 
-      if not station_data:
-
-        rec = {'stations' : [ station ] ,
-          'escalators' : [u] if u.is_escalator() else [],
-          'elevators' : [u] if u.is_elevator() else []
-          }
-        station_to_data[station_name] = rec
-
-      else:
-
-        # Add the station (if necessary)
-        station_codes = [s.code for s in station_data['stations']]
-        if station.code not in station_codes:
-          station_data['stations'].append(station)
-
+      # station_data should not be None, but check anyway
+      if station_data:
         # Add the unit
         if u.is_escalator():
           station_data['escalators'].append(u)

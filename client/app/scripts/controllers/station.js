@@ -9,11 +9,12 @@
  */
 angular.module('dcmetrometricsApp')
 
-  .controller('StationCtrl', ['$scope', '$route', 'directory', 
+  .controller('StationCtrl', ['$scope', '$route', 'directory', 'statusTableUtils', 
 
-     function ($scope, $route, directory) {
+     function ($scope, $route, directory, statusTableUtils) {
 
         $scope.$route = $route;
+        $scope.statusTableUtils = statusTableUtils;
         $scope.stationName = $route.current.params.station;
 
         $scope.escalators_have_station_descriptions = false;

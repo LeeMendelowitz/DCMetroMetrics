@@ -13,7 +13,7 @@
 
   <tr ng-repeat="station in stationDirectory">
     <td><a href="#/stations/{{station.stations[0].short_name}}">{{ station.stations[0].long_name }}</a></td>
-    <td>TO DO</td>
+    <td> {{ station.stations[0].all_lines }}</td>
     <td>{{ station.escalators.length }}</td>
     <td>{{ station.elevators.length }}</td>
   </tr>

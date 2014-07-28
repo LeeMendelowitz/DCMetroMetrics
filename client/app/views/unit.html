@@ -1,0 +1,33 @@
+<p>This is the unit view.</p>
+
+<h1>{{ unitId }}</h1>
+
+<table class = "table table-bordered">
+  <tr>
+    <th>Station</th>
+    <td>{{ stationData.long_name }}</td>
+  </tr>
+  <tr ng-show = "{{ unitData.unit.station_desc }}">
+    <th>Entrance</th>
+    <td>{{ unitData.unit.station_desc }}</td>
+  </tr>
+  <tr>
+    <th>Description</th>
+    <td>{{ unitData.unit.esc_desc }}</td>
+  </tr>
+</table>
+
+<h3>Statuses</h3>
+
+<table class = "table table-bordered table-hover">
+  <tr>
+    <th>Time</th>
+    <th>Status</th>
+    <th>Duration</th>
+  </tr>
+  <tr ng-repeat = "status in unitData.statuses" class = "{{statusTableUtils.getRowClass(status)}}">
+    <td> {{ status.time | date:'short' }} </td>
+    <td> {{ status.symptom_description }} </td>
+    <td> {{ statusTableUtils.getDuration(status) | duration }} </td>
+  </tr>
+</table>
