@@ -59,6 +59,6 @@ angular.module('dcmetrometricsApp')
             var category = unit.key_statuses.lastStatus.symptom_category;
             return catToClass[category];
 
-        }
+        };
 
   }]);

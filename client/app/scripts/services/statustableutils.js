@@ -29,19 +29,19 @@ angular.module('dcmetrometricsApp')
         now = newNow;
       }
       return now;
-    }
+    };
 
     
     this.getRowClass = function(status) {
         var category = status.symptom_category;
         return catToClass[category];
-    }
+    };
 
     this.getDuration = function(status) {
       var end_time = status.end_time ? new Date(status.end_time) : getNow();
       var start_time = new Date(status.time);
       var duration = end_time - start_time;
       return duration;
-    }
+    };
 
   });

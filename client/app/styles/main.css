@@ -1,6 +1,6 @@
 /* Space out content a bit */
 body {
-  padding-top: 20px;
+  padding-top: 60px;
   padding-bottom: 20px;
 }
 
@@ -33,9 +33,9 @@ body {
 
 /* Customize container */
 @media (min-width: 768px) {
-  .container {
+/*  .container {
     max-width: 730px;
-  }
+  }*/
 }
 .container-narrow > hr {
   margin: 30px 0;
@@ -76,4 +76,39 @@ body {
   .jumbotron {
     border-bottom: 0;
   }
+}
+
+
+/* CSS for Line Color Circles */
+.circle {
+  border-radius: 50%;
+  border: 1px solid #7e7e7e;
+  width: 1em;
+  height: 1em;
+  margin: 0em 0.25em;
+  display: inline-block;
+}
+
+.circle.GR {
+  background-color: #339A60;
+}
+
+.circle.RD {
+  background-color: #db4949;
+}
+
+.circle.OR {
+  background-color: #db8949;
+}
+
+.circle.YL {
+  background-color: #f1ff0f;
+}
+
+.circle.BL {
+  background-color: #0261e1;
+}
+
+.circle.SV {
+  background-color: #b8b9ba;
 }

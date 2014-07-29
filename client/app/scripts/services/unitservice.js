@@ -12,7 +12,6 @@ angular.module('dcmetrometricsApp')
     // AngularJS will instantiate a singleton by calling "new" on this function
 
 
-    var url = "/json/station_directory.json";
     var unitToData = {};
 
     this.getUnitData = function(unitId) {

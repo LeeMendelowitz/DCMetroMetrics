@@ -1,11 +1,11 @@
-<p>This is the unit view.</p>
-
-<h1>{{ unitId }}</h1>
+<h1>{{ unitId | unitIdToHuman }}</h1>
 
 <table class = "table table-bordered">
   <tr>
     <th>Station</th>
-    <td>{{ stationData.long_name }}</td>
+    <td><a href="#/stations/{{stationData.short_name}}">{{ stationData.long_name }}
+    <lineColors lines="stationData.all_lines"></lineColors>
+    </a></td>
   </tr>
   <tr ng-show = "{{ unitData.unit.station_desc }}">
     <th>Entrance</th>
@@ -14,6 +14,23 @@
   <tr>
     <th>Description</th>
     <td>{{ unitData.unit.esc_desc }}</td>
+  </tr>
+</table>
+
+<h2> Summary </h2>
+
+<table class = "table table-bordered">
+  <tr>
+    <th># Breaks</th>
+    <td> </td>
+  </tr>
+  <tr>
+    <th># Inspections</th>
+    <td></td>
+  </tr>
+  <tr>
+    <th>Availability</th>
+    <td></td>
   </tr>
 </table>
 
