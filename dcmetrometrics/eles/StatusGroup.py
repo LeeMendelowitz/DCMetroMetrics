@@ -66,8 +66,8 @@ class StatusGroupBase(object):
             lastTime = s.time
 
         for i,s in enumerate(statuses):
-            end_time = getattr(s, 'end_time', None)
-            if i < (numStatuses - 1) and not end_time:
+            s_end_time = getattr(s, 'end_time', None)
+            if i < (numStatuses - 1) and not s_end_time:
                 raise RuntimeError('Status must have end_time defined')
 
         start_time = start_time or statuses[0].time
@@ -441,3 +441,21 @@ class Outage(StatusGroupBase):
     @computeOnce
     def categories(self):
         return set(s.symptom_category for s in self.allStatuses)
+
+#############################################################            
+            
+def _checkStatusListSane(statusList):
+    """Check that each status has a 'time' and 'end_time' defined
+    and that the list is sorted
+    """
+    lastTime = None
+    for s in statusList:
+        if 'end_time' not in s:
+            raise RuntimeError('Status missing end_time')
+        if 'time' not in s:
+            raise RuntimeError('Status missing time')
+        if s['time'] > s['end_time']:
+            raise RuntimeError('Status has bad starting/ending time')
+        if lastTime and s['time'] < lastTime:
+            raise RuntimeError('Status not sorted properly')
+        lastTime = s['time']
