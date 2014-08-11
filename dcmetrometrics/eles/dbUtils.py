@@ -19,7 +19,7 @@ import itertools
 
 # custom imports
 
-from ..common.dbGlobals import DBG
+from ..common.dbGlobals import G
 from ..common import dbGlobals, stations
 from ..common.metroTimes import TimeRange, utcnow, isNaive, toUtc, tzutc
 from .defs import symptomToCategory, OPERATIONAL_CODE as OP_CODE
@@ -65,14 +65,16 @@ def update_db_from_incident(inc, curTime):
     # Add the escalator to the database
     doc = { 'unit_id' : inc.UnitId,
           'station_code' : inc.StationCode,
-          'station_name' : inc.StationName, # Use the station name from stations.py
           'station_name' : stations.codeToName[inc.StationCode], # Use the station name from stations.py
           'esc_desc' : inc.LocationDescription,
           'station_desc' : inc.StationDesc,
           'unit_type' : inc.UnitType
     }
 
-    SymptomCode.add(inc.SymptomCode, inc.SymptomDescription)
+    # Add this symptom (if we are seeing it for the first time)
+    SymptomCode.add(inc.SymptomDescription)
+
+    # Add the unit (if we are seeing it for the first time)
     Unit.add(curTime = curTime, **doc)
 
     
@@ -89,6 +91,7 @@ def get_latest_statuses(escalators=False, elevators=False):
     #       statuses escalator by escalator
     """
    
+    DBG = G()
 
     if escalators and not elevators:
         esc_ids = DBG.getEscalatorIds()
@@ -156,6 +159,8 @@ def set_unit_key_statuses():
 def add_status_attributes(statusList):
     raise RuntimeError("The add_status_attributes method is deprecated!")
 
+    DBG = G()
+    
     if not statusList:
         return
 
@@ -214,6 +219,8 @@ def group_statuses_by_escalator(statuses):
 def get_system_availability(escalators=False, elevators=False):
 
     raise RuntimeError("Deprecated. Must update this method to use the KeyStatuses collection.")
+
+    DBG = G()
 
     db = DBG.getDB()
 
@@ -304,6 +311,7 @@ def get_station_summary(stationCode, start_time = None, end_time = None):
     stationData = stations.codeToStationData[stationCode]
     stationCodes = set(stationData['allCodes'])
 
+    DBG = G()
     escIds = DBG.getEscalatorIds()
     eleIds = DBG.getElevatorIds()
     escDataList = (DBG.escIdToEscData[escId] for escId in escIds)
@@ -371,6 +379,7 @@ def get_station_summary(stationCode, start_time = None, end_time = None):
 # Get a snapshot of the station right now
 def get_station_snapshot(stationCode):
 
+    DBG = G()
     db = DBG.getDB()
 
     stationData = stations.codeToStationData[stationCode]
@@ -553,6 +562,8 @@ def summarize_statuses(statusList, start_time, end_time):
 ############################################################################
 # Get a summary of all escalators for the specified time period
 def get_all_unit_summaries(start_time=None, end_time=None, escalators=False, elevators=False):
+
+    DBG = G()
 
     # Convert start_time and end_time to utcTimeZone, if necessary
     if start_time is not None:

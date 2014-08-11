@@ -6,7 +6,10 @@ from mongoengine import *
 from operator import attrgetter
 from ..common.metroTimes import TimeRange, UTCToLocalTime, toUtc
 from .defs import symptomToCategory, SYMPTOM_CHOICES
+from ..common import dbGlobals
 from .misc_utils import *
+from datetime import timedelta
+import sys
 
 class WebJSONMixin(object):
 
@@ -16,22 +19,27 @@ class WebJSONMixin(object):
 
     return dict((k, getattr(self, k, None)) for k in fields)
 
-
-class SymptomCode(Document):
+class SymptomCodeOld(Document):
   """
   The different states an escalator can be in.
   """
 
-  id = IntField(primary_key = True, required=True, db_field='_id')
-  description = StringField(db_field = 'symptom_desc', required=True, unique=True)
+  id = IntField(primary_key = True, db_field = '_id')
+  description = StringField(db_field = 'symptom_desc', required=True)
   category = StringField(required=True, choices = SYMPTOM_CHOICES)
-  meta = {'collection' : 'symptom_codes'}
+  meta = {'collection' : 'symptom_codes_old'}
 
   def __str__(self):
     output = ''
     output += '\tcode: %s\n'%(self.pk)
     output += '\tdescription: %s\n'%(self.description)
     return output
+
+  def make_new_format(self):
+    new = SymptomCode(symptom_code = self.id,
+      description = self.description,
+      category = self.category)
+    return new
 
   @classmethod
   def add(cls, code, description):
@@ -40,6 +48,32 @@ class SymptomCode(Document):
                category = symptomToCategory[description])
     code.save()
     return code
+
+class SymptomCode(Document):
+  """
+  The different states an escalator can be in.
+  """
+
+  symptom_code = IntField(required=False)
+  description = StringField(db_field = 'symptom_desc', required = True, unique = True)
+  category = StringField(required=True, choices = SYMPTOM_CHOICES)
+  meta = {'collection' : 'symptom_codes'}
+
+  def __str__(self):
+    output = ''
+    output += '\id: %s\n'%(self.pk)
+    output += '\tdescription: %s\n'%(self.description)
+    output += '\tcategory: %s\n'%(self.category)
+    return output
+
+  @classmethod
+  def add(cls, description):
+    try:
+      symptom = cls(description=description, 
+                 category = symptomToCategory[description])
+      symptom.save()
+    except NotUniqueError:
+      pass
 
 class Station(WebJSONMixin, Document):
   """
@@ -163,7 +197,6 @@ class Station(WebJSONMixin, Document):
     return station_to_data
 
 
-
 class Unit(WebJSONMixin, Document):
   """
   An escalator or an elevator.
@@ -221,23 +254,25 @@ class Unit(WebJSONMixin, Document):
 
         if curTime is None:
           curTime = datetime.now() 
-        first_status = {'escalator_id' : unit.id,
-               'time' : curTime - timedelta(seconds=1),
-               'tickDelta' : 0,
-               'symptom_code' : OP_CODE}
-        first_status = UnitStatus(**first_status)
+
+        G = dbGlobals.G()
+
+        first_status = UnitStatus(escalator_id = unit.id,
+                                  time = curTime - timedelta(seconds=1),
+                                  tickDelta = 0,
+                                  symptom_code = G.OPERATIONAL)
         first_status.denormalize()
         first_status.save()
 
         key_statuses = KeyStatuses(unit = unit)
-        key_statuses.lastOperationalStatus = status
-        key_statuses.lastStatus = status
+        key_statuses.lastOperationalStatus = first_status
+        key_statuses.lastStatus = first_status
         key_statuses.save()
 
     elif not has_key_statuses:
       # Compute key statuses from the unit's history.
-      sys.stderr.write("Could not find a key status entry for unit %s. Building one from the unit's status history\n")
-      self.compute_key_statuses()
+      sys.stderr.write("Could not find a key status entry for unit %s. Building one from the unit's status history\n"%unit.id)
+      unit.compute_key_statuses()
 
   def get_statuses(self, *args, **kwargs):
     """
@@ -331,13 +366,14 @@ class Unit(WebJSONMixin, Document):
       key_statuses = KeyStatuses.select_key_statuses(statuses)
 
       try:
-        # If a KeyStatuses record already exists for this unit, update it.
+        # If a KeyStatuses record already exists for this unit, delete it.
         old_key_statuses = KeyStatuses.objects(unit = self).get()
-        key_statuses.pk = old_key_statuses.pk
+        old_key_statuses.delete()
       except DoesNotExist:
         pass
 
       key_statuses.save()
+      
       return key_statuses
 
   def get_key_statuses(self):
@@ -355,6 +391,124 @@ class Unit(WebJSONMixin, Document):
   
 
 
+#############################################
+# Old format for UnitStatus, with reference to symptoms in old format.
+class UnitStatusOld(WebJSONMixin, Document):
+  """
+  Escalator or elevator status.
+  """
+  unit = ReferenceField(Unit, required=True, db_field='escalator_id')
+  time = DateTimeField(required=True)
+  end_time = DateTimeField()
+  metro_open_time = FloatField() # Duration of status for which metro was open (seconds)
+  symptom = ReferenceField(SymptomCodeOld, required=True, db_field='symptom_code')
+  tickDelta = FloatField(required=True, default=0.0)
+
+  # Denormalized fields
+  unit_id = StringField()
+  station_code = StringField()
+  station_name = StringField()
+  station_desc = StringField()
+  esc_desc = StringField()
+  unit_type = StringField(choices=('ESCALATOR', 'ELEVATOR'))
+
+  symptom_description = StringField()
+  symptom_category = StringField(choices=SYMPTOM_CHOICES)
+
+
+
+  #######################
+
+  meta = {'collection' : 'escalator_statuses_old',
+          'index' : [('escalator_id', '-time')]}
+
+  web_json_fields = ['unit_id', 'time', 'end_time', 'metro_open_time',
+    'tickDelta', 'symptom_description', 'symptom_category']
+
+
+  def to_new_format(self):
+    """Convert to the new UnitStatus format. Leave the symptom field blank"""
+    new = UnitStatus(unit = self.unit,
+      time = self.time,
+      end_time = self.end_time,
+      metro_open_time = self.metro_open_time, 
+      symptom = None,
+      tickDelta = self.tickDelta,
+      unit_id = self.unit_id,
+      station_code = self.station_code,
+      station_name = self.station_name,
+      station_desc = self.station_desc,
+      esc_desc = self.esc_desc,
+      unit_type = self.unit_type,
+      symptom_description = self.symptom_description,
+      symptom_category = self.symptom_category)
+    return new
+
+
+  def clean(self):
+    """
+    Convert the time and end_time fields to UTC time zone.
+    """
+    self.time = toUtc(self.time, allow_naive = True)
+    if self.end_time:
+      self.end_time = toUtc(self.end_time, allow_naive = True)
+
+
+  #######################
+  def __str__(self):
+    keys = ['unit_id', 'station_name', 'station_desc', 'esc_desc', 'unit_type', 'time', 'end_time', 'metro_open_time']
+    output = '' 
+    output += '\tunit: %s\n'%self.unit_id
+    output += '\tsymptom: %s\n'%self.symptom.description
+    for k in keys:
+      output += '\t%s: %s\n'%(k, getattr(self,k, 'N/A'))
+    return output
+
+  def denormalize(self):
+    """
+    Denormalize by grabbing fields from unit data and symptom data.
+    """
+    unit = self.unit
+    symptom = self.symptom
+
+    self.unit_id = unit.unit_id
+    self.station_code = unit.station_code
+    self.station_name = unit.station_name
+    self.station_desc = unit.station_desc
+    self.esc_desc = unit.esc_desc
+    self.unit_type = unit.unit_type
+
+    self.symptom_description = symptom.description
+    self.symptom_category = symptom.category
+
+  def compute_metro_open_time(self):
+    """
+    Compute the amount of time for which Metro was open that this status
+    lasted. 
+    """
+    start_time = UTCToLocalTime(self.time)
+    end_time = getattr(self, 'end_time', None)
+    if end_time:
+      end_time = UTCToLocalTime(end_time)
+      time_range = TimeRange(start_time, end_time)
+      self.metro_open_time = time_range.metroOpenTime
+
+  def _add_timezones(self):
+    """
+    Make the time and end_time fields non-naive timezones,
+    in UTC.
+
+    Timezones are stored as naive UTC datetimes in database,
+    but should be used in application logic as non-naive datetimes,
+    (i.e. they shoudl have UTC timezone.)
+    """
+    self.time = toUtc(self.time, allow_naive = True)
+    end_time = getattr(self, 'end_time', None)
+    if end_time:
+      self.end_time = toUtc(self.end_time, allow_naive = True)
+
+#############################################
+# New format for UnitStatus, with reference to symptoms in new format.
 class UnitStatus(WebJSONMixin, Document):
   """
   Escalator or elevator status.
@@ -448,6 +602,8 @@ class UnitStatus(WebJSONMixin, Document):
     end_time = getattr(self, 'end_time', None)
     if end_time:
       self.end_time = toUtc(self.end_time, allow_naive = True)
+
+
 
 
 class ElevatorAppState(Document):

@@ -8,6 +8,8 @@ class Incident: An item on the WMATA list of escalator outages.
 from ..common.utils import *
 from ..common import utils
 from datetime import date, datetime, time
+from ..common.metroTimes import parse_iso_time
+import pprint
 
 ###################################################################
 class Incident(object):
@@ -30,20 +32,22 @@ class Incident(object):
          u'UnitStatus',
          u'DisplayOrder']
 
-        requiredKeys = ['SymptomDescription',
-                        'LocationDescription',
-                        'UnitName',
-                        'UnitType',
-                        'SymptomCode',
-                        'StationName',
-                        'StationCode']
+        # requiredKeys = ['SymptomDescription',
+        #                 'LocationDescription',
+        #                 'UnitName',
+        #                 'UnitType',
+        #                 'SymptomCode',
+        #                 'StationName',
+        #                 'StationCode']
 
-        for k in requiredKeys:
-            if k not in data:
-                raise RuntimeError('Key missing in incident data: %s'%k)
+        # for k in requiredKeys:
+        #     if k not in data:
+        #         raise RuntimeError('Key missing in incident data: %s'%k)
 
-        self.data = data # Store a copy of the original data from this object was constructed
-        self.__dict__.update(data.iteritems())
+        self._data = data # Store a copy of the original data from this object was constructed
+        for k,v in data.iteritems():
+            setattr(self, k, v)
+        #self.__dict__.update(data.iteritems())
         self.addAttr()
 
     def addAttr(self):
@@ -67,18 +71,17 @@ class Incident(object):
             self.StationDesc = sdesc.strip()
 
     def cleanTimes(self):
-        attrs = ['DateOutOfServ', 'TimeOutOfService', 'DateUpdated']
+        """
+        Convert the times from string to datetimes.
+        """
+        attrs = ['DateOutOfServ', 'DateUpdated']
         if not all(hasattr(self, a) for a in attrs):
             return
 
-        # Clean up the out of service and update times
-        outOfServiceDate = utils.parseMetroDate(self.DateOutOfServ)
-        outOfServiceTime = utils.parseMetroTime(self.TimeOutOfService)
-        self.TimeOutOfService = datetime.combine(date=outOfServiceDate, time=outOfServiceTime)
-        self.TimeUpdated = utils.parseMetroDatetime(self.DateUpdated)
+        # Convert the DateOutOfServe and DateUpdated fields
+        self.DateOutOfServ = parse_iso_time(self.DateOutOfServ)
+        self.DateUpdated = parse_iso_time(self.DateUpdated)
 
-        del self.DateUpdated
-        del self.DateOutOfServ
 
     def isElevator(self):
         return self.UnitType == 'ELEVATOR'
@@ -102,4 +105,7 @@ class Incident(object):
 
     def __getitem__(self, k):
         return getattr(self, k)
+
+    def __str__(self):
+        return pprint.pformat(self._data)
 

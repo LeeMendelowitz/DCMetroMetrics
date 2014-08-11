@@ -20,7 +20,7 @@ from ..common.globals import DATA_DIR
 from ..common.JSONifier import JSONWriter
 import dbUtils
 from .dbUtils import invert_dict, update_db_from_incident
-from .models import KeyStatuses, UnitStatus
+from .models import KeyStatuses, UnitStatus, SymptomCode, Unit
 from ..keys import WMATA_API_KEY
 from ..third_party.twitter import TwitterError
 from .Incident import Incident
@@ -97,7 +97,7 @@ class ELESApp(object):
         self.checkWMATAKey()
 
         self.log = log
-        self.dbg = dbGlobals.DBG
+        self.dbg = dbGlobals.G()
 
         self.json_writer = JSONWriter()
 
@@ -149,8 +149,12 @@ class ELESApp(object):
         # Update static json files.
         INFO("Updating static json files.")
         for (unit_id, old_status, new_status, key_status) in changed_units:
-            unit = Unit.get(unit_id = unit_id)
+            INFO("Writing json for unit: %s"%unit_id)
+            unit = Unit.objects.get(unit_id = unit_id)
             self.json_writer.write_unit(unit)
+
+        INFO("Writing station directory.")
+        self.json_writer.write_station_directory()
 
         # TODO: Broadcast tweets on twitter
 
@@ -173,6 +177,9 @@ class ELESApp(object):
         # an initial operational status will be created for the unit.
         for inc in incidents:
             update_db_from_incident(inc, curTime)
+
+        symptoms = list(SymptomCode.objects)
+        symptom_description_to_symptom = dict((s.description, s) for s in symptoms)
 
         unit_id_to_incident = dict((i.UnitId, i) for i in incidents)
 
@@ -236,15 +243,16 @@ class ELESApp(object):
             # Otherwise the unit is operational.
             incident = unit_id_to_incident.get(unit_id, None)
             if incident:
-                symptom_code = int(incident.SymptomCode)
+                symptom_description = incident.SymptomDescription
             else:
-                symptom_code = OP_CODE
+                symptom_description = "OPERATIONAL"
 
             # Save new UnitStatus
+            symptom = symptom_description_to_symptom[symptom_description]
             new_status = UnitStatus(unit = key_status.unit, 
                                         time = curTime,
                                         tickDelta = tickDelta,
-                                        symptom = symptom_code)
+                                        symptom = symptom)
             new_status.denormalize()
             new_status.save()
 
@@ -252,15 +260,6 @@ class ELESApp(object):
 
         return changed_units
 
-
-    #####################################
-    # Store outgoing tweets in the tweet outbox
-    def storeTweets(self, tweetMsgs):
-        if not tweetMsgs:
-            return
-        curTime = utcnow()
-        docs = [{'msg' : m, 'sent' : False, 'time': curTime} for m in tweetMsgs]
-        self.getTweetOutbox().insert(docs)
 
     ##########################################################
     # Send tweets which have been stored in the twitter outbox

@@ -12,9 +12,9 @@ or symptom code is seen for the first time.
 import pymongo
 import os
 import mongoengine
-
+from mongoengine import DoesNotExist
 from ..eles.defs import OPERATIONAL_CODE as OP_CODE, symptomToCategory
-from ..eles.models import Unit, UnitStatus, SymptomCode
+
 
 from .globals import MONGODB_HOST, MONGODB_PORT, MONGODB_USERNAME, MONGODB_PASSWORD
 
@@ -26,8 +26,9 @@ class _DBGlobals(object):
         self.db = None
         self.unitToEscId = None
         self.escIdToUnit = None
-        self.symptomToId = None # Symptom Description to symptom primary key
-        self.symptomCodeToSymptom = None # Symptom primary key to symptom description
+        self.symptom_dict = None # Symptom Description to symptom object
+        self.OPERATIONAL = None
+        self.symptoms = None # Symptom primary key to symptom description
         self.escIdToEscData = None
         self.escList = None
         self.eleList = None
@@ -45,9 +46,16 @@ class _DBGlobals(object):
 
         self.db = getDB()
 
-        # Save the operational symptom code.
-        operation_symptom = SymptomCode(_id = OP_CODE, description="OPERATIONAL", category="ON")
-        operation_symptom.save()
+        from ..eles.models import Unit, UnitStatus, SymptomCode
+
+        # Save the operational symptom code if it does not already exist.
+        try:
+            operational = SymptomCode.objects(description="OPERATIONAL").get()
+        except DoesNotExist:
+            operational = SymptomCode(description = "OPERATIONAL", category = "ON")
+            operational.save()
+
+        self.OPERATIONAL = operational
 
         # Check all other symptom codes, and update the categories that are specified in the definitions file.
         for symptom in SymptomCode.objects:
@@ -63,8 +71,8 @@ class _DBGlobals(object):
 
         # Build symptomDict, symptomCodeToSymptom
         symptoms = list(SymptomCode.objects)
-        self.symptomToId = dict((d.description, d.pk) for d in symptoms)
-        self.symptomCodeToSymptom = invert_dict(self.symptomToId)
+        self.symptom_dict = dict((d.description, d) for d in symptoms)
+        self.symptoms = symptoms
 
         # Build escalator/elevator data
         self.escList = [d for d in units if d.is_escalator()]
@@ -120,7 +128,18 @@ def connect():
     from mongoengine import connect
     connect('MetroEscalators', host=MONGODB_HOST, port=MONGODB_PORT, username=MONGODB_USERNAME, password=MONGODB_PASSWORD)
 
+_G = None # Global object
+def G():
+    """Return a shared global object which maintains the escalator and elevator directory in memory.
+    """
 
-# Create a global variable which should be used throughout the application
-DBG = _DBGlobals()
-DBG.update()
+    global _G
+
+    if _G:
+        return _G
+    
+    _G = _DBGlobals()
+    _G.update()
+    return _G
+
+

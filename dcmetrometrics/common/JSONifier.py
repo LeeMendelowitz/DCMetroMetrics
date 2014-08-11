@@ -59,7 +59,20 @@ class JSONWriter(object):
     with open(outpath, 'w') as fout:
       fout.write(jdata)
 
+  def write_station_directory(self):
 
+    sd = Station.get_station_directory()
+    jdata = dumps(sd, cls = WebJSONEncoder)
+
+    # Create the directory if necessary
+    outdir = os.path.join(self.basedir, 'json')
+    mkdir_p(outdir)
+
+    fname = '%s.json'%('station_directory')
+    outpath = os.path.join(outdir, fname)
+
+    with open(outpath, 'w') as fout:
+      fout.write(jdata)
 
 
 

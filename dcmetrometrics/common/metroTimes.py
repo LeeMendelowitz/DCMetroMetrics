@@ -13,9 +13,11 @@ daylight savings starts/ends. This is a low impact bug.
 from datetime import time, date, datetime, timedelta
 from dateutil.tz import tzlocal, tzutc
 from dateutil import zoneinfo
+from dateutil import parser 
 from .descriptors import setOnce, computeOnce
 
 nytz = zoneinfo.gettz("America/New_York")
+tzny = nytz 
 tzutc = tzutc()
 combine = datetime.combine
 
@@ -291,6 +293,7 @@ def toUtc(dt, allow_naive = False):
         return dt
     
     dt = dt.astimezone(tzutc)
+
     return dt
 
 #################################################
@@ -312,3 +315,13 @@ def isNaive(dt):
 #################################################
 def utcnow():
     return datetime.utcnow().replace(tzinfo=tzutc)
+
+def parse_iso_time(s):
+    """Parse an IsoFormat time string and return as a datetime object
+    with local timezone.
+
+    Eg: parse_iso_time("2014-08-10T09:59:55")
+    """
+    dt = parser.parse(s)
+    dt = dt.replace(tzinfo = tzny)
+    return dt
