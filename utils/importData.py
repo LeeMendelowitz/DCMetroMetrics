@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+    #!/usr/bin/env python
 """
 Downloads the latest DC Metro Metrics data from www.DCMetroMetrics.com
 Loads the data into the local MongoDB Database
@@ -11,7 +11,7 @@ from subprocess import call
 
 parser = argparse.ArgumentParser(description="Import DCMetroMetrics data into MongoDB")
 parser.add_argument('--db', default="MetroEscalators", help='The database to use.')
-parser.add_argument('--zip', default="./DCMetroMetricsData", help='The zip file to use')
+parser.add_argument('--zip', default="./DCMetroMetricsData.zip", help='The zip file to use')
 
 c = MongoClient()
 
@@ -54,7 +54,7 @@ def run():
         print 'Dropping collection %s'%collection
         db[collection].drop()
         print 'Importing json %s into collection %s'%(j, collection)
-        cmd = 'mongoimport -d {db} -c {collection} {fname}'
+        cmd = 'mongoimport --db {db} --collection {collection} {fname}'
         cmd = cmd.format(db = args.db, collection=collection, fname=j)
         call(cmd, shell=True)
 

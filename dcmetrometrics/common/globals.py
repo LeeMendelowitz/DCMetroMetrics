@@ -8,6 +8,7 @@ PY_DIR = os.environ['PYTHON_DIR']
 REPO_DIR = os.environ['REPO_DIR']
 SCRIPT_DIR = os.path.join(REPO_DIR, 'scripts')
 DATA_DIR = os.environ['DATA_DIR']
+WWW_DIR = os.environ['WWW_DIR']
 
 MONGODB_HOST = os.environ["MONGODB_HOST"]
 MONGODB_PORT = int(os.environ["MONGODB_PORT"])

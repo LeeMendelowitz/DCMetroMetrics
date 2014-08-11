@@ -79,7 +79,7 @@ def update_symptom_codes():
    - Key difference: Do not use symptom code as a primary key anymore, since the codes have been deprected
   """
 
-  from dcmetrometrics.eles import models
+  from dcmetrometrics.eles import models, defs
   from mongoengine.context_managers import switch_db, switch_collection
 
   # Fish out symptom codes in the old format from the symptom_code collection
@@ -98,6 +98,8 @@ def update_symptom_codes():
     s_old = list(SymptomCodeOld.objects)
     for s in s_old:
       s_new = s.make_new_format()
+      if not s_new.category:
+        s_new.category = defs.symptomToCategory[s_new.description]
       print "saving: ", s_new
       s_new.save()
 
@@ -131,7 +133,7 @@ If successful, will backup to collection escalator_statuses_old..."""
       n = len(models.UnitStatusOld.objects)
       for i, s in enumerate(models.UnitStatusOld.objects):
         # Make a backup of the old unit statuses
-        print "saving unit status %i of %i"%(i, n)
+        print "Backing up unit status %i of %i (%.2f %%)"%(i, n, float(i)/n*100.0)
         s.switch_collection('escalator_statuses_old')
         s.save() # Save to the new collection
   except Exception as e:
@@ -180,10 +182,11 @@ def delete_recent_statuses():
 
 def recompute_key_statuses():
   """Recompute key statuses for all units"""
-  from dcmetrometrics.eles.models import Unit
+  from dcmetrometrics.eles.models import Unit, KeyStatuses
   units = Unit.objects
   start = datetime.now()
   n = len(units)
+  KeyStatuses.drop_collection()
   for i, unit in enumerate(Unit.objects):
     print "Computing key statuses for unit %s: %i of %i (%.2f%%)"%(unit.unit_id, i, n, 100.0*i/n)
     unit.compute_key_statuses()
@@ -210,4 +213,15 @@ def delete_units_missing_statuses():
   elapsed = (datetime.now() - start).total_seconds()
   print "%.2f seconds elapsed"%elapsed
 
+def bad_key_statuses():
+  """Return key statuses where we can't dereference the unit"""
+  from dcmetrometrics.eles.models import KeyStatuses
+  ks = KeyStatuses.objects.select_related()
+  bad = []
+  for k in ks:
+    try:
+      print k.unit.unit_id
+    except Exception as e:
+      bad.append(k)
+  return bad
   

@@ -17,6 +17,7 @@ DATA_DIR = os.path.join(HOME_DIR, 'data')
 vals = [
     ('DATA_DIR', os.path.join(HOME_DIR, 'data')),
     ('REPO_DIR', HOME_DIR),
+    ('WWW_DIR', os.path.join(HOME_DIR, 'www')),
     #('MONGODB_USERNAME', "LMM"),
     #('MONGODB_PASSWORD', "123456"),
     ('MONGODB_HOST', 'localhost'),

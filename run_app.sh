@@ -1,4 +1,4 @@
-d#!/bin/bash
+#!/bin/bash
 
 # Script for running the dcmetrometrics worker app on digital ocean
 ROOT=/home/lmendelo/dcmetrometrics

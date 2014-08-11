@@ -26,7 +26,7 @@ class SymptomCodeOld(Document):
 
   id = IntField(primary_key = True, db_field = '_id')
   description = StringField(db_field = 'symptom_desc', required=True)
-  category = StringField(required=True, choices = SYMPTOM_CHOICES)
+  category = StringField(choices = SYMPTOM_CHOICES)
   meta = {'collection' : 'symptom_codes_old'}
 
   def __str__(self):

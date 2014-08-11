@@ -11,12 +11,22 @@ import sys
 from time import sleep
 from datetime import datetime, date, time, timedelta
 from collections import defaultdict
-from logging import (debug as DEBUG, warning as WARNING, info as INFO)
+
+##########################################
+# Set up logging
+import logging
+logger = logging.getLogger('ELESApp')
+logger.setLevel(logging.DEBUG)
+DEBUG = logger.debug
+WARNING = logger.warning
+INFO = logger.info
+
+##########################################
 
 # Custom modules
 from ..common import dbGlobals, twitterUtils, utils, stations
 from ..common.metroTimes import utcnow, tzutc, metroIsOpen, toLocalTime, isNaive
-from ..common.globals import DATA_DIR
+from ..common.globals import DATA_DIR, WWW_DIR
 from ..common.JSONifier import JSONWriter
 import dbUtils
 from .dbUtils import invert_dict, update_db_from_incident
@@ -35,10 +45,6 @@ SILENCE_GAP = 60*20
 # Maximum number of tweets allowed in a single tick. Otherwise
 # the tick is silenced
 MAX_TICK_TWEETS = 10
-
-OUTPUT_DIR = DATA_DIR
-if OUTPUT_DIR is None:
-    OUTPUT_DIR = os.getcwd()
 
 def checkWMATAKey():
     """
@@ -99,7 +105,7 @@ class ELESApp(object):
         self.log = log
         self.dbg = dbGlobals.G()
 
-        self.json_writer = JSONWriter()
+        self.json_writer = JSONWriter(WWW_DIR)
 
     def getTwitterApi(self):
         if not self.LIVE:
@@ -153,10 +159,13 @@ class ELESApp(object):
             unit = Unit.objects.get(unit_id = unit_id)
             self.json_writer.write_unit(unit)
 
-        INFO("Writing station directory.")
-        self.json_writer.write_station_directory()
+        if changed_units:
+        # if True:
+            INFO("Writing station directory.")
+            self.json_writer.write_station_directory()
 
         # TODO: Broadcast tweets on twitter
+        INFO("Done tick.")
 
 
     #########################

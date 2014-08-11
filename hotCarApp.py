@@ -30,7 +30,7 @@ class HotCarApp(RestartingGreenlet):
         RestartingGreenlet.__init__(self, LIVE=LIVE)
         self.SLEEP = 40 # Run every 10 seconds
         self.LIVE = LIVE
-        self.dbg = dbGlobals.DBGlobals()
+        self.dbg = dbGlobals.G()
         self.db = self.dbg.getDB()
 
     # Run forever
