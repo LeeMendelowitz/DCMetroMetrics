@@ -22,11 +22,15 @@ angular
     $routeProvider
       .when('/home', {
         templateUrl: 'views/main.html',
-        controller: 'MainCtrl'
+        controller: 'OutagesCtrl'
       })
       .when('/about', {
         templateUrl: 'views/about.html',
         controller: 'AboutCtrl'
+      })
+      .when('/outages', {
+        templateUrl: 'views/outages.html',
+        controller: 'OutagesCtrl'
       })
       .when('/stations', {
         templateUrl: 'views/stationlisting.html',

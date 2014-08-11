@@ -4,7 +4,7 @@
  * @ngdoc service
  * @name dcmetrometricsApp.directory
  * @description
- * # directory
+ * # Stores and caches the station directory.
  * Service in the dcmetrometricsApp.
  */
 angular.module('dcmetrometricsApp')
@@ -15,7 +15,7 @@ angular.module('dcmetrometricsApp')
 
     var url = "/json/station_directory.json";
 
-    var stationDirectory, shortNameToData, codeToData;
+    var stationDirectory, shortNameToData, codeToData, escalatorOutages, elevatorOutages;
 
     this.get_directory = function() {
       
@@ -26,7 +26,9 @@ angular.module('dcmetrometricsApp')
       if (stationDirectory && shortNameToData && codeToData) {
           ret = { directory: stationDirectory,
                      shortNameToData: shortNameToData,
-                     codeToData: codeToData } ;
+                     codeToData: codeToData,
+                     escalatorOutages: escalatorOutages,
+                     elevatorOutages: elevatorOutages } ;
           deferred.resolve(ret);
           return deferred.promise;
       }
@@ -34,24 +36,47 @@ angular.module('dcmetrometricsApp')
       $http.get(url, { cache: true })
         .success( function(d) {
 
+          var i, unit;
+
           stationDirectory = d;
 
           // Populate shortNameToData;
           shortNameToData = {};
           codeToData = {};
+          escalatorOutages = [];
+          elevatorOutages = [];
           for   (var station in stationDirectory) {
+
             var stationData = stationDirectory[station];
             var shortName = stationData.stations[0].short_name;
+
+            for (i = 0; i < stationData.escalators.length; i++) {
+              unit = stationData.escalators[i];
+              if (unit.key_statuses.lastStatus.symptom_category != "ON" ) {
+                escalatorOutages.push(unit);
+              }
+            }
+
+            for (i = 0; i < stationData.elevators.length; i++) {
+              unit = stationData.elevators[i];
+              if (unit.key_statuses.lastStatus.symptom_category !== "ON" ) {
+                elevatorOutages.push(unit);
+              }
+            }
+
             shortNameToData[shortName] = stationData;
-            for (var i = 0; i < stationData.stations.length; i++) {
+            for (i = 0; i < stationData.stations.length; i++) {
               var sdata = stationData.stations[i];
               codeToData[sdata.code] = sdata;
             }
+
           }
 
           var ret = {directory: stationDirectory,
                      shortNameToData: shortNameToData,
-                     codeToData: codeToData };
+                     codeToData: codeToData,
+                     escalatorOutages: escalatorOutages,
+                     elevatorOutages: elevatorOutages };
           deferred.resolve(ret);
         })
         .error(function() {

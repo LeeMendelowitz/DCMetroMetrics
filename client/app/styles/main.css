@@ -112,3 +112,8 @@ body {
 .circle.SV {
   background-color: #b8b9ba;
 }
+
+/* Extra padding for buttons on home page */
+.home .btn {
+  margin: 5px;
+}
