@@ -134,6 +134,8 @@ class ELESApp(object):
         INFO("Getting ELES incidents from WMATA API.")
         incidents = getELESIncidents()
 
+        INFO("Have %i outages."%len(incidents))
+
         # Update the database with units that changed status.
         INFO("Processing Changes units.")
         changed_units = self.processIncidents(incidents, curTime, log = self.log)
