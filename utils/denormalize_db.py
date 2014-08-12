@@ -130,7 +130,7 @@ def update_unit_statuses():
 If successful, will backup to collection escalator_statuses_old..."""
   try:
     with switch_collection(models.UnitStatusOld, "escalator_statuses") as UnitStatusOld:
-      n = len(models.UnitStatusOld.objects)
+      n = models.UnitStatusOld.objects.count()
       for i, s in enumerate(models.UnitStatusOld.objects):
         # Make a backup of the old unit statuses
         print "Backing up unit status %i of %i (%.2f %%)"%(i, n, float(i)/n*100.0)
@@ -142,7 +142,7 @@ If successful, will backup to collection escalator_statuses_old..."""
     return
 
   # Save unit statuses in the new format.
-  n = len(models.UnitStatusOld.objects)
+  n = models.UnitStatusOld.objects.count()
   for i, s_old in enumerate(models.UnitStatusOld.objects):
     print 'Reformatting unit status %i of %i (%.2f %%)'%(i, n, float(i)/n*100.0)
     s_new = s_old.to_new_format()
@@ -158,7 +158,7 @@ def write_units_json():
   import os
   jwriter = JSONWriter(basedir = os.path.join('client', 'app'))
   from dcmetrometrics.eles.models import Unit
-  num_units = len(Unit.objects)
+  num_units = Unit.objects.count()
   for i, unit in enumerate(Unit.objects):
     print 'Writing unit %i of %i: %s'%(i, num_units, unit.unit_id)
     jwriter.write_unit(unit)
@@ -190,7 +190,7 @@ def recompute_key_statuses():
   for i, unit in enumerate(Unit.objects):
     print "Computing key statuses for unit %s: %i of %i (%.2f%%)"%(unit.unit_id, i, n, 100.0*i/n)
     unit.compute_key_statuses()
-
+    
   elapsed = (datetime.now() - start).total_seconds()
   print "%.2f seconds elapsed"%elapsed
 
