@@ -1,0 +1,45 @@
+<h1>Outages</h1>
+
+<tabset>
+
+  <tab heading="Escalators" active="escalatorTabActive" select="selectEscalatorTab()">
+
+    <br>
+    <table class = "table table-bordered">
+      <tr>
+        <th>Unit</th>
+        <th>Station</th>
+        <th>Description</th>
+        <th>Status</th>
+      </tr>
+      <tr ng-repeat = "unit in escalatorOutages">
+        <td><a ng-href="#/units/{{unit.unit_id}}">{{ unit.unit_id.substring(0,6) }}</a></td>
+        <td><a ng-href="{{getStationUrl(unit)}}">{{ getStationName(unit) }} <lineColors lines="getStationLines(unit)"></lineColors></a></td>
+        <td>{{ unitDescription(unit) }}</td>
+        <td>{{ unit.key_statuses.lastStatus.symptom_description}}</td>
+      </tr>
+    </table>
+
+  </tab>
+
+  <tab heading="Elevators" active="elevatorTabActive" select="selectElevatorTab()">
+
+    <br>
+    <table class = "table table-bordered">
+      <tr>
+        <th>Unit</th>
+        <th>Station</th>
+        <th>Description</th>
+        <th>Status</th>
+      </tr>
+      <tr ng-repeat = "unit in elevatorOutages">
+        <td><a ng-href="#/units/{{unit.unit_id}}">{{ unit.unit_id.substring(0,6) }}</a></td>
+        <td><a ng-href="{{getStationUrl(unit)}}">{{ getStationName(unit) }}<lineColors lines="getStationLines(unit)"></lineColors></a></td>
+        <td>{{ unitDescription(unit) }}</td>
+        <td>{{ unit.key_statuses.lastStatus.symptom_description}}</td>
+      </tr>
+    </table>
+
+  </tab>
+
+</tabset>
