@@ -8,7 +8,7 @@
  * Controller of the dcmetrometricsApp
  */
 angular.module('dcmetrometricsApp')
-  .controller('UnitCtrl', ['$scope', '$route', 'unitService', 'directory', 'statusTableUtils',
+  .controller('UnitPageCtrl', ['$scope', '$route', 'unitService', 'directory', 'statusTableUtils',
     function ($scope, $route, unitService, directory, statusTableUtils) {
 
       $scope.$route = $route;

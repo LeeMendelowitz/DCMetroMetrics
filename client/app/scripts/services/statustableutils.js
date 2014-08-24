@@ -44,4 +44,5 @@ angular.module('dcmetrometricsApp')
       return duration;
     };
 
+
   });

@@ -43,7 +43,7 @@ angular
       })
       .when('/units/:unitId', {
         templateUrl: 'views/unit.html',
-        controller: 'UnitCtrl'
+        controller: 'UnitPageCtrl'
       })
       .otherwise({
         redirectTo: '/home'

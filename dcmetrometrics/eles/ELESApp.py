@@ -137,7 +137,7 @@ class ELESApp(object):
         INFO("Have %i outages."%len(incidents))
 
         # Update the database with units that changed status.
-        INFO("Processing Changes units.")
+        INFO("Processing changed units.")
         changed_units = self.processIncidents(incidents, curTime, log = self.log)
 
         # Make tweets, but do not send them.
@@ -163,8 +163,12 @@ class ELESApp(object):
 
         if changed_units:
         # if True:
-            INFO("Writing station directory.")
+            INFO("Writing station directory json.")
             self.json_writer.write_station_directory()
+
+            INFO("Writing recent updates json.")
+            self.json_writer.write_recent_updates()
+
 
         # TODO: Broadcast tweets on twitter
         INFO("Done tick.")

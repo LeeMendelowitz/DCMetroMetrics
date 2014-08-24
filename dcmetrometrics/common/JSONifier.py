@@ -75,4 +75,22 @@ class JSONWriter(object):
       fout.write(jdata)
 
 
+  def write_recent_updates(self):
+    """
+    Write a list of recent status changes
+    """
+
+    recent = list(UnitStatus.objects.order_by('-time')[:20])
+    jdata = dumps(recent, cls = WebJSONEncoder)
+
+    # Create the directory if necessary
+    outdir = os.path.join(self.basedir, 'json')
+    mkdir_p(outdir)
+
+    fname = 'recent_updates.json'
+    outpath = os.path.join(outdir, fname)
+
+    with open(outpath, 'w') as fout:
+      fout.write(jdata)
+
 

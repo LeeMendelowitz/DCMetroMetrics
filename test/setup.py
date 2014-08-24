@@ -73,3 +73,22 @@ fixSysPath()
 #setupDB()
 print 'DONE'
 print '*'*50 + '\n\n'
+
+
+print "Setting up logging"
+###############################################################
+# Log the ELES App to a file.
+import logging
+LOG_FILE_NAME = os.path.join(DATA_DIR, 'ELESApp.log')
+fh = logging.FileHandler(LOG_FILE_NAME)
+sh = logging.StreamHandler(sys.stderr)
+
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+fh.setFormatter(formatter)
+sh.setFormatter(formatter)
+
+logger = logging.getLogger('ELESApp')
+logger.addHandler(fh)
+logger.addHandler(sh)
+print "Done setting up logging"
+#################################################################

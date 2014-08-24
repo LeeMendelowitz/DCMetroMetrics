@@ -106,7 +106,7 @@ def update_symptom_codes():
 def update_symptom_code_category():
   """Update the symptom categories"""
   from dcmetrometrics.eles import models, defs
-  for s in SymptomCode.objects:
+  for i,s in enumerate(SymptomCode.objects):
     category = defs.symptomToCategory[s.description]
     s.category = category
     s.save()
@@ -200,8 +200,16 @@ def delete_units_missing_statuses():
   units = Unit.objects
   start = datetime.now()
   n = len(units)
+  report_interval = max(int(n/100 + 0.5), 1)
+  report_counter = 0
   for i, unit in enumerate(Unit.objects):
-    print "Checking unit %s: %i of %i (%.2f%%)"%(unit.unit_id, i, n, 100.0*i/n)
+    report_counter += 1
+    if report_counter == report_interval:
+      sys.stdout.write(".")
+      sys.stdout.flush()
+      report_counter = 0
+
+   # print "Checking unit %s: %i of %i (%.2f%%)"%(unit.unit_id, i, n, 100.0*i/n)
     statuses = unit.get_statuses()
     if len(statuses) == 0:
       # Delete the unit, delete key statuses
@@ -211,17 +219,77 @@ def delete_units_missing_statuses():
       unit.delete()
 
   elapsed = (datetime.now() - start).total_seconds()
-  print "%.2f seconds elapsed"%elapsed
+  sys.stdout.write("\n%.2f seconds elapsed\n"%elapsed)
 
 def bad_key_statuses():
   """Return key statuses where we can't dereference the unit"""
   from dcmetrometrics.eles.models import KeyStatuses
   ks = KeyStatuses.objects.select_related()
   bad = []
+
+
   for k in ks:
     try:
-      print k.unit.unit_id
+      a = k.unit.unit_id
     except Exception as e:
       bad.append(k)
   return bad
+
+
+def add_status_update_type():
+  """Fill in the update field for all statuses"""
+  from dcmetrometrics.eles.models import Unit, KeyStatuses
+  units = Unit.objects
+  start = datetime.now()
+  n = len(units)
+  for i, unit in enumerate(units):
+    print "Updating status types for unit %s: %i of %i (%.2f%%)"%(unit.unit_id, i, n, 100.0*i/n)
+    statuses = unit.get_statuses()[::-1] # Sort in ascending order of time
+    was_broken = False
+    was_off = False
+    is_first = True
+    it = iter(statuses)
+    for s in statuses:
+
+      if is_first:
+        s.update_type = 'Update'
+        s.save()
+        is_first = False
+        continue
+
+      # Handle now on case
+      if s.symptom_category == 'ON':
+        if was_broken:
+          s.update_type = 'Fix'
+        else:
+          s.update_type = 'On'
+        was_broken = False
+        was_off = False
+
+      # Handle now broken case
+      elif s.symptom_category == 'BROKEN':
+
+        if was_broken:
+          s.update_type = 'Update'
+        else:
+          s.update_type = 'Break'
+
+        was_off = True
+        was_broken = True
+
+      # Handle now off for other reason case
+      else:
+
+        if not was_off:
+          s.update_type = 'Off'
+        else:
+          s.update_type = 'Update'
+
+        was_off = True
+
+      s.save()
+
+  elapsed = (datetime.now() - start).total_seconds()
+  print "%.2f seconds elapsed"%elapsed
+
   

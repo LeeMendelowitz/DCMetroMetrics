@@ -1,4 +1,4 @@
-'use strict';
+  'use strict';
 
 /**
  * @ngdoc filter
@@ -11,6 +11,8 @@
 angular.module('dcmetrometricsApp')
   .filter('duration', function () {
     return function (input) {
+      
+      // Input is in milliseconds. Convert to seconds.
       var seconds = parseInt(input)/1000.0;
       var days = 0, hours = 0, minutes = 0;
       var remainder = seconds;

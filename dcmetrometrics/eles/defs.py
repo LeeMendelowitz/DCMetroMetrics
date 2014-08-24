@@ -19,7 +19,10 @@ offStatuses = ['SAFETY WORK ORDER',
                'TURNED OFF/WALKER',
                'SCHEDULED SUPPORT',
                'PREV. MAINT. REPAIRS',
-               'Inspection Repair']
+               'Inspection Repair',
+               'Walker',
+               'Scheduled Support',
+               'Preventive Maintenance Repairs']
 
 inspectStatuses = ['SAFETY INSPECTION',
                    'PREV. MAINT. INSPECTION',

@@ -11,6 +11,9 @@ from .misc_utils import *
 from datetime import timedelta
 import sys
 
+import logging
+logger = logging.getLogger('ELESApp')
+
 class WebJSONMixin(object):
 
   def to_web_json(self):
@@ -72,6 +75,7 @@ class SymptomCode(Document):
       symptom = cls(description=description, 
                  category = symptomToCategory[description])
       symptom.save()
+      logger.info("Saving new symptom: " + description)
     except NotUniqueError:
       pass
 
@@ -244,6 +248,7 @@ class Unit(WebJSONMixin, Document):
     try:
       unit = Unit.objects.get(unit_id = unit_id)
     except DoesNotExist:
+      logger.info("Adding Unit to DB: " + unit_id)
       unit = cls(**kwargs)
       unit.save()
 
@@ -257,6 +262,7 @@ class Unit(WebJSONMixin, Document):
 
         G = dbGlobals.G()
 
+        
         first_status = UnitStatus(escalator_id = unit.id,
                                   time = curTime - timedelta(seconds=1),
                                   tickDelta = 0,
@@ -264,14 +270,17 @@ class Unit(WebJSONMixin, Document):
         first_status.denormalize()
         first_status.save()
 
-        key_statuses = KeyStatuses(unit = unit)
-        key_statuses.lastOperationalStatus = first_status
-        key_statuses.lastStatus = first_status
-        key_statuses.save()
+        logger.info("Saving first status for unit:\n" + str(first_status))
+
+        unit.compute_key_statuses()
+        # key_statuses = KeyStatuses(unit = unit)
+        # key_statuses.lastOperationalStatus = first_status
+        # key_statuses.lastStatus = first_status
+        # key_statuses.save()
 
     elif not has_key_statuses:
       # Compute key statuses from the unit's history.
-      sys.stderr.write("Could not find a key status entry for unit %s. Building one from the unit's status history\n"%unit.id)
+      logger.info("Could not find a key status entry for unit %s. Building one from the unit's status history\n"%unit.id)
       unit.compute_key_statuses()
 
   def get_statuses(self, *args, **kwargs):
@@ -369,9 +378,11 @@ class Unit(WebJSONMixin, Document):
         # If a KeyStatuses record already exists for this unit, delete it.
         old_key_statuses = KeyStatuses.objects(unit = self).get()
         old_key_statuses.delete()
+        logger.info("Deleting existing key statuses entry for unit: " + self.unit_id)
       except DoesNotExist:
         pass
 
+      logger.info("Saving key statuses entry for unit: " + self.unit_id)
       key_statuses.save()
       
       return key_statuses
@@ -531,6 +542,8 @@ class UnitStatus(WebJSONMixin, Document):
   symptom_description = StringField()
   symptom_category = StringField(choices=SYMPTOM_CHOICES)
 
+  update_type = StringField(choices = ('Off', 'On', 'Break', 'Fix', 'Update'))
+
 
 
   #######################
@@ -539,6 +552,7 @@ class UnitStatus(WebJSONMixin, Document):
           'index' : [('escalator_id', '-time')]}
 
   web_json_fields = ['unit_id', 'time', 'end_time', 'metro_open_time',
+    'update_type',
     'tickDelta', 'symptom_description', 'symptom_category']
 
   def clean(self):
@@ -552,7 +566,10 @@ class UnitStatus(WebJSONMixin, Document):
 
   #######################
   def __str__(self):
-    keys = ['unit_id', 'station_name', 'station_desc', 'esc_desc', 'unit_type', 'time', 'end_time', 'metro_open_time']
+    keys = ['unit_id', 'station_name', 'station_desc',
+    'esc_desc', 'unit_type', 'symptom_description', 'symptom_category',
+    'update_type',
+    'time', 'end_time', 'metro_open_time']
     output = '' 
     output += '\tunit: %s\n'%self.unit_id
     output += '\tsymptom: %s\n'%self.symptom.description
@@ -676,7 +693,9 @@ class KeyStatuses(WebJSONMixin, Document):
   lastStatus = ReferenceField(UnitStatus, required = True) # The most recent status
   
   #################################
-  meta = {'collection' : 'key_statuses'}
+  meta = {'collection' : 'key_statuses',
+          'indexes': ['unit']
+  }
 
   web_json_fields = ['lastFixStatus', 'lastBreakStatus', 'lastInspectionStatus',
   'lastOperationalStatus', 'currentBreakStatus', 'lastStatus']
@@ -712,6 +731,10 @@ class KeyStatuses(WebJSONMixin, Document):
         self.lastBreakStatus = self.currentBreakStatus
         self.currentBreakStatus = None
         self.lastFixStatus = unit_status
+        unit_status.update_type = 'Fix'
+      else:
+        unit_status.update_type = 'On'
+
 
     elif unit_status.symptom_category == 'BROKEN':
       self.lastBrokenStatus = unit_status
@@ -719,11 +742,22 @@ class KeyStatuses(WebJSONMixin, Document):
       if not self.currentBreakStatus:
         # This is a new break.
         self.currentBreakStatus = unit_status
+        unit_status.update_type = 'Break'
+      else:
+        unit_status.update_type = 'Update'
+
 
     elif unit_status.symptom_category == 'INSPECTION':
+
       self.lastInspectionStatus = unit_status
 
+      if self.lastStatus.symptom_category == "ON":
+        unit_status.update_type = 'Off'
+      else:
+        unit_status.update_Type = 'Update'
+
     self.lastStatus = unit_status
+    unit_status.save()
     self.save()
 
 

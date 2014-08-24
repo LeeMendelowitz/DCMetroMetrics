@@ -13,9 +13,12 @@ angular.module('dcmetrometricsApp')
     
     // AngularJS will instantiate a singleton by calling "new" on this function
 
-    var url = "/json/station_directory.json";
+    var directoryUrl = "/json/station_directory.json";
+    var recentUpdateUrl = "/json/recent_updates.json";
 
     var stationDirectory, shortNameToData, codeToData, escalatorOutages, elevatorOutages;
+    var recentUpdates, unitIdToUnit;
+
 
     this.get_directory = function() {
       
@@ -28,12 +31,13 @@ angular.module('dcmetrometricsApp')
                      shortNameToData: shortNameToData,
                      codeToData: codeToData,
                      escalatorOutages: escalatorOutages,
-                     elevatorOutages: elevatorOutages } ;
+                     elevatorOutages: elevatorOutages,
+                     unitIdToUnit: unitIdToUnit } ;
           deferred.resolve(ret);
           return deferred.promise;
       }
 
-      $http.get(url, { cache: true })
+      $http.get(directoryUrl, { cache: true })
         .success( function(d) {
 
           var i, unit;
@@ -45,6 +49,9 @@ angular.module('dcmetrometricsApp')
           codeToData = {};
           escalatorOutages = [];
           elevatorOutages = [];
+
+          unitIdToUnit = {};
+
           for   (var station in stationDirectory) {
 
             var stationData = stationDirectory[station];
@@ -55,6 +62,7 @@ angular.module('dcmetrometricsApp')
               if (unit.key_statuses.lastStatus.symptom_category != "ON" ) {
                 escalatorOutages.push(unit);
               }
+              unitIdToUnit[unit.unit_id] = unit;
             }
 
             for (i = 0; i < stationData.elevators.length; i++) {
@@ -62,6 +70,7 @@ angular.module('dcmetrometricsApp')
               if (unit.key_statuses.lastStatus.symptom_category !== "ON" ) {
                 elevatorOutages.push(unit);
               }
+              unitIdToUnit[unit.unit_id] = unit;
             }
 
             shortNameToData[shortName] = stationData;
@@ -76,7 +85,8 @@ angular.module('dcmetrometricsApp')
                      shortNameToData: shortNameToData,
                      codeToData: codeToData,
                      escalatorOutages: escalatorOutages,
-                     elevatorOutages: elevatorOutages };
+                     elevatorOutages: elevatorOutages,
+                     unitIdToUnit: unitIdToUnit };
           deferred.resolve(ret);
         })
         .error(function() {
@@ -87,5 +97,71 @@ angular.module('dcmetrometricsApp')
       return deferred.promise;
 
     };
+
+    this.get_recent_updates = function() {
+      
+      // Return a promise that gives the station directory.
+      var deferred = $q.defer();
+      var ret;
+
+      if (recentUpdates) {
+          deferred.resolve(recentUpdates);
+          return deferred.promise;
+      }
+
+      $http.get(recentUpdateUrl, { cache: true })
+        .success( function(d) {
+          recentUpdates = d;
+          deferred.resolve(d);
+        })
+        .error(function() {
+          deferred.reject();
+        });
+
+      // Return a promise
+      return deferred.promise;
+
+    };
+
+    // Get the station url for a unit.
+    this.getStationUrl = function(unit) {
+
+        if(!unit || !codeToData) { return undefined;}
+        var sd = codeToData[unit.station_code];
+        return "#/stations/" + sd.short_name;
+
+    };
+
+
+    this.getStationName = function(unit) {
+        var sd = unit && codeToData && codeToData[unit.station_code];
+        return sd && sd.long_name;
+    };
+
+
+    // Get station lines for a unit
+    this.getStationLines = function(unit) {
+
+      if (!unit) { return undefined; }
+
+      if (codeToData && unit) {
+        var sd = codeToData[unit.station_code];
+        return sd && sd.all_lines;
+      }
+
+    };
+
+    // Get the unit object for a status
+    this.unitFromStatus = function(status) {
+      return status && unitIdToUnit &&
+       unitIdToUnit[status.unit_id];
+    };
+
+    // Get station lines for a status
+    this.getStationLinesForStatus = function(status) {
+      var unit = status && this.unitFromStatus(status);
+      return unit && this.getStationLines(unit);
+    };
+
 
   }]);
