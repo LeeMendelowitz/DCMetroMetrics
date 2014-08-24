@@ -37,14 +37,20 @@
 <h3>Statuses</h3>
 
 <table class = "table table-bordered table-hover">
+  <thead>
   <tr>
     <th>Time</th>
     <th>Status</th>
+    <th>Type</th>
     <th>Duration</th>
   </tr>
+  </thead>
+  <tbody>
   <tr ng-repeat = "status in unitData.statuses" class = "{{statusTableUtils.getRowClass(status)}}">
     <td> {{ status.time | date:'short' }} </td>
-    <td> {{ status.symptom_description }} </td>
+    <td> {{ status.symptom_description | capFirst }} </td>
+    <td> {{ status.update_type }} </td>
     <td> {{ statusTableUtils.getDuration(status) | duration }} </td>
   </tr>
+  </tbody>
 </table>

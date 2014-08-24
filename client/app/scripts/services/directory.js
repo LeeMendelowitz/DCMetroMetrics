@@ -163,5 +163,16 @@ angular.module('dcmetrometricsApp')
       return unit && this.getStationLines(unit);
     };
 
+    this.unitDescription = function(unit){
+      var ret = "";
+      if (!unit) { return undefined; }
+      if (unit.station_desc) {
+        ret = unit.station_desc + ", " + unit.esc_desc;
+      } else {
+        ret = unit.esc_desc;
+      }
+      return ret;
+    };
+
 
   }]);
