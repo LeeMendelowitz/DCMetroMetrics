@@ -53,7 +53,7 @@
 <!--       <td><pre>{{ getStationUrl( unitFromStatus(s) ) }}</pre></td> -->
       <td>{{ status.symptom_description | capFirst }}</td>
       <td>{{ status.update_type }}</td>
-      <td>{{ statusTableUtils.getDuration(status) | duration }} ago</td>
+      <td>{{ statusTableUtils.getTimeSince(status) | duration }} ago</td>
     </tr>
   </table>
 

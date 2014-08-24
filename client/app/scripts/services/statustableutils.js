@@ -44,5 +44,12 @@ angular.module('dcmetrometricsApp')
       return duration;
     };
 
+    this.getTimeSince = function(status) {
+      var start_time = new Date(status.time);
+      var timeSince = getNow() - start_time;
+      return timeSince;
+    };
+
+
 
   });
