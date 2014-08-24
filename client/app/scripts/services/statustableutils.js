@@ -15,7 +15,7 @@ angular.module('dcmetrometricsApp')
     var catToClass = {
           BROKEN : 'danger',
           INSPECTION : 'warning',
-          OFF : 'danger',
+          OFF : 'warning',
           ON : 'success',
           REHAB : 'info'
     };

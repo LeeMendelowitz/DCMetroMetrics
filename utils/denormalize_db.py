@@ -151,17 +151,25 @@ If successful, will backup to collection escalator_statuses_old..."""
     s_new.save()
 
 
-def write_units_json():
-  """Write json files for each unit
+def write_json():
+  """Generate all json files.
   """
   from dcmetrometrics.common.JSONifier import JSONWriter
   import os
+
   jwriter = JSONWriter(basedir = os.path.join('client', 'app'))
+
   from dcmetrometrics.eles.models import Unit
   num_units = Unit.objects.count()
   for i, unit in enumerate(Unit.objects):
     print 'Writing unit %i of %i: %s'%(i, num_units, unit.unit_id)
     jwriter.write_unit(unit)
+
+  # Write the station directory
+  jwriter.write_station_directory()
+
+  # Write the recent updates
+  jwriter.write_recent_updates()  
 
 def delete_recent_statuses():
   """Delete statuses from the past two days.
@@ -291,5 +299,24 @@ def add_status_update_type():
 
   elapsed = (datetime.now() - start).total_seconds()
   print "%.2f seconds elapsed"%elapsed
+
+def update_2014_08_24():
+
+  # First, update the status classifications using the latest defs.
+  print "Updating symptom code categories."
+  update_symptom_code_category()
+
+  # Now denormalize all the unit statuses to bring them up to date.
+  print "Denormalizing unit statuses."
+  denormalize_unit_statuses()
+
+  print "Adding status update types."
+  add_status_update_type()
+
+  print "Generating all JSON"
+  write_json()
+
+
+
 
   

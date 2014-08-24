@@ -78,16 +78,7 @@ angular.module('dcmetrometricsApp')
 
       };
 
-      $scope.unitDescription = function(unit){
-        var ret = "";
-        if (!unit) { return undefined; }
-        if (unit.station_desc) {
-          ret = unit.station_desc + ", " + unit.esc_desc;
-        } else {
-          ret = unit.esc_desc;
-        }
-        return ret;
-      };
+
 
       $scope.selectEscalatorTab = function() {
         console.log("selected escalator tab");
