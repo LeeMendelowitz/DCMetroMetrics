@@ -21,31 +21,38 @@
   <!-- Table of recent outages -->
   <h4>Recent Updates</h4>
 
-  <table class="table table-bordered">
+  <table class="table table-bordered table-condensed table-striped">
     <thead>
       <tr>
-        <th>Unit</th>
-        <th>Station</th>
-        <th>Type</th>
-        <th>Description</th>
-        <th>Time</th>
+        <th class="col-sm-2">Unit</th>
+        <th class="col-sm-5">Description</th>
+        <th class="col-sm-2">Status</th>
+        <th class="col-sm-1">Type</th>
+        <th class="col-sm-2">When</th>
       </tr>
     </thead>
 
     <tr ng-repeat="status in recentUpdates" ng-controller="StatusentryCtrl">
-      <td><a ng-href="#/units/{{status.unit_id}}">{{ status.unit_id | unitIdToHuman }}</a> 
+      <td>
+        <a ng-href="#/units/{{status.unit_id}}">{{ status.unit_id | unitIdToHuman }}</a> 
       </td>
-      <td><a ng-href="{{ directory.getStationUrl( directory.unitFromStatus(status)) }}">
-      {{ directory.getStationName(directory.unitFromStatus(status)) }}
-      <lineColors lines="directory.getStationLinesForStatus(status).join()"></lineColors>
-      </a>
+
+      <td>
+
+        <a ng-href="{{ directory.getStationUrl( directory.unitFromStatus(status)) }}">
+        {{ directory.getStationName(directory.unitFromStatus(status)) }}
+        <lineColors lines="directory.getStationLinesForStatus(status).join()"></lineColors>
+        </a>
+        <br>
+        {{ directory.unitDescription(unit) }}
+
       </td>
 <!--        <td><a ng-href="{{ getStationUrl( unitFromStatus(s) ) }}">
        {{ getStationName( unitFromStatus(s) ) }}
        </a></td> -->
 <!--       <td><pre>{{ getStationUrl( unitFromStatus(s) ) }}</pre></td> -->
-      <td>{{ status.update_type }}</td>
       <td>{{ status.symptom_description | capFirst }}</td>
+      <td>{{ status.update_type }}</td>
       <td>{{ statusTableUtils.getDuration(status) | duration }} ago</td>
     </tr>
   </table>
