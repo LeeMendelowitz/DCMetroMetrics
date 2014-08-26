@@ -13,6 +13,7 @@ from datetime import datetime
 from dcmetrometrics.common.dbGlobals import G
 from dcmetrometrics.eles import dbUtils
 from dcmetrometrics.eles.models import Unit, SymptomCode, UnitStatus
+from datetime import timedelta
 
 
 def denormalize_unit_statuses():
@@ -171,13 +172,13 @@ def write_json():
   # Write the recent updates
   jwriter.write_recent_updates()  
 
-def delete_recent_statuses():
+def delete_recent_statuses(time_delta = timedelta(hours = 2)):
   """Delete statuses from the past two days.
   Recompute keystatuses for affected units"""
   from dcmetrometrics.common import metroTimes
-  from datetime import timedelta
+
   from dcmetrometrics.eles.models import UnitStatus
-  t0 = metroTimes.utcnow() - timedelta(days = 2)
+  t0 = metroTimes.utcnow() - time_delta
   statuses = UnitStatus.objects(time__gt = t0)
   units = set(s.unit for s in statuses)
   print "Deleting %i recent statuses"%len(statuses)
