@@ -754,14 +754,14 @@ class KeyStatuses(WebJSONMixin, Document):
       if self.lastStatus.symptom_category == "ON":
         unit_status.update_type = 'Off'
       else:
-        unit_status.update_Type = 'Update'
+        unit_status.update_type = 'Update'
 
     elif unit_status.symptom_category == 'OFF':
 
       if self.lastStatus.symptom_category == "ON":
         unit_status.update_type = "Off"
       else:
-        unit_Status.update_Type = "Update"
+        unit_Status.update_type = "Update"
 
 
     self.lastStatus = unit_status
