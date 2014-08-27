@@ -8,6 +8,8 @@ from .utils import mkdir_p
 
 
 from ..eles.models import (Unit, UnitStatus, KeyStatuses, Station)
+from ..hotcars.models import (HotCarReport, Temperature)
+from ..common.WebJSONMixin import WebJSONMixin
 
 class WebJSONEncoder(JSONEncoder):
   """JSON Encoder for DC Metro Metrics data types.
@@ -21,7 +23,7 @@ class WebJSONEncoder(JSONEncoder):
        return o.isoformat()
 
     # Convert ELES models
-    elif isinstance(o, (Unit, UnitStatus, Station, KeyStatuses)):
+    elif isinstance(o, (WebJSONMixin)):
       return o.to_web_json()
 
     # Let the base class default method raise the TypeError
@@ -92,5 +94,24 @@ class JSONWriter(object):
 
     with open(outpath, 'w') as fout:
       fout.write(jdata)
+
+  def write_hotcars(self):
+    """
+    Write all hot car reports
+    """
+    recent = list(HotCarReport.objects.order_by('-time').select_related())
+    jdata = dumps(recent, cls = WebJSONEncoder)
+
+    # Create the directory if necessary
+    outdir = os.path.join(self.basedir, 'json')
+    mkdir_p(outdir)
+
+    fname = 'hotcar_reports.json'
+    outpath = os.path.join(outdir, fname)
+
+    with open(outpath, 'w') as fout:
+      fout.write(jdata)
+
+
 
 

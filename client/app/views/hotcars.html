@@ -1,0 +1,23 @@
+<h1>HotCars</h1>
+
+<p>To report a hot car, tweet a single 4 digit car number with the line color and hashtags #wmata #hotcar.</p>
+
+<table class = "table table-bordered table-striped">
+<thead>
+  <tr>
+    <th>Car</th>
+    <th>Tweet</th>
+  </tr>
+</thead>
+<tbody>
+  <tr ng-repeat = "report in allReports.slice(0,10)">
+    <td>{{ report.car_number }}</td>
+    <td>{{ report.tweet.text }}</td>
+  </tr>
+</tbody>
+<table>
+<tr><td>Row of dummy data</td></tr>
+<tr ng-repeat = "report in allReports.slice(0,10)">
+  <td><pre>{{ report | json }}</pre></td>
+</tr>
+</table>

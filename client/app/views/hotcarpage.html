@@ -1,0 +1,16 @@
+<h1>Hotcar {{ carNumber }}</h1>
+
+<table class = "table table-bordered">
+  <tr>
+    <th class = "col-sm-2"> # Reports </th>
+    <td class = "col-sm-2"> {{ reports.length }} </td>
+  </tr>
+  <tr>
+    <th> Lines </th>
+    <td> {{ colorString }} <linecolors lines="{{ colorString }}"></td>
+  </tr>
+</table>
+
+
+<h2>Tweets</h2>
+<tweetline reports="reports"></tweetline>

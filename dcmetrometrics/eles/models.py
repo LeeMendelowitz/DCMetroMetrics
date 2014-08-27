@@ -5,6 +5,7 @@ Models for eles data.
 from mongoengine import *
 from operator import attrgetter
 from ..common.metroTimes import TimeRange, UTCToLocalTime, toUtc
+from ..common.WebJSONMixin import WebJSONMixin
 from .defs import symptomToCategory, SYMPTOM_CHOICES
 from ..common import dbGlobals
 from .misc_utils import *
@@ -13,14 +14,6 @@ import sys
 
 import logging
 logger = logging.getLogger('ELESApp')
-
-class WebJSONMixin(object):
-
-  def to_web_json(self):
-    
-    fields = getattr(self, 'web_json_fields', [])
-
-    return dict((k, getattr(self, k, None)) for k in fields)
 
 class SymptomCodeOld(Document):
   """

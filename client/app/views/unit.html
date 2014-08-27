@@ -4,7 +4,7 @@
   <tr>
     <th>Station</th>
     <td><a href="#/stations/{{stationData.short_name}}">{{ stationData.long_name }}
-    <lineColors lines="stationData.all_lines.join()"></lineColors>
+    <lineColors lines="{{stationData.all_lines.join(',')}}"></lineColors>
     </a></td>
   </tr>
   <tr ng-show = "{{ unitData.unit.station_desc }}">

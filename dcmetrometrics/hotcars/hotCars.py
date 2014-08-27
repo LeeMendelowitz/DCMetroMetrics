@@ -16,7 +16,7 @@ from operator import itemgetter
 from ..third_party.twitter import TwitterError
 from ..common import twitterUtils
 from ..common.metroTimes import utcnow, toLocalTime, UTCToLocalTime, tzutc
-
+    
 ME = 'MetroHotCars'.upper()
 
 # Words which are not allowed in tweets which mention
@@ -422,11 +422,14 @@ def updateDBFromTweet(db, tweet, hotCarData, log=sys.stderr):
     carNums = hotCarData['cars']
     colors = hotCarData['colors']
     carNum = int(carNums[0])
-    color = colors[0] if colors and len(colors)==1 else 'NONE'
+    color = colors[0] if colors and len(colors)==1 else None
     doc = {'tweet_id' : tweet.id,
            'car_number' : carNum,
-           'color' : color,
            'time' : makeUTCDateTime(tweet.created_at_in_seconds)}
+           
+    if color:
+        doc['color'] = color
+
     count = db.hotcars.find({'tweet_id' : tweet.id}).count()
     if count == 0:
         log.write('Updating hotcars collection with tweet %i\n'%tweet.id)

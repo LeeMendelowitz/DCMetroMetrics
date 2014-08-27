@@ -41,6 +41,7 @@
               <ul class="nav navbar-nav">
                 <li data-match-route="/outages"><a href="#/outages">Outages</a></li>
                 <li data-match-route="/stations"><a href="#/stations">Stations</a></li>
+                <li data-match-route="/hotcars"><a href="#/hotcars">HotCars</a></li>
 <!--                 <li data-match-route="/rankings"><a href="#/rankings">Rankings</a></li>
                 <li data-match-route="/hotcars"><a href="#/hotcars">HotCars</a></li>
                 <li data-match-route="/data"><a href="#/data">Data</a></li> -->
@@ -138,6 +139,7 @@
     <script src="bower_components/angular-strap/dist/angular-strap.min.js"></script>
     <script src="bower_components/angular-strap/dist/angular-strap.tpl.min.js"></script>
     <script src="bower_components/angular-bootstrap/ui-bootstrap-tpls.js"></script>
+    <script src="bower_components/angular-ui-router/release/angular-ui-router.js"></script>
     <!-- endbower -->
     <!-- endbuild -->
 
@@ -159,6 +161,22 @@
         <script src="scripts/controllers/statusentry.js"></script>
         <script src="scripts/controllers/unitentry.js"></script>
         <script src="scripts/filters/capfirst.js"></script>
+        <script src="scripts/services/hotcardirectory.js"></script>
+        <script src="scripts/controllers/hotcardirectory.js"></script>
+        <script src="scripts/controllers/hotcarpage.js"></script>
+        <script src="scripts/directives/tweetline.js"></script>
         <!-- endbuild -->
+
+        <!-- TWITTER WIDGETS.js -->
+        <script>
+        window.twttr = (function (d, s, id) {
+          var t, js, fjs = d.getElementsByTagName(s)[0];
+          if (d.getElementById(id)) return;
+          js = d.createElement(s); js.id = id; js.src= "https://platform.twitter.com/widgets.js";
+          fjs.parentNode.insertBefore(js, fjs);
+          return window.twttr || (t = { _e: [], ready: function (f) { t._e.push(f) } });
+        }(document, "script", "twitter-wjs"));
+        </script>
+
 </body>
 </html>

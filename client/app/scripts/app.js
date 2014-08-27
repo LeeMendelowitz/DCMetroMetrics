@@ -45,6 +45,14 @@ angular
         templateUrl: 'views/unit.html',
         controller: 'UnitPageCtrl'
       })
+      .when('/hotcars', {
+        templateUrl: 'views/hotcars.html',
+        controller: 'HotCarDirectoryCtrl'
+      })
+      .when('/hotcars/:carNumber', {
+        templateUrl: 'views/hotcarpage.html',
+        controller: 'HotcarpageCtrl'
+      })
       .otherwise({
         redirectTo: '/home'
       });

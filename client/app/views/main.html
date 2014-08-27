@@ -41,7 +41,7 @@
 
         <a ng-href="{{ directory.getStationUrl( directory.unitFromStatus(status)) }}">
         {{ directory.getStationName(directory.unitFromStatus(status)) }}
-        <lineColors lines="directory.getStationLinesForStatus(status).join()"></lineColors>
+        <lineColors lines="{{directory.getStationLinesForStatus(status).join()}}"></lineColors>
         </a>
         <br>
         {{ directory.unitDescription(unit) }}

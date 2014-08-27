@@ -17,7 +17,7 @@
           </tr>
           <tr ng-repeat = "unit in escalatorOutages" ng-controller="UnitentryCtrl" >
             <td><a ng-href="#/units/{{unit.unit_id}}">{{ unit.unit_id.substring(0,6) }}</a></td>
-            <td><a ng-href="{{directory.getStationUrl(unit)}}">{{ directory.getStationName(unit) }} <lineColors lines="stationLines.join()"></lineColors></a></td>
+            <td><a ng-href="{{directory.getStationUrl(unit)}}">{{ directory.getStationName(unit) }} <lineColors lines="{{stationLines.join()}}"></lineColors></a></td>
             <td>{{ directory.unitDescription(unit) }}</td>
             <td>{{ unit.key_statuses.lastStatus.symptom_description}}</td>
           </tr>
@@ -39,7 +39,7 @@
           </tr>
           <tr ng-repeat = "unit in elevatorOutages" ng-controller="UnitentryCtrl">
             <td><a ng-href="#/units/{{unit.unit_id}}">{{ unit.unit_id.substring(0,6) }}</a></td>
-            <td><a ng-href="{{directory.getStationUrl(unit)}}">{{ directory.getStationName(unit) }}<lineColors lines="stationLines.join()"></lineColors></a></td>
+            <td><a ng-href="{{directory.getStationUrl(unit)}}">{{ directory.getStationName(unit) }}<lineColors lines="{{stationLines.join()}}"></lineColors></a></td>
             <td>{{ directory.unitDescription(unit) }}</td>
             <td>{{ unit.key_statuses.lastStatus.symptom_description | capFirst }}</td>
           </tr>

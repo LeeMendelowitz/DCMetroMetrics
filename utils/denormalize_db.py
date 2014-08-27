@@ -319,5 +319,14 @@ def update_2014_08_24():
 
 
 
+def update_2014_08_25():
+    # If a hot car has a color of NONE, set to None.
+    from dcmetrometrics.hotcars.models import HotCarReport
+    count = 0
+    for hc in HotCarReport.objects(color = "NONE"):
+      count += 1
+      hc.color = None
+      hc.save()
+    print "Reset color on %i records"%count
 
   
