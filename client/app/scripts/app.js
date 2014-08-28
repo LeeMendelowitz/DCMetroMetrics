@@ -17,7 +17,8 @@ angular
     'ngSanitize',
     'ngTouch',
     'mgcrea.ngStrap',
-    'ui.bootstrap'
+    'ui.bootstrap',
+    'ngTable'
   ])
   .config(function ($routeProvider) {
     $routeProvider
