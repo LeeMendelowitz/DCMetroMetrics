@@ -8,7 +8,7 @@
  *
  * Main module of the application.
  */
-angular
+var app = angular
   .module('dcmetrometricsApp', [
     'ngAnimate',
     'ngCookies',
@@ -18,9 +18,12 @@ angular
     'ngTouch',
     'mgcrea.ngStrap',
     'ui.bootstrap',
-    'ngTable'
-  ])
-  .config(function ($routeProvider) {
+    'ngTable',
+    'angular-loading-bar',
+    'angularSpinner'
+  ]);
+
+app.config(function ($routeProvider) {
     $routeProvider
       .when('/home', {
         templateUrl: 'views/main.html',
@@ -57,4 +60,8 @@ angular
       .otherwise({
         redirectTo: '/home'
       });
-  });
+});
+
+app.config(['cfpLoadingBarProvider', function(cfpLoadingBarProvider) {
+    cfpLoadingBarProvider.latencyThreshold = 100;
+}]);

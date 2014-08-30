@@ -11,9 +11,11 @@
     <link rel="stylesheet" href="bower_components/bootstrap/dist/css/bootstrap.css" />
     <link rel="stylesheet" href="bower_components/angular-motion/dist/angular-motion.min.css" />
     <link rel="stylesheet" href="bower_components/ng-table/ng-table.css" />
+    <link rel="stylesheet" href="bower_components/angular-loading-bar/build/loading-bar.css" />
     <!-- endbower -->
     <!-- endbuild -->
     <!-- build:css(.tmp) styles/main.css -->
+    <link rel="stylesheet" href="styles/animate.css">
     <link rel="stylesheet" href="styles/main.css">
     <!-- endbuild -->
   </head>
@@ -118,6 +120,33 @@
       ga('send', 'pageview');
     </script>
 
+
+      <!-- TWITTER WIDGETS.js -->
+      <script>
+        window.twttr = (function (d, s, id) {
+          var t, js, fjs = d.getElementsByTagName(s)[0];
+          if (d.getElementById(id)) return;
+          js = d.createElement(s); js.id = id; js.src= "https://platform.twitter.com/widgets.js";
+          fjs.parentNode.insertBefore(js, fjs);
+          return window.twttr || (t = { _e: [], ready: function (f) { t._e.push(f) } });
+        }(document, "script", "twitter-wjs"));
+        
+        // twttr.ready(function (twttr) {
+
+        //     // bind events here
+        //     twttr.events.bind('loaded', function (event) {
+        //       event.widgets.forEach(function (widget) {
+        //         console.log("Created widget", widget.id);
+        //       });
+        //     });
+
+        //     twttr.events.bind('rendered', function (event) {
+        //       console.log("Created widget", event.target.id);
+        //     });
+
+        // });
+      </script>
+
     <!-- build:js(.) scripts/oldieshim.js -->
     <!--[if lt IE 9]>
     <script src="bower_components/es5-shim/es5-shim.js"></script>
@@ -142,6 +171,9 @@
     <script src="bower_components/angular-bootstrap/ui-bootstrap-tpls.js"></script>
     <script src="bower_components/angular-ui-router/release/angular-ui-router.js"></script>
     <script src="bower_components/ng-table/ng-table.js"></script>
+    <script src="bower_components/angular-loading-bar/build/loading-bar.js"></script>
+    <script src="bower_components/spin.js/spin.js"></script>
+    <script src="bower_components/angular-spinner/angular-spinner.js"></script>
     <!-- endbower -->
     <!-- endbuild -->
 
@@ -169,16 +201,6 @@
         <script src="scripts/directives/tweetline.js"></script>
         <!-- endbuild -->
 
-        <!-- TWITTER WIDGETS.js -->
-        <script>
-        window.twttr = (function (d, s, id) {
-          var t, js, fjs = d.getElementsByTagName(s)[0];
-          if (d.getElementById(id)) return;
-          js = d.createElement(s); js.id = id; js.src= "https://platform.twitter.com/widgets.js";
-          fjs.parentNode.insertBefore(js, fjs);
-          return window.twttr || (t = { _e: [], ready: function (f) { t._e.push(f) } });
-        }(document, "script", "twitter-wjs"));
-        </script>
 
 </body>
 </html>

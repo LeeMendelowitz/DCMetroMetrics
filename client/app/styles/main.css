@@ -117,3 +117,12 @@ body {
 .home .btn {
   margin: 5px;
 }
+
+.tweets.ng-hide-remove {
+    -webkit-animation: fadeIn 1.0s;
+    animation: fadeIn 1.0s;
+}
+
+.hotcar-twitter-section {
+  min-height: 300px;
+}

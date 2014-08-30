@@ -1,5 +1,8 @@
 <h1>Hotcar {{ carNumber }}</h1>
 
+<!-- <button ng-click="toggleThing()">Toggle</button>
+<div ng-show = "showThing">Look at me!</div>
+ -->
 <table class = "table table-bordered">
   <tr>
     <th class = "col-sm-2"> # Reports </th>
@@ -11,6 +14,15 @@
   </tr>
 </table>
 
-
 <h2>Tweets</h2>
-<tweetline reports="reports"></tweetline>
+
+  <div class = "hotcar-twitter-section">
+
+      <span us-spinner spinner-key="tweet-spinner" spinner-start-active="1"></span>
+
+      <div ng-show = "loadedTweets" class="tweets">
+        <p ng-if = "reports && reports.length == 0">There are no reports for this car.</p>
+        <tweetline reports="reports" post-load = "postLoad()"></tweetline>
+      </div>
+
+  </div>
