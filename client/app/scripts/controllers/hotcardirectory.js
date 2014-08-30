@@ -18,11 +18,11 @@ angular.module('dcmetrometricsApp')
     deferred.then( function(data) {
 
       $scope.allReports = data.allReports;
-
       $scope.data = data;
       $scope.summaryByCar = data.summaryByCar;
       $scope.reportsByCar = data.reportsByCar;
       $scope.allSummaries = data.allSummaries;
+      $scope.recentReports = $scope.allReports.slice(0, 20);
 
     });
 

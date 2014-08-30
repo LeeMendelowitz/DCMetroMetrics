@@ -7,7 +7,7 @@
  * # tweetline
  */
 angular.module('dcmetrometricsApp')
-  .directive('tweetline', ['$compile', function ($compile) {
+  .directive('tweetline', ['$compile', 'usSpinnerService', function ($compile, usSpinnerService) {
 
     return {
 
@@ -16,6 +16,10 @@ angular.module('dcmetrometricsApp')
       link: function postLink(scope, element, attrs) {
 
           scope.$watch('reports', function(reports, reportsOld) {
+
+            if( reports.length === 0) {
+              usSpinnerService.stop('tweet-spinner');
+            }
             
             scope.$evalAsync(function() {
                 scope.renderTweets();
@@ -34,7 +38,8 @@ angular.module('dcmetrometricsApp')
           twttr.events.bind('loaded', function (event) {
             //console.log('twitter load');
             $scope.$apply(function() {
-              $scope.renderedTweets = true;
+                $scope.renderedTweets = true;
+                usSpinnerService.stop('tweet-spinner');
                 $scope.postLoad();
               }
             );
@@ -44,12 +49,29 @@ angular.module('dcmetrometricsApp')
 
         };
 
+        var color2code = {
+          "RED" : "RD",
+          "ORANGE" : "OR",
+          "GREEN" : "GR",
+          "YELLOW" : "YL",
+          "BLUE" : "BL",
+          "SILVER": "SV"
+        };
+
+        $scope.colorStringFromReport = function(report) {
+          var colorString = '';
+          if (report.color && color2code.hasOwnProperty(report.color)) {
+            colorString += color2code[report.color];
+          }
+          return colorString;
+        }
+
 
       }],
       scope: {
         reports: '=',
-        postLoad: '&'
-      },
-      replace: true
+        postLoad: '&',
+        showLink: '='
+      }
     };
   }]);

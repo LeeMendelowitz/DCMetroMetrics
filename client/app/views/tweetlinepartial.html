@@ -1,9 +1,34 @@
-<div>
-  <div class="tweet-wrapper col-xs-12 col-sm-6 col-md-4 col-lg-3"
-   ng-repeat-start = "report in reports"
-   ng-bind-html = "report.tweet.embed_html"></div>
-  <div ng-if = "($index + 1) % 2 == 0" class="clearfix visible-sm-block"></div>
-  <div ng-if = "($index + 1) % 3 == 0" class="clearfix visible-md-block"></div>
-  <div ng-repeat-end ng-if = "($index + 1) % 4 == 0" class="clearfix visible-lg-block"></div>
-  <div class="clearfix"></div>
+<div class = "tweetline">
+
+  <span us-spinner spinner-key="tweet-spinner" spinner-start-active="1"></span>
+
+  <p ng-if = "reports.length === 0">There are no reports for this car.</p>
+
+  <div ng-show = "renderedTweets" class="tweets">
+
+    <div class="col-xs-12 col-sm-6 col-md-4 col-lg-3"
+     ng-repeat-start = "report in reports">
+
+      <div class="tweet-wrapper">
+        <div ng-if = "showLink">
+            <a ng-href = "#/hotcars/{{ report.car_number}}">
+              Car {{ report.car_number }}
+              <linecolors lines="{{colorStringFromReport(report)}}"></linecolors>
+            </a>
+            
+         </div>
+
+         <div ng-bind-html = "report.tweet.embed_html"></div>
+
+      </div>
+
+    </div>
+    <div ng-if = "($index + 1) % 2 == 0" class="clearfix visible-sm-block"></div>
+    <div ng-if = "($index + 1) % 3 == 0" class="clearfix visible-md-block"></div>
+    <div ng-repeat-end ng-if = "($index + 1) % 4 == 0" class="clearfix visible-lg-block"></div>
+
+    <div class="clearfix"></div>
+
+  </div>
+
 </div>

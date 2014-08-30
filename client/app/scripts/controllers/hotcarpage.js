@@ -8,12 +8,12 @@
  * Controller of the dcmetrometricsApp
  */
 angular.module('dcmetrometricsApp')
-  .controller('HotcarpageCtrl', ['$scope', '$route', 'hotCarDirectory', 'usSpinnerService',
-    function ($scope, $route, hotCarDirectory, usSpinnerService) {
+  .controller('HotcarpageCtrl', ['$scope', '$route', 'hotCarDirectory',
+    function ($scope, $route, hotCarDirectory) {
 
     $scope.$route = $route;
     $scope.carNumber = $route.current.params.carNumber;
-    $scope.reports = [];
+    $scope.reports = undefined;
     $scope.colors = [];
     $scope.colorString = "";
     $scope.loadedTweets = false;
@@ -25,7 +25,6 @@ angular.module('dcmetrometricsApp')
 
     $scope.postLoad = function() {
         $scope.loadedTweets = true;
-        usSpinnerService.stop('tweet-spinner');
     };
 
     hotCarDirectory.get_data().then( function(data) {
@@ -37,6 +36,8 @@ angular.module('dcmetrometricsApp')
       //   return report.car_number == $scope.carNumber;
       // });
 
+      $scope.reports = [];
+
 
       if (!data.reportsByCar.hasOwnProperty($scope.carNumber)) {
 
@@ -44,8 +45,8 @@ angular.module('dcmetrometricsApp')
         $scope.reports = [];
         $scope.postLoad();
         return;
-        
-      };
+
+      }
       
       $scope.reports = data.reportsByCar[$scope.carNumber];
 

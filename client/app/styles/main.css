@@ -123,6 +123,11 @@ body {
     animation: fadeIn 1.0s;
 }
 
-.hotcar-twitter-section {
+.tweetline {
+  position: relative;
   min-height: 300px;
+}
+
+.tweet-wrapper {
+  /* background-color: gray;*/
 }
