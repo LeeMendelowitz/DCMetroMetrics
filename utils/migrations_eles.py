@@ -1,4 +1,6 @@
 """
+Script to perform database migrations for the ELES App.
+
 Script to denormalize the database by adding fields to the unit status records.
 
 This should be imported as a module and not run directly.

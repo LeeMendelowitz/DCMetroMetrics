@@ -24,56 +24,55 @@ from dcmetrometrics.common.globals import DATA_DIR, REPO_DIR, DATA_DIR
 
 OUTPUT_DIR = DATA_DIR
 
+###############################################################
+# Log the HotCarApp App to a file.
+import logging
+
+LOG_FILE_NAME = os.path.join(DATA_DIR, 'HotCarApp.log')
+fh = logging.FileHandler(LOG_FILE_NAME)
+sh = logging.StreamHandler(sys.stderr)
+
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+fh.setFormatter(formatter)
+sh.setFormatter(formatter)
+
+logger = logging.getLogger('HotCarApp')
+logger.addHandler(fh)
+logger.addHandler(sh)
+#################################################################
+
 class HotCarApp(RestartingGreenlet):
 
     def __init__(self, LIVE=False):
+
+        dbGlobals.connect()
+
         RestartingGreenlet.__init__(self, LIVE=LIVE)
         self.SLEEP = 40 # Run every 10 seconds
         self.LIVE = LIVE
-        self.dbg = dbGlobals.G()
-        self.db = self.dbg.getDB()
 
     # Run forever
     def _run(self):
 
         while True:
+
             try:
-                self.tick()
+
+                hotCars.tick(tweetLive = self.LIVE)
+
             except Exception as e:
+
                 import traceback
-                logFileName = os.path.join(OUTPUT_DIR, 'runHotCarApp.log')
-                logFile = open(logFileName, 'a')
-                logFile.write('HotCarApp: Caught Exception! %s\n'%str(e))
                 tb = traceback.format_exc()
-                logFile.write('Traceback:\n%s\n\n'%tb)
-                logFile.close()
+                logger.error("HotCarApp Caught Error! %s\nTraceback:\n%s"%(str(e), tb))
+
             gevent.sleep(self.SLEEP)
 
-    def tick(self):
-
-        logFileName = os.path.join(OUTPUT_DIR, 'runHotCarApp.log')
-
-        with open(logFileName, 'a') as logFile:
-            n = datetime.now()
-            timeStr = n.strftime('%d-%B-%Y %H:%M:%S')
-            msg = '*'*50 + '\n'
-            msg += '%s Running Hot Car App\n'%timeStr
-            logFile.write(msg)
-            logFile.flush()
-
-            # Run the tick
-            self.runOnce(tweetLive=self.LIVE, log=logFile)
-
-            logFile.close()
-
-    def runOnce(self, tweetLive=False, log=sys.stdout):
-        # Establish connection with the database
-        # Run one cycle of the hotcar app
-        hotCars.tick(self.db, tweetLive=tweetLive, log=log)
+        
 
 if __name__ == '__main__':
     from time import sleep
-    app = HotCarApp(LIVE=False)
-    while True:
-        app.runOnce(tweetLive=False, log=sys.stdout)
-        sleep(40)
+    app = HotCarApp(LIVE = False)
+    app.start()
+    app.join()
+

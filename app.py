@@ -29,29 +29,21 @@ from hotCarApp import HotCarApp
 import gevent
 from gevent import monkey; monkey.patch_all() # Needed for bottle
 
-def run(LIVE=False):
+HOT_CAR_TWEET_LIVE = 'HOT_CAR_TWEET_LIVE' in os.environ
+
+def run(LIVE = False):
 
    # Do not run as live unless this module is main
    if __name__ != "__main__":
        LIVE = False
 
-   # Run the web server
-   # Update: Do not run let the bottle app act as the webserver.
-   # Instead, gunicorn is used to run bottle as a WSGI app.
-   #serverApp = Server()
-   #serverApp.start()
-
    # Run MetroEscalators/MetroElevators twitter App
-   elesApp = ELESApp(LIVE=LIVE)
+   elesApp = ELESApp(LIVE = LIVE)
    elesApp.start()
 
    # Run HotCar twitter app
-   hotCarApplication = HotCarApp(LIVE=LIVE)
+   hotCarApplication = HotCarApp(LIVE = HOT_CAR_TWEET_LIVE)
    hotCarApplication.start()
-
-   # Run the web page generator
-   # webPageGenerator = WebPageGenerator()
-   # webPageGenerator.start()
 
    # Run forever
    while True:
@@ -59,4 +51,4 @@ def run(LIVE=False):
 
 if __name__ == '__main__':
    #run(LIVE=True)
-   run(LIVE=False)
+   run(LIVE = False)

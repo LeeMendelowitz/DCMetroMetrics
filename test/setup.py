@@ -75,20 +75,34 @@ print 'DONE'
 print '*'*50 + '\n\n'
 
 
-print "Setting up logging"
-###############################################################
-# Log the ELES App to a file.
-import logging
-LOG_FILE_NAME = os.path.join(DATA_DIR, 'ELESApp.log')
-fh = logging.FileHandler(LOG_FILE_NAME)
-sh = logging.StreamHandler(sys.stderr)
+def setup_logging():
 
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-fh.setFormatter(formatter)
-sh.setFormatter(formatter)
+    print "Setting up logging"
+    ###############################################################
+    # Log the ELES App to a file.
+    import logging
 
-logger = logging.getLogger('ELESApp')
-logger.addHandler(fh)
-logger.addHandler(sh)
-print "Done setting up logging"
+    LOG_FILE_NAME = os.path.join(DATA_DIR, 'ELESApp.log')
+    fh = logging.FileHandler(LOG_FILE_NAME)
+    sh = logging.StreamHandler(sys.stderr)
+
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    fh.setFormatter(formatter)
+    sh.setFormatter(formatter)
+
+    logger = logging.getLogger('ELESApp')
+    logger.addHandler(fh)
+    logger.addHandler(sh)
+
+    # Set up logging for HotCar App.
+    hot_car_logger = logging.getLogger("HotCarApp")
+    hot_car_file = os.path.join(DATA_DIR, 'HotCarApp.log')
+    fh = logging.FileHandler(hot_car_file)
+    sh = logging.StreamHandler(sys.stderr)
+    fh.setFormatter(formatter)
+    sh.setFormatter(formatter)
+    hot_car_logger.addHandler(fh)
+    hot_car_logger.addHandler(sh)
+    print "Done setting up logging"
+
 #################################################################

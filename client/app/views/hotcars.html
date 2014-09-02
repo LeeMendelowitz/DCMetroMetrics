@@ -75,19 +75,10 @@
   </table>
 </div>
 
-<h2>Tweets</h2>
+<h2>Most Recent Tweets</h2>
 
   <div class = "hotcar-twitter-section">
 
         <tweetline reports="recentReports" post-load = "postLoad()" show-link = "true"></tweetline>
 
   </div>
-
-
-
-<table>
-<tr><td>Row of dummy data</td></tr>
-<tr ng-repeat = "report in allReports.slice(0,10)">
-  <td><pre>{{ report | json }}</pre></td>
-</tr>
-</table>
