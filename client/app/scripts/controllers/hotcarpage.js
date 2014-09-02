@@ -36,7 +36,7 @@ angular.module('dcmetrometricsApp')
       //   return report.car_number == $scope.carNumber;
       // });
 
-      $scope.reports = [];
+      $scope.reports = undefined;
 
 
       if (!data.reportsByCar.hasOwnProperty($scope.carNumber)) {

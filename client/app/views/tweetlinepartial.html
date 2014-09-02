@@ -1,15 +1,14 @@
-<div class = "tweetline">
+<div class = "dcmm-tweetline">
 
   <span us-spinner spinner-key="tweet-spinner" spinner-start-active="1"></span>
 
   <p ng-if = "reports.length === 0">There are no reports for this car.</p>
 
-  <div ng-show = "renderedTweets" class="tweets">
-
+  <div class="dcmm-tweets" ng-show = "renderedTweets">
     <div class="col-xs-12 col-sm-6 col-md-4 col-lg-3"
      ng-repeat-start = "report in reports">
 
-      <div class="tweet-wrapper">
+      <div class="dcmm-tweet-wrapper">
         <div ng-if = "showLink">
             <a ng-href = "#/hotcars/{{ report.car_number}}">
               Car {{ report.car_number }}

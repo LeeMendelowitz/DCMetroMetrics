@@ -13,6 +13,7 @@ angular.module('dcmetrometricsApp')
   
     var deferred = hotCarDirectory.get_data();
 
+    $scope.recentReports = undefined;
 
     // Get HotCar data and put data on the scope.
     deferred.then( function(data) {

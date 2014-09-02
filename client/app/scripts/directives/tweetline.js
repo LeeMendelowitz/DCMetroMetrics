@@ -7,7 +7,7 @@
  * # tweetline
  */
 angular.module('dcmetrometricsApp')
-  .directive('tweetline', ['$compile', 'usSpinnerService', function ($compile, usSpinnerService) {
+  .directive('tweetline', ['$compile', '$timeout', 'usSpinnerService', function ($compile, $timeout, usSpinnerService) {
 
     return {
 
@@ -17,7 +17,9 @@ angular.module('dcmetrometricsApp')
 
           scope.$watch('reports', function(reports, reportsOld) {
 
-            if( reports.length === 0) {
+            if (reports === undefined) { return; }
+
+            if( (reports instanceof Array) && reports.length === 0) {
               usSpinnerService.stop('tweet-spinner');
             }
             
@@ -26,26 +28,39 @@ angular.module('dcmetrometricsApp')
             });
 
           });
+
+          // Create a timeout to show the tweets. This is done to avoid
+          // the case where twttr widgets takes to long to load or do its stuff.
+          scope.delayedShow = $timeout(function() {
+            console.log("doing a delayed show because twttr widgets took too long.");
+            scope.showTweets();
+          }, 2000);
       },
       controller: ['$scope', function($scope) {
 
         $scope.renderedTweets = false;
 
-        $scope.renderTweets = function() {
-          // Use the Twitter widgets.js to style the tweets
-
-          twttr.events._handlers = {}; // unbind all twitter events
-          twttr.events.bind('loaded', function (event) {
-            //console.log('twitter load');
-            $scope.$apply(function() {
-                $scope.renderedTweets = true;
-                usSpinnerService.stop('tweet-spinner');
-                $scope.postLoad();
-              }
-            );
+        $scope.showTweets = function() {
+          $scope.$apply( function() {
+            $scope.renderedTweets = true;
+            usSpinnerService.stop('tweet-spinner');
+            $scope.postLoad();
           });
 
-          twttr.widgets.load();
+          // Cancel the timeout
+          $timeout.cancel($scope.delayedShow);
+
+        };
+
+        $scope.renderTweets = function() {
+
+          // Use the Twitter widgets.js to style the tweets
+          twttr.events && twttr.events._handlers && twttr.events.unbind &&twttr.events.unbind('loaded');
+          twttr.events && twttr.events.bind && twttr.events.bind('loaded', function (event) {
+            $scope.showTweets();
+          });
+
+          twttr.widgets && twttr.widgets.load();
 
         };
 

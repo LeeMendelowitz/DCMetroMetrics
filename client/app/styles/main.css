@@ -118,16 +118,17 @@ body {
   margin: 5px;
 }
 
-.tweets.ng-hide-remove {
+
+.dcmm-tweets.ng-hide-remove {
     -webkit-animation: fadeIn 1.0s;
     animation: fadeIn 1.0s;
 }
 
-.tweetline {
+.dcmm-tweetline {
   position: relative;
   min-height: 300px;
 }
 
-.tweet-wrapper {
+.dcmm-tweet-wrapper {
   /* background-color: gray;*/
 }
