@@ -1,32 +1,31 @@
-<h1>Hotcar {{ carNumber }}</h1>
+<div class="jumbotron dcmm-page-header">
+  <div class="container">
+      <h1>Hotcar {{ carNumber }}</h1>
 
-<!-- <button ng-click="toggleThing()">Toggle</button>
-<div ng-show = "showThing">Look at me!</div>
- -->
-<table class = "table table-bordered">
-  <tr>
-    <th class = "col-sm-2"> # Reports </th>
-    <td class = "col-sm-2"> {{ reports.length }} </td>
-  </tr>
-  <tr>
-    <th> Lines </th>
-    <td><linecolors lines="{{ colorString }}"></td>
-  </tr>
-</table>
 
-<h2>Tweets</h2>
-
-<!--   <div class = "hotcar-twitter-section">
-
-      <span us-spinner spinner-key="tweet-spinner" spinner-start-active="1"></span>
-
-      <div ng-show = "loadedTweets" class="tweets">
-        <p ng-if = "reports && reports.length == 0">There are no reports for this car.</p>
-        <tweetline reports="reports" post-load = "postLoad()"></tweetline>
-      </div>
+      <p ng-show="reports !== undefined" class="dcmm-fadeIn">Reported {{ reports.length }} times on lines <linecolors lines="{{ colorString }}"></linecolors> </p>
 
   </div>
- -->
+</div>
+
+<div class="container">
+
+<!-- 
+  <table class = "table table-bordered">
+    <tr>
+      <th class = "col-sm-2"> # Reports </th>
+      <td class = "col-sm-2"> {{ reports.length }} </td>
+    </tr>
+    <tr>
+      <th> Lines </th>
+      <td><linecolors lines="{{ colorString }}"></linecolors></td>
+    </tr>
+  </table> -->
+
+  <h2>Tweets</h2>
+
   <div class = "hotcar-twitter-section">
         <tweetline reports="reports" post-load = "postLoad()"></tweetline>
   </div>
+
+</div

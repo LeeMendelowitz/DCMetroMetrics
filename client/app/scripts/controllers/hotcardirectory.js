@@ -8,10 +8,13 @@
  * Controller of the dcmetrometricsApp
  */
 angular.module('dcmetrometricsApp')
-  .controller('HotCarDirectoryCtrl', ['$scope', 'hotCarDirectory', 'ngTableParams', '$filter',
-    function ($scope, hotCarDirectory, ngTableParams, $filter) {
+  .controller('HotCarDirectoryCtrl', ['$scope', '$location', '$anchorScroll', 'hotCarDirectory', 'ngTableParams', '$filter',
+    function ($scope, $location, $anchorScroll, hotCarDirectory, ngTableParams, $filter) {
   
     var deferred = hotCarDirectory.get_data();
+
+    $scope.section = 'sec-leaderboard';
+
 
     $scope.recentReports = undefined;
 
@@ -55,10 +58,17 @@ angular.module('dcmetrometricsApp')
 
     });
 
+    $scope.scrollTo = function(id) {
+
+        // set the location.hash to the id of
+        // the element you wish to scroll to.
+        $scope.section = id;
+        $location.hash(id);
+        $anchorScroll();
+
+    };
 
 
-
-  
 
 
   }]);

@@ -18,11 +18,6 @@ angular.module('dcmetrometricsApp')
     $scope.colorString = "";
     $scope.loadedTweets = false;
 
-    $scope.showThing = false;
-    $scope.toggleThing = function() {
-      $scope.showThing = !$scope.showThing;
-    };
-
     $scope.postLoad = function() {
         $scope.loadedTweets = true;
     };

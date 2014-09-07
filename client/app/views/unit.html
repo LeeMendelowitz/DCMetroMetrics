@@ -1,56 +1,77 @@
-<h1>{{ unitId | unitIdToHuman }}</h1>
+<div class="jumbotron dcmm-page-header">
+  <div class="container">
 
-<table class = "table table-bordered">
-  <tr>
-    <th>Station</th>
-    <td><a href="#/stations/{{stationData.short_name}}">{{ stationData.long_name }}
-    <lineColors lines="{{stationData.all_lines.join(',')}}"></lineColors>
-    </a></td>
-  </tr>
-  <tr ng-show = "{{ unitData.unit.station_desc }}">
-    <th>Entrance</th>
-    <td>{{ unitData.unit.station_desc }}</td>
-  </tr>
-  <tr>
-    <th>Description</th>
-    <td>{{ unitData.unit.esc_desc }}</td>
-  </tr>
-</table>
+      <h1>{{ unitId | unitIdToHuman }}</h1>
 
-<h2> Summary </h2>
+      <p>
+      <a href="#/stations/{{stationData.short_name}}">{{ stationData.long_name }}
+      <lineColors lines="{{stationData.all_lines.join(',')}}"></lineColors>
+      </a>
+      </p>
 
-<table class = "table table-bordered table-condensed table-hover">
-  <tr>
-    <th># Breaks</th>
-    <td> </td>
-  </tr>
-  <tr>
-    <th># Inspections</th>
-    <td></td>
-  </tr>
-  <tr>
-    <th>Availability</th>
-    <td></td>
-  </tr>
-</table>
+      <p>{{ unitData.unit.station_desc }}</p>
 
-<h3>Statuses</h3>
+      <p>{{ unitData.unit.esc_desc }}</p>
 
-<table class = "table table-bordered table-hover table-condensed table-hover">
-  <thead>
-  <tr>
-    <th>Time</th>
-    <th>Status</th>
-    <th>Type</th>
-    <th>Duration</th>
-  </tr>
-  </thead>
-  <tbody>
-  <tr ng-repeat = "status in unitData.statuses" class = "{{statusTableUtils.getRowClass(status)}}">
-    <td> {{ status.time | date:'short' }} </td>
-    <td> {{ status.symptom_description | capFirst }} </td>
-    <td> {{ status.update_type }} </td>
-    <td> {{ statusTableUtils.getDuration(status) | duration }} </td>
-  </tr>
-  </tbody>
-</table>
+  </div>
+
+
+</div>
+
+<div class="container">
+
+<!--   <table class = "table table-bordered">
+    <tr>
+      <th>Station</th>
+      <td><a href="#/stations/{{stationData.short_name}}">{{ stationData.long_name }}
+      <lineColors lines="{{stationData.all_lines.join(',')}}"></lineColors>
+      </a></td>
+    </tr>
+    <tr ng-show = "{{ unitData.unit.station_desc }}">
+      <th>Entrance</th>
+      <td>{{ unitData.unit.station_desc }}</td>
+    </tr>
+    <tr>
+      <th>Description</th>
+      <td>{{ unitData.unit.esc_desc }}</td>
+    </tr>
+  </table> -->
+
+  <h2> Summary </h2>
+
+  <table class = "table table-bordered table-condensed table-hover">
+    <tr>
+      <th># Breaks</th>
+      <td> </td>
+    </tr>
+    <tr>
+      <th># Inspections</th>
+      <td></td>
+    </tr>
+    <tr>
+      <th>Availability</th>
+      <td></td>
+    </tr>
+  </table>
+
+  <h3>Statuses</h3>
+
+  <table class = "table table-bordered table-hover table-condensed table-hover">
+    <thead>
+    <tr>
+      <th>Time</th>
+      <th>Status</th>
+      <th>Type</th>
+      <th>Duration</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr ng-repeat = "status in unitData.statuses" class = "{{statusTableUtils.getRowClass(status)}}">
+      <td> {{ status.time | date:'short' }} </td>
+      <td> {{ status.symptom_description | capFirst }} </td>
+      <td> {{ status.update_type }} </td>
+      <td> {{ statusTableUtils.getDuration(status) | duration }} </td>
+    </tr>
+    </tbody>
+  </table>
+</div>

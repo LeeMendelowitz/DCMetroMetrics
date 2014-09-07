@@ -20,8 +20,13 @@ var app = angular
     'ui.bootstrap',
     'ngTable',
     'angular-loading-bar',
-    'angularSpinner'
+    'angularSpinner',
+    'ui.utils'
   ]);
+
+app.config(function($locationProvider) {
+  $locationProvider.html5Mode(false);
+})
 
 app.config(function ($routeProvider) {
     $routeProvider

@@ -1,4 +1,4 @@
-  <div class="jumbotron home">
+<!--   <div class="jumbotron home">
    
     <h1>DC Metro Metrics</h1>
 
@@ -16,7 +16,27 @@
 
     <p class="bg-info text-left">This site is being actively updated. We hope to have the escalator and elevator rankings and HotCar pages updated soon.</p>
 
+  </div> -->
+
+<div class="jumbotron dcmm-page-header">
+  <div class="container">
+
+    <h1>DC Metro Metrics</h1>
+
+    <h3>Tracking escalator outages, elevator breakdowns, and 
+    <a href="https://twitter.com/idiot3qu3/statuses/493882919341940736" target="_blank">#wmata</a> 
+    <a href="https://twitter.com/be_rettDC/statuses/361835301057998848" target="_blank">#hotcar</a>'s since 2013.</h3>
+
+    <br><br>
+
+    <a href="#/outages/escalator" class="btn btn-primary btn-lg" role="button">{{ escalatorOutages.length}} Escalator Outages</a>
+
+    <a href="#/outages/elevator" class="btn btn-warning btn-lg" role="button">{{ elevatorOutages.length}} Elevator Outages</a>
+    
   </div>
+</div>
+
+<div class="container">
 
   <!-- Table of recent outages -->
   <h4>Recent Updates</h4>
@@ -57,3 +77,4 @@
     </tr>
   </table>
 
+</div>

@@ -1,30 +1,25 @@
+<div class="jumbotron dcmm-page-header">
+  <div class="container">
+      <h1>Station Directory</h1>
+  </div>
+</div>
 
-<!-- Make a table of stations -->
-<h1> Station Directory </h1>
+<div class="container">
+  <table class="table table-condensed table-striped table-bordered table-hover">
 
-<!-- <p>
-<div class = "circle RD"></div>
-<div class = "circle OR"></div>
-<div class = "circle YL"></div>
-<div class = "circle GR"></div>
-<div class = "circle BL"></div>
-<div class = "circle SV"></div>
-<p> -->
+    <tr>
+      <th>Station</th>
+      <th>Escalators</th>
+      <th>Elevators</th>
+    </tr>
 
-<table class="table table-condensed table-striped table-bordered table-hover">
+    <tr ng-repeat="station in stationDirectory">
+      <td><a href="#/stations/{{station.stations[0].short_name}}">{{ station.stations[0].long_name }} <lineColors lines='{{station.stations[0].all_lines.join()}}'></lineColors>
+      </a></td>
+      <td>{{ station.escalators.length }}</td>
+      <td>{{ station.elevators.length }}</td>
+    </tr>
 
-  <tr>
-    <th>Station</th>
-    <th>Escalators</th>
-    <th>Elevators</th>
-  </tr>
+  </table>
 
-  <tr ng-repeat="station in stationDirectory">
-    <td><a href="#/stations/{{station.stations[0].short_name}}">{{ station.stations[0].long_name }} <lineColors lines='{{station.stations[0].all_lines.join()}}'></lineColors>
-    </a></td>
-    <td>{{ station.escalators.length }}</td>
-    <td>{{ station.elevators.length }}</td>
-  </tr>
-
-</table>
-
+</div>
