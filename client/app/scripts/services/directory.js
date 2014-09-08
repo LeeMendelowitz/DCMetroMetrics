@@ -59,7 +59,7 @@ angular.module('dcmetrometricsApp')
 
             for (i = 0; i < stationData.escalators.length; i++) {
               unit = stationData.escalators[i];
-              if (unit.key_statuses.lastStatus.symptom_category != "ON" ) {
+              if (unit.key_statuses.lastStatus.symptom_category !== "ON" ) {
                 escalatorOutages.push(unit);
               }
               unitIdToUnit[unit.unit_id] = unit;

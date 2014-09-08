@@ -19,6 +19,6 @@ angular.module('dcmetrometricsApp')
 
     $scope.collapseNav = function() {
       $scope.navbarCollapsed = true;
-    }
+    };
 
   });

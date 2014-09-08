@@ -50,9 +50,9 @@ class SymptomCode(Document):
   The different states an escalator can be in.
   """
 
-  symptom_code = IntField(required=False)
+  symptom_code = IntField(required = False)
   description = StringField(db_field = 'symptom_desc', required = True, unique = True)
-  category = StringField(required=True, choices = SYMPTOM_CHOICES)
+  category = StringField(required = True, choices = SYMPTOM_CHOICES)
   meta = {'collection' : 'symptom_codes'}
 
   def __str__(self):
@@ -148,6 +148,13 @@ class Station(WebJSONMixin, Document):
   def get_elevators(self):
     return self._get_units(shared = False, escalators = False, elevators = True)
 
+  def get_recent_statuses(self, n = 20):
+    """
+    Get recent statuses for this station
+    """
+    q = UnitStatus.objects(station_code__in = self.all_codes).order_by('-time').limit(n)
+    return list(q)
+
   @classmethod
   def get_station_directory(cls):
 
@@ -169,7 +176,8 @@ class Station(WebJSONMixin, Document):
       if not station_data:
         station_data = {'stations': [station], 
                         'escalators': [],
-                        'elevators': []}
+                        'elevators': [],
+                        'recent_statuses': station.get_recent_statuses(20)}
       else:
         station_data['stations'].append(station)
       station_to_data[station_name] = station_data
@@ -191,6 +199,11 @@ class Station(WebJSONMixin, Document):
 
         station_to_data[station_name] = station_data
 
+    # Sort the units by their ids.
+    for station_name, station_data in station_to_data.iteritems():
+      station_data['escalators'] = sorted(station_data['escalators'], key = lambda s: s.unit_id)
+      station_data['elevators'] = sorted(station_data['elevators'], key = lambda s: s.unit_id)
+    
     return station_to_data
 
 
@@ -532,7 +545,7 @@ class UnitStatus(WebJSONMixin, Document):
   esc_desc = StringField()
   unit_type = StringField(choices=('ESCALATOR', 'ELEVATOR'))
 
-  symptom_description = StringField()
+  symptom_description = StringField(required = True)
   symptom_category = StringField(choices=SYMPTOM_CHOICES)
 
   update_type = StringField(choices = ('Off', 'On', 'Break', 'Fix', 'Update'))
@@ -542,7 +555,8 @@ class UnitStatus(WebJSONMixin, Document):
   #######################
 
   meta = {'collection' : 'escalator_statuses',
-          'index' : [('escalator_id', '-time')]}
+          'index' : [('escalator_id', '-time'),
+                     ('station_code', '-time')]}
 
   web_json_fields = ['unit_id', 'time', 'end_time', 'metro_open_time',
     'update_type',

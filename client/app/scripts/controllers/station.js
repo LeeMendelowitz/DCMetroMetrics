@@ -16,8 +16,6 @@ angular.module('dcmetrometricsApp')
         $scope.statusTableUtils = statusTableUtils;
         $scope.stationName = $stateParams.station;
 
-        console.log("Have params: ", $stateParams);
-
         $scope.escalators_have_station_descriptions = false;
         $scope.elevators_have_station_descriptions = false;
 
@@ -25,7 +23,7 @@ angular.module('dcmetrometricsApp')
         // Request station directory data
         directory.get_directory().then( function(data) { 
           var i;
-          console.log("Got data!");
+
           $scope.stationDirectory = data.directory;
           $scope.stationData = data.shortNameToData[$scope.stationName];
 
@@ -73,4 +71,10 @@ angular.module('dcmetrometricsApp')
           return $state.is('stations.detail.elevators');
         };
 
+        $scope.showRecentUpdates = function() {
+          var $state = $scope.$state;
+          return $state.is('stations.detail.recent');
+        };
+
+        
   }]);

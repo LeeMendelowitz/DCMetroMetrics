@@ -29,7 +29,7 @@ var app = angular
 
 app.config(function($locationProvider) {
   $locationProvider.html5Mode(false);
-})
+});
   
 app.config(function($stateProvider, $urlRouterProvider) {
   //
@@ -74,6 +74,9 @@ app.config(function($stateProvider, $urlRouterProvider) {
     })
     .state('stations.detail.elevators', {
       url: '/elevators'
+    })
+    .state('stations.detail.recent', {
+      url: '/recent'
     })
     .state('hotcars', {
       abstract: true,

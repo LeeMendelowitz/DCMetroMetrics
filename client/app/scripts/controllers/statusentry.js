@@ -11,9 +11,12 @@
 angular.module('dcmetrometricsApp')
   .controller('StatusentryCtrl', ['$scope', 'directory', function ($scope, directory) {
 
+    $scope.directory = directory;
+
     // Get the unit from the status for the current scope.
     $scope.unit = undefined;
     $scope.stationLines = undefined;
+
 
     // We can simply assume that a controller has initialized
     // the directory and recent_upates data before this controller 

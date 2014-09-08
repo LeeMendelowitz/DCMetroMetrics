@@ -11,6 +11,7 @@
       <ul class="nav nav-pills nav-stacked dcmm-sidenav" affix offset-top="250">
         <li ng-class="{active : showEscalators()}"><a ui-sref="stations.detail.escalators">Escalators</a></li>
         <li ng-class="{active : showElevators()}"><a ui-sref="stations.detail.elevators">Elevators</a></li>
+        <li ng-class="{active : showRecentUpdates()}"><a ui-sref="stations.detail.recent">Recent Updates</a></li>
       </ul>
   </div>
 
@@ -22,10 +23,9 @@
       <ul class="nav nav-pills">
         <li ng-class="{active : showEscalators()}"><a ui-sref="stations.detail.escalators">Escalators</a></li>
         <li ng-class="{active : showElevators()}"><a ui-sref="stations.detail.elevators">Elevators</a></li>
+        <li ng-class="{active : showRecentUpdates()}"><a ui-sref="stations.detail.recent">Recent Updates</a></li>
       </ul>
     </div>
-
-
 
     <div class = "col-xs-12 dcmm-fadeIn" ng-show="showEscalators()">
 
@@ -67,6 +67,46 @@
       </table>
     </div>
 
+    <div class="col-xs-12 dcmm-fadeIn" ng-show="showRecentUpdates()">
+    
+      <h2>Recent Updates</h2>
+
+      <table class="table table-bordered table-condensed table-striped">
+        <thead>
+          <tr>
+            <th class="col-sm-2">Unit</th>
+            <th class="col-sm-5">Description</th>
+            <th class="col-sm-2">Status</th>
+            <th class="col-sm-1">Type</th>
+            <th class="col-sm-2">When</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <tr ng-repeat="status in stationData.recent_statuses" ng-controller="StatusentryCtrl">
+
+            <td>
+              <a ui-sref="unit.main({unitId: unit.unit_id})">{{ status.unit_id | unitIdToHuman }}</a> 
+            </td>
+
+            <td>
+
+              <a ui-sref="stations.detail({station: directory.getStationShortName(unit)})">
+              {{ directory.getStationName(directory.unitFromStatus(status)) }}
+              <lineColors lines="{{directory.getStationLinesForStatus(status).join()}}"></lineColors>
+              </a>
+              <br>
+              {{ directory.unitDescription(unit) }}
+
+            </td>
+
+            <td>{{ status.symptom_description | capFirst }}</td>
+            <td>{{ status.update_type }}</td>
+            <td>{{ statusTableUtils.getTimeSince(status) | duration }} ago</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 
 </div>

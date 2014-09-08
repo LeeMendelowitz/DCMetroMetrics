@@ -55,7 +55,7 @@ angular.module('dcmetrometricsApp')
         $scope.renderTweets = function() {
 
           // Use the Twitter widgets.js to style the tweets
-          twttr.events && twttr.events._handlers && twttr.events.unbind &&twttr.events.unbind('loaded');
+          twttr.events && twttr.events._handlers && twttr.events.unbind && twttr.events.unbind('loaded');
           twttr.events && twttr.events.bind && twttr.events.bind('loaded', function (event) {
             $scope.showTweets();
           });
