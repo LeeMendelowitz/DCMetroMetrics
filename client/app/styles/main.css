@@ -127,7 +127,7 @@ body {
     animation: fadeIn 1.0s;
 }
 
-.dcmm-fadeIn {
+.dcmm-fadeIn.ng-hide-remove {
     -webkit-animation: fadeIn 1.0s;
     animation: fadeIn 1.0s;
 }
@@ -147,19 +147,19 @@ body {
 }
 */
 
-#dcmm-hotcarnav.affix {
+.dcmm-sidenav.affix {
   top: 70px;
   box-sizing: border-box;
 }
 
 @media (min-width: 992px) {
-  #dcmm-hotcarnav.affix {
+  .dcmm-sidenav.affix {
     width: 132px;
   }
 }
 
 @media (min-width: 1200px) {
-  #dcmm-hotcarnav.affix {
+  .dcmm-hotcarnav.affix {
     width: 165px;
   }
 }

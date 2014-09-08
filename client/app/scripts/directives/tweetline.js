@@ -11,7 +11,7 @@ angular.module('dcmetrometricsApp')
 
     return {
 
-      templateUrl: 'views/tweetlinepartial.html',
+      templateUrl: '/views/tweetlinepartial.html',
       restrict: 'E',
       link: function postLink(scope, element, attrs) {
 

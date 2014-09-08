@@ -1,64 +1,76 @@
 <div class="jumbotron dcmm-page-header">
   <div class="container">
-      <h1>Current Escalator & Elevator Outages</h1>
+      <h1>Current Outages</h1>
       <p ng-show="escalatorOutages !== undefined" class="dcmm-fadeIn">There are {{escalatorOutages.length}} escalator outages and {{elevatorOutages.length}} elevator outages
       at {{stations_with_outage.length}} stations.</p>
   </div>
 </div>
 
-<div class="container" scroll-target-collector>
-
-  <div class="row">
+<div class="container">
 
     <div class = "col-md-2 visible-md-block visible-lg-block" >
-        <ul class="nav nav-pills nav-stacked" id="dcmm-hotcarnav" affix offset-top="250">
-          <li data-target="#sec-escalator" data-offset=50 bs-scrollspy><a ng-click="scrollTo('sec-escalator')">Escalators</a></li>
-          <li data-target="#sec-elevator" data-offset=-2000 bs-scrollspy><a ng-click="scrollTo('sec-elevator')">Elevators</a></li>
-<!--           <li data-target="#sec-escalator" bs-scrollspy><a>Escalators</a></li>
-          <li data-target="#sec-elevator" bs-scrollspy><a >Elevators</a></li> -->
+        <ul class="nav nav-pills nav-stacked dcmm-sidenav" affix offset-top="250">
+          <li ng-class="{active : showEscalators()}"><a ui-sref="outages.escalators">Escalators</a></li>
+          <li ng-class="{active : showElevators()}"><a ui-sref="outages.elevators">Elevators</a></li>
         </ul>
     </div>
 
-    <div class = "col-md-10">
-      <h2 id = "sec-escalator" scroll-target>Escalator Outages</h2>
-      <table class = "table table-bordered table-condensed table-striped">
-          <tr>
-            <th>Unit</th>
-            <th>Station</th>
-            <th>Description</th>
-            <th>Status</th>
-          </tr>
-          <tr ng-repeat = "unit in escalatorOutages" ng-controller="UnitentryCtrl" >
-            <td><a ui-sref="unit.main({unitId: unit.unit_id})">{{ unit.unit_id.substring(0,6) }}</a></td>
-            <td><a ui-sref="stations.detail({station: directory.getStationShortName(unit)})">{{ directory.getStationName(unit) }} <lineColors lines="{{stationLines.join()}}"></lineColors></a></td>
-            <td>{{ directory.unitDescription(unit) }}</td>
-            <td>{{ unit.key_statuses.lastStatus.symptom_description}}</td>
-          </tr>
-        </table>
+    <div class = "col-xs-12 col-md-10">
 
-        <h2 id="sec-elevator" scroll-target>Elevator Outages</h2> 
-        <table class = "table table-bordered table-condensed table-striped">
-          <tr>
-            <th>Unit</th>
-            <th>Station</th>
-            <th>Description</th>
-            <th>Status</th>
-          </tr>
-          <tr ng-repeat = "unit in elevatorOutages" ng-controller="UnitentryCtrl">
-            <td><a ui-sref="unit.main({unitId: unit.unit_id})">{{ unit.unit_id.substring(0,6) }}</a></td>
-            <td><a ui-sref="stations.detail({station: directory.getStationShortName(unit)})">{{ directory.getStationName(unit) }}<lineColors lines="{{stationLines.join()}}"></lineColors></a></td>
-            <td>{{ directory.unitDescription(unit) }}</td>
-            <td>{{ unit.key_statuses.lastStatus.symptom_description | capFirst }}</td>
-          </tr>
-        </table>
+        <div class = "col-xs-12 hidden-md hidden-lg" >
+          <ul class="nav nav-pills">
+            <li ng-class="{active : showEscalators()}"><a ui-sref="outages.escalators">Escalators</a></li>
+            <li ng-class="{active : showElevators()}"><a ui-sref="outages.elevators">Elevators</a></li>
+          </ul>
+        </div>
+
+        <div class="col-xs-12 dcmm-fadeIn" ng-show="showEscalators()">
+
+          <h2 id = "sec-escalator">Escalator Outages</h2>
+
+          <table class = "table table-bordered table-condensed table-striped">
+            <tr>
+              <th>Unit</th>
+              <th>Station</th>
+              <th>Description</th>
+              <th>Status</th>
+            </tr>
+            <tr ng-repeat = "unit in escalatorOutages" ng-controller="UnitentryCtrl" >
+              <td><a ui-sref="unit.main({unitId: unit.unit_id})">{{ unit.unit_id.substring(0,6) }}</a></td>
+              <td><a ui-sref="stations.detail({station: directory.getStationShortName(unit)})">{{ directory.getStationName(unit) }} <lineColors lines="{{stationLines.join()}}"></lineColors></a></td>
+              <td>{{ directory.unitDescription(unit) }}</td>
+              <td>{{ unit.key_statuses.lastStatus.symptom_description}}</td>
+            </tr>
+          </table>
+
+        </div>
+
+        <div class="col-xs-12 dcmm-fadeIn" ng-show="showElevators()">
+
+          <h2 id="sec-elevator">Elevator Outages</h2> 
+
+          <table class = "table table-bordered table-condensed table-striped">
+            <tr>
+              <th>Unit</th>
+              <th>Station</th>
+              <th>Description</th>
+              <th>Status</th>
+            </tr>
+            <tr ng-repeat = "unit in elevatorOutages" ng-controller="UnitentryCtrl">
+              <td><a ui-sref="unit.main({unitId: unit.unit_id})">{{ unit.unit_id.substring(0,6) }}</a></td>
+              <td><a ui-sref="stations.detail({station: directory.getStationShortName(unit)})">{{ directory.getStationName(unit) }}<lineColors lines="{{stationLines.join()}}"></lineColors></a></td>
+              <td>{{ directory.unitDescription(unit) }}</td>
+              <td>{{ unit.key_statuses.lastStatus.symptom_description | capFirst }}</td>
+            </tr>
+          </table>
+        </div>
+
 
     </div>
 
-  </div> <!-- /row -->
 
-</div> <!-- /container
 
-  <tabset>
+<!--   <tabset>
 
    <tab heading="Escalators" active="escalatorTabActive" ng-click="selectEscalatorTab()" >
 
@@ -104,6 +116,6 @@
 
     </tab>
 
-  </tabset>
+  </tabset> -->
 
-</div>
+  </div> <!-- /container -->

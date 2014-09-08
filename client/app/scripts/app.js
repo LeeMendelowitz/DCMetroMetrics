@@ -40,19 +40,16 @@ app.config(function($stateProvider, $urlRouterProvider) {
   $stateProvider
     .state('home', {
       url: "/home",
-      templateUrl: "views/main.html",
+      templateUrl: "/views/main.html",
       controller: 'OutagesCtrl'
     })
     .state('outages', {
       url: "/outages",
-      templateUrl: 'views/outages.html',
+      templateUrl: '/views/outages.html',
       controller: 'OutagesCtrl'
     })
     .state('outages.escalators', {
       url: "/escalators",
-      controller: ["$scope", function($scope) {
-        $scope.curScrollTarget = "sec-"
-      }]
     })
     .state('outages.elevators', {
       url: "/elevators",
@@ -64,27 +61,39 @@ app.config(function($stateProvider, $urlRouterProvider) {
     })
     .state('stations.list', {
       url: '/list',
-      templateUrl: 'views/stationlisting.html',
+      templateUrl: '/views/stationlisting.html',
       controller: 'StationDirectoryCtrl'
     })
     .state('stations.detail', {
       url: '/detail/:station',
-      templateUrl: 'views/station.html',
+      templateUrl: '/views/station.html',
       controller: 'StationCtrl'
+    })
+    .state('stations.detail.escalators', {
+      url: '/escalators'
+    })
+    .state('stations.detail.elevators', {
+      url: '/elevators'
     })
     .state('hotcars', {
       abstract: true,
       url: '/hotcars',
+      controller: 'HotCarDirectoryCtrl',
       template: '<ui-view/>'
     })
     .state('hotcars.main', {
       url: '/main',
-      templateUrl: 'views/hotcars.html',
-      controller: 'HotCarDirectoryCtrl'
+      templateUrl: '/views/hotcars.html'
+    })
+    .state('hotcars.main.leaderboard', {
+      url: '/leaderboard',
+    })
+    .state('hotcars.main.tweets', {
+      url: '/tweets',
     })
     .state('hotcars.detail', {
       url: '/detail/:carNumber',
-      templateUrl: 'views/hotcarpage.html',
+      templateUrl: '/views/hotcarpage.html',
       controller: 'HotcarpageCtrl'
     })
     .state('unit', {
@@ -94,7 +103,7 @@ app.config(function($stateProvider, $urlRouterProvider) {
     })
     .state('unit.main', {
       url: '/detail/:unitId',
-      templateUrl: 'views/unit.html',
+      templateUrl: '/views/unit.html',
       controller: 'UnitPageCtrl'
     });
 
@@ -108,11 +117,10 @@ app.config(['cfpLoadingBarProvider', function(cfpLoadingBarProvider) {
 app.run(
   [          '$rootScope', '$state', '$stateParams',
     function ($rootScope,   $state,   $stateParams) {
-
-    // It's very handy to add references to $state and $stateParams to the $rootScope
-    // so that you can access them from any scope within your applications.
-    $rootScope.$state = $state;
-    $rootScope.$stateParams = $stateParams;
+      // It's very handy to add references to $state and $stateParams to the $rootScope
+      // so that you can access them from any scope within your applications.
+      $rootScope.$state = $state;
+      $rootScope.$stateParams = $stateParams;
     }
   ]
 )

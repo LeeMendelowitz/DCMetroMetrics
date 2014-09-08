@@ -14,8 +14,6 @@ angular.module('dcmetrometricsApp')
     var deferred = hotCarDirectory.get_data();
 
     $scope.section = 'sec-leaderboard';
-
-
     $scope.recentReports = undefined;
 
     // Get HotCar data and put data on the scope.
@@ -66,6 +64,14 @@ angular.module('dcmetrometricsApp')
         $location.hash(id);
         $anchorScroll();
 
+    };
+
+    $scope.showLeaderboard = function() {
+       return $scope.$state.is("hotcars.main.leaderboard");
+    };
+
+    $scope.showTweets = function() {
+      return $scope.$state.is("hotcars.main") || $scope.$state.is("hotcars.main.tweets");
     };
 
 

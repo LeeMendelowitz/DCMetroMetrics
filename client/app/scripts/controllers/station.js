@@ -62,4 +62,15 @@ angular.module('dcmetrometricsApp')
 
         };
 
+        $scope.showEscalators = function() {
+          var $state = $scope.$state;
+          return $state.is('stations.detail.escalators') ||
+            $state.is("stations.detail");
+        };
+
+        $scope.showElevators= function() {
+          var $state = $scope.$state;
+          return $state.is('stations.detail.elevators');
+        };
+
   }]);

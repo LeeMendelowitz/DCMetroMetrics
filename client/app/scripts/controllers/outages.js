@@ -111,7 +111,14 @@ angular.module('dcmetrometricsApp')
         $state.go("outages.elevators");
       };
 
-      $scope.set
+      $scope.showEscalators = function() {
+        return $scope.$state.is("outages.escalators") ||
+          $scope.$state.is("outages");
+      };
+
+      $scope.showElevators = function() {
+        return $scope.$state.is("outages.elevators");
+      };
 
 
 
