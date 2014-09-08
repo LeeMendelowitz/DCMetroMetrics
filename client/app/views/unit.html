@@ -4,7 +4,7 @@
       <h1>{{ unitId | unitIdToHuman }}</h1>
 
       <p>
-      <a href="#/stations/{{stationData.short_name}}">{{ stationData.long_name }}
+      <a ui-sref="stations.detail({station: stationData.short_name})">{{ stationData.long_name }}
       <lineColors lines="{{stationData.all_lines.join(',')}}"></lineColors>
       </a>
       </p>

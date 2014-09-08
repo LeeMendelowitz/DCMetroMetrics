@@ -8,11 +8,12 @@
  * Controller of the dcmetrometricsApp
  */
 angular.module('dcmetrometricsApp')
-  .controller('HotcarpageCtrl', ['$scope', '$route', 'hotCarDirectory',
-    function ($scope, $route, hotCarDirectory) {
+  .controller('HotcarpageCtrl', ['$scope', '$stateParams', 'hotCarDirectory',
+    function ($scope, $stateParams, hotCarDirectory) {
 
-    $scope.$route = $route;
-    $scope.carNumber = $route.current.params.carNumber;
+    $scope.$stateParams = $stateParams;
+    console.log("have state params: ", $stateParams);
+    $scope.carNumber = $stateParams.carNumber;
     $scope.reports = undefined;
     $scope.colors = [];
     $scope.colorString = "";

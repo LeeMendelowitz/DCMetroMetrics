@@ -17,56 +17,102 @@ var app = angular
     'ngSanitize',
     'ngTouch',
     'mgcrea.ngStrap',
+    'mgcrea.ngStrap.helpers.dimensions',
+    'mgcrea.ngStrap.scrollspy',
     'ui.bootstrap',
     'ngTable',
     'angular-loading-bar',
     'angularSpinner',
-    'ui.utils'
+    'ui.utils',
+    'ui.router'
   ]);
 
 app.config(function($locationProvider) {
   $locationProvider.html5Mode(false);
 })
+  
+app.config(function($stateProvider, $urlRouterProvider) {
+  //
+  // For any unmatched url, redirect to /state1
+  $urlRouterProvider.otherwise("/home");
+  //
+  // Now set up the states
+  $stateProvider
+    .state('home', {
+      url: "/home",
+      templateUrl: "views/main.html",
+      controller: 'OutagesCtrl'
+    })
+    .state('outages', {
+      url: "/outages",
+      templateUrl: 'views/outages.html',
+      controller: 'OutagesCtrl'
+    })
+    .state('outages.escalators', {
+      url: "/escalators",
+      controller: ["$scope", function($scope) {
+        $scope.curScrollTarget = "sec-"
+      }]
+    })
+    .state('outages.elevators', {
+      url: "/elevators",
+    })
+    .state('stations', {
+      abstract: true,
+      url: '/stations',
+      template: '<ui-view/>'
+    })
+    .state('stations.list', {
+      url: '/list',
+      templateUrl: 'views/stationlisting.html',
+      controller: 'StationDirectoryCtrl'
+    })
+    .state('stations.detail', {
+      url: '/detail/:station',
+      templateUrl: 'views/station.html',
+      controller: 'StationCtrl'
+    })
+    .state('hotcars', {
+      abstract: true,
+      url: '/hotcars',
+      template: '<ui-view/>'
+    })
+    .state('hotcars.main', {
+      url: '/main',
+      templateUrl: 'views/hotcars.html',
+      controller: 'HotCarDirectoryCtrl'
+    })
+    .state('hotcars.detail', {
+      url: '/detail/:carNumber',
+      templateUrl: 'views/hotcarpage.html',
+      controller: 'HotcarpageCtrl'
+    })
+    .state('unit', {
+      abstract: true,
+      url: '/unit',
+      template: '<ui-view/>'
+    })
+    .state('unit.main', {
+      url: '/detail/:unitId',
+      templateUrl: 'views/unit.html',
+      controller: 'UnitPageCtrl'
+    });
 
-app.config(function ($routeProvider) {
-    $routeProvider
-      .when('/home', {
-        templateUrl: 'views/main.html',
-        controller: 'OutagesCtrl'
-      })
-      .when('/about', {
-        templateUrl: 'views/about.html',
-        controller: 'AboutCtrl'
-      })
-      .when('/outages/:unittype?', {
-        templateUrl: 'views/outages.html',
-        controller: 'OutagesCtrl'
-      })
-      .when('/stations', {
-        templateUrl: 'views/stationlisting.html',
-        controller: 'StationDirectoryCtrl'
-      })
-      .when('/stations/:station', {
-        templateUrl: 'views/station.html',
-        controller: 'StationCtrl'
-      })
-      .when('/units/:unitId', {
-        templateUrl: 'views/unit.html',
-        controller: 'UnitPageCtrl'
-      })
-      .when('/hotcars', {
-        templateUrl: 'views/hotcars.html',
-        controller: 'HotCarDirectoryCtrl'
-      })
-      .when('/hotcars/:carNumber', {
-        templateUrl: 'views/hotcarpage.html',
-        controller: 'HotcarpageCtrl'
-      })
-      .otherwise({
-        redirectTo: '/home'
-      });
 });
+
 
 app.config(['cfpLoadingBarProvider', function(cfpLoadingBarProvider) {
     cfpLoadingBarProvider.latencyThreshold = 100;
 }]);
+
+app.run(
+  [          '$rootScope', '$state', '$stateParams',
+    function ($rootScope,   $state,   $stateParams) {
+
+    // It's very handy to add references to $state and $stateParams to the $rootScope
+    // so that you can access them from any scope within your applications.
+    $rootScope.$state = $state;
+    $rootScope.$stateParams = $stateParams;
+    }
+  ]
+)

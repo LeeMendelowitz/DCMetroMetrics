@@ -9,13 +9,14 @@
  */
 angular.module('dcmetrometricsApp')
 
-  .controller('StationCtrl', ['$scope', '$route', 'directory', 'statusTableUtils', 
+  .controller('StationCtrl', ['$scope', '$stateParams', 'directory', 'statusTableUtils', 
 
-     function ($scope, $route, directory, statusTableUtils) {
+     function ($scope, $stateParams, directory, statusTableUtils) {
 
-        $scope.$route = $route;
         $scope.statusTableUtils = statusTableUtils;
-        $scope.stationName = $route.current.params.station;
+        $scope.stationName = $stateParams.station;
+
+        console.log("Have params: ", $stateParams);
 
         $scope.escalators_have_station_descriptions = false;
         $scope.elevators_have_station_descriptions = false;

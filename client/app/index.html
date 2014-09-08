@@ -37,15 +37,15 @@
                 <span class="icon-bar"></span>
                 <span class="icon-bar"></span>
               </button>
-              <a class="navbar-brand" href="#">DC Metro Metrics</a>
+              <a class="navbar-brand" ui-sref="home">DC Metro Metrics</a>
             </div>
 
             <!-- Collect the nav links, forms, and other content for toggling -->
             <div class="collapse navbar-collapse" id = "navbar-collapse" collapse="navbarCollapsed">
               <ul class="nav navbar-nav">
-                <li data-match-route="/outages"><a ng-href="#/outages" ng-click="collapseNav()">Outages</a></li>
-                <li data-match-route="/stations"><a ng-href="#/stations" ng-click="collapseNav()">Stations</a></li>
-                <li data-match-route="/hotcars*"><a ng-href="#/hotcars" ng-click="collapseNav()">HotCars</a></li>
+                <li data-match-route="/outages"><a ui-sref="outages" ng-click="collapseNav()">Outages</a></li>
+                <li data-match-route="/stations"><a ui-sref="stations.list" ng-click="collapseNav()">Stations</a></li>
+                <li data-match-route="/hotcars*"><a ui-sref="hotcars.main" ng-click="collapseNav()">HotCars</a></li>
 <!--                 <li data-match-route="/rankings"><a href="#/rankings">Rankings</a></li>
                 <li data-match-route="/hotcars"><a href="#/hotcars">HotCars</a></li>
                 <li data-match-route="/data"><a href="#/data">Data</a></li> -->
@@ -86,7 +86,7 @@
 
 
       
-    <div ng-view="">
+    <div ui-view>
       
     </div>
 
@@ -194,6 +194,8 @@
         <script src="scripts/controllers/nav.js"></script>
         <script src="scripts/directives/affix.js"></script>
         <script src="scripts/directives/scrolltobookmark.js"></script>
+        <script src="scripts/directives/scrolltarget.js"></script>
+        <script src="scripts/directives/scrolltargetcollector.js"></script>
         <!-- endbuild -->
 
 

@@ -1,4 +1,4 @@
-<!--   <div class="jumbotron home">
+  <!--   <div class="jumbotron home">
    
     <h1>DC Metro Metrics</h1>
 
@@ -29,9 +29,9 @@
 
     <br><br>
 
-    <a href="#/outages/escalator" class="btn btn-primary btn-lg" role="button">{{ escalatorOutages.length}} Escalator Outages</a>
+    <a ui-sref="outages.escalators" class="btn btn-primary btn-lg" role="button">{{ escalatorOutages.length}} Escalator Outages</a>
 
-    <a href="#/outages/elevator" class="btn btn-warning btn-lg" role="button">{{ elevatorOutages.length}} Elevator Outages</a>
+    <a ui-sref="outages.elevators" class="btn btn-warning btn-lg" role="button">{{ elevatorOutages.length}} Elevator Outages</a>
     
   </div>
 </div>
@@ -54,12 +54,12 @@
 
     <tr ng-repeat="status in recentUpdates" ng-controller="StatusentryCtrl">
       <td>
-        <a ng-href="#/units/{{status.unit_id}}">{{ status.unit_id | unitIdToHuman }}</a> 
+        <a ui-sref="unit.main({unitId: unit.unit_id})">{{ status.unit_id | unitIdToHuman }}</a> 
       </td>
 
       <td>
 
-        <a ng-href="{{ directory.getStationUrl( directory.unitFromStatus(status)) }}">
+        <a ui-sref="stations.detail({station: directory.getStationShortName(unit)})">
         {{ directory.getStationName(directory.unitFromStatus(status)) }}
         <lineColors lines="{{directory.getStationLinesForStatus(status).join()}}"></lineColors>
         </a>

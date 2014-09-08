@@ -132,12 +132,15 @@ angular.module('dcmetrometricsApp')
 
     };
 
-
     this.getStationName = function(unit) {
         var sd = unit && codeToData && codeToData[unit.station_code];
         return sd && sd.long_name;
     };
 
+    this.getStationShortName = function(unit) {
+        var sd = unit && codeToData && codeToData[unit.station_code];
+        return sd && sd.short_name;
+    };
 
     // Get station lines for a unit
     this.getStationLines = function(unit) {

@@ -10,7 +10,7 @@
 
       <div class="dcmm-tweet-wrapper">
         <div ng-if = "showLink">
-            <a ng-href = "#/hotcars/{{ report.car_number}}">
+            <a ui-sref = "hotcars.detail({carNumber: report.car_number})">
               Car {{ report.car_number }}
               <linecolors lines="{{colorStringFromReport(report)}}"></linecolors>
             </a>

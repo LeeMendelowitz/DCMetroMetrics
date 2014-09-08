@@ -14,7 +14,7 @@
     </tr>
 
     <tr ng-repeat="station in stationDirectory">
-      <td><a href="#/stations/{{station.stations[0].short_name}}">{{ station.stations[0].long_name }} <lineColors lines='{{station.stations[0].all_lines.join()}}'></lineColors>
+      <td><a ui-sref="stations.detail({station: station.stations[0].short_name })">{{ station.stations[0].long_name }} <lineColors lines='{{station.stations[0].all_lines.join()}}'></lineColors>
       </a></td>
       <td>{{ station.escalators.length }}</td>
       <td>{{ station.elevators.length }}</td>

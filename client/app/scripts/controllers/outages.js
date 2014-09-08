@@ -8,15 +8,19 @@
  * Controller of the dcmetrometricsApp
  */
 angular.module('dcmetrometricsApp')
-  .controller('OutagesCtrl', ['$scope', '$route', '$location', 'directory', 'statusTableUtils', 
+  .controller('OutagesCtrl', ['$scope', '$uiViewScroll', '$location', '$state', 'directory', 'statusTableUtils', 
 
-     function ($scope, $route, $location, directory, statusTableUtils) {
+     function ($scope, $uiViewScroll, $location, $state, directory, statusTableUtils) {
 
       $scope.directory = directory;
       $scope.statusTableUtils = statusTableUtils;
+      $scope.elevatorOutages = undefined;
+      $scope.escalatorOutages = undefined;
 
       // Get the unit directory
       directory.get_directory().then( function(data) {
+
+        var i, key, outage;
 
         // Sort the outages by station name and unit code.
         var sortFunc = function(unit1, unit2) {
@@ -43,6 +47,28 @@ angular.module('dcmetrometricsApp')
         $scope.elevatorOutages = data.elevatorOutages.sort(sortFunc);
         $scope.unitIdToUnit = data.unitIdToUnit;
 
+        // Count how many station outages there are.
+        var stationDict = {};
+        for(i = 0; i < data.escalatorOutages.length; i++) {
+          outage = data.escalatorOutages[i];
+          stationDict[outage.station_name] = 1;
+        }
+        for(i = 0; i < data.elevatorOutages.length; i++) {
+          outage = data.elevatorOutages[i];
+          stationDict[outage.station_name] = 1;
+        }
+
+        var stations_with_outage = [];
+        for(key in stationDict) {
+          if(stationDict.hasOwnProperty(key)) {
+            stations_with_outage.push(key);
+          }
+        }
+
+        console.log(stationDict);
+
+        $scope.stations_with_outage = stations_with_outage;
+
 
         // Get recent statuses
         directory.get_recent_updates().then( function(data) {
@@ -54,14 +80,11 @@ angular.module('dcmetrometricsApp')
 
 
 
-      // Figure out which tab is active based on the location.
-      $scope.escalatorTabActive = true;
-      $scope.elevatorTabActive = false;
-      var reElevator = /elevator/i;
-      if ( reElevator.test($location.path()) ) {
-        $scope.escalatorTabActive = false;
-        $scope.elevatorTabActive = true;
-      }
+      // Figure out which tab is active from state
+
+      $scope.escalatorTabActive = $state.is("outages.escalators");
+      $scope.elevatorTabActive = $state.is("outages.elevators");
+
 
       $scope.getSymptomClass = function(unit) {
 
@@ -78,17 +101,18 @@ angular.module('dcmetrometricsApp')
 
       };
 
-
-
       $scope.selectEscalatorTab = function() {
         console.log("selected escalator tab");
-        //$location.path('/outages/escalator');
+        $state.go("outages.escalators");
       };
 
       $scope.selectElevatorTab = function() {
         console.log("selected elevator tab");
-        //$location.path('/outages/elevator');
+        $state.go("outages.elevators");
       };
+
+      $scope.set
+
 
 
      }]);
