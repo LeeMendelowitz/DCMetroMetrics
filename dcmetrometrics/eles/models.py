@@ -4,11 +4,12 @@ Models for eles data.
 
 from mongoengine import *
 from operator import attrgetter
-from ..common.metroTimes import TimeRange, UTCToLocalTime, toUtc
+from ..common.metroTimes import TimeRange, UTCToLocalTime, toUtc, utcnow
 from ..common.WebJSONMixin import WebJSONMixin
 from .defs import symptomToCategory, SYMPTOM_CHOICES
 from ..common import dbGlobals
 from .misc_utils import *
+from .StatusGroup import StatusGroup
 from datetime import timedelta
 import sys
 
@@ -295,6 +296,52 @@ class Unit(WebJSONMixin, Document):
     """
     return self._get_unit_statuses(object_id = self.pk, *args, **kwargs)
 
+  def compute_performance_summary(self):
+    """
+    Compute or recompute the historical performance summary for a unit.
+    """
+
+    # If a record already exists, delete it.
+    try:
+      ups = UnitPerformanceSummary.objects(unit = self).get()
+      ups.delete()
+    except DoesNotExist:
+      ups = None
+
+    statuses = self.get_statuses() # This resturn statuses in descending order, most recent first
+    statuses = statuses[::-1] # Sort statuses in ascending order of time.
+
+    logger.info("Computing performance summary for unit: %s"%self.unit_id)
+    if not statuses:
+      logger.warning("No statuses for unit %s! Not computing performance summary."%self.unit_id)
+      return None
+
+    end_time = utcnow()
+    start_times = [('one_day', end_time - timedelta(days = 1)),
+                   ('three_day', end_time - timedelta(days = 3)),
+                   ('seven_day', end_time - timedelta(days = 7)),
+                   ('fourteen_day', end_time - timedelta(days = 14)),
+                   ('thirty_day', end_time - timedelta(days = 30)),
+                   ('all_time', statuses[0].time)]
+
+    ups = UnitPerformanceSummary(unit = self, unit_id = self.unit_id)
+
+    for key, start_time in start_times:
+      sg = StatusGroup(statuses, start_time, end_time)
+      upp = UnitPerformancePeriod(unit_id = self.unit_id,
+                                 start_time = start_time,
+                                 end_time = end_time,
+                                 availability = sg.availability,
+                                 broken_time_percentage = sg.brokenTimePercentage,
+                                 num_breaks = len(sg.breakStatuses),
+                                 num_inspections = len(sg.inspectionStatuses)
+                                 )
+      setattr(ups, key, upp)
+
+    ups.save()
+    return ups
+
+
   @staticmethod
   def _get_unit_statuses(object_id=None, start_time = None, end_time = None):
     """
@@ -358,9 +405,6 @@ class Unit(WebJSONMixin, Document):
     for status in statuses:
         status._add_timezones()
 
-    # This call is no longer necessary, because db is denormalized
-    #add_status_attributes(statuses)
-
     return statuses
 
   def compute_key_statuses(self):
@@ -405,7 +449,15 @@ class Unit(WebJSONMixin, Document):
   @property
   def key_statuses(self):
     return self.get_key_statuses()
-  
+
+  @property
+  def performance_summary(self):
+    try:
+      ups = UnitPerformanceSummary.objects(unit = self).get()
+    except DoesNotExist:
+      ups = None
+    return ups
+
 
 
 #############################################
@@ -725,10 +777,6 @@ class KeyStatuses(WebJSONMixin, Document):
     if unit_status.symptom_description == self.lastStatus.symptom_description:
       return
 
-    # Update the end_time of the previous status.
-    self.lastStatus.end_time = unit_status.time
-    self.lastStatus.save()
-
     if unit_status.symptom_category == 'ON':
       
       self.lastOperationalStatus = unit_status
@@ -770,7 +818,11 @@ class KeyStatuses(WebJSONMixin, Document):
       else:
         unit_status.update_type = "Update"
 
+    # Update the end_time of the previous status.
+    self.lastStatus.end_time = unit_status.time
+    self.lastStatus.save()
 
+    # Update the keyStatus with the new status.
     self.lastStatus = unit_status
     unit_status.save()
     self.save()
@@ -878,4 +930,40 @@ class KeyStatuses(WebJSONMixin, Document):
     }
 
     return cls(unit = unit_pk, **data)
+
+
+
+class UnitPerformancePeriod(WebJSONMixin, EmbeddedDocument):
+  """
+  A performance summary for a unit over a time period.
+  """
+  unit_id = StringField(required = True)
+  created = DateTimeField(default = utcnow) # Creation time of the document.
+  start_time = DateTimeField(required = True)
+  end_time = DateTimeField(required = True)
+  availability = FloatField(required = True)
+  broken_time_percentage = FloatField(required = True)
+  num_breaks = IntField(required = True)
+  num_inspections = IntField(required = True)
+
+  web_json_fields = ['unit_id', 'start_time', 'end_time', 'availability',
+    'broken_time_percentage', 'num_breaks', 'num_inspections']
+
+class UnitPerformanceSummary(WebJSONMixin, Document):
+  """
+  A performance summary for a unit over several time periods.
+  """
+  unit = ReferenceField(Unit, required = True, primary_key = True)
+  unit_id = StringField(required = True, unique = True)
+
+  # Performance summaries
+  one_day = EmbeddedDocumentField(UnitPerformancePeriod)
+  three_day = EmbeddedDocumentField(UnitPerformancePeriod)
+  seven_day = EmbeddedDocumentField(UnitPerformancePeriod)
+  fourteen_day = EmbeddedDocumentField(UnitPerformancePeriod)
+  thirty_day = EmbeddedDocumentField(UnitPerformancePeriod)
+  all_time = EmbeddedDocumentField(UnitPerformancePeriod)
+
+  web_json_fields = ['one_day', 'three_day', 'seven_day', 'fourteen_day',
+                     'thirty_day', 'all_time']
 

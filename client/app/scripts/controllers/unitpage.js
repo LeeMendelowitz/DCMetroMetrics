@@ -27,5 +27,14 @@ angular.module('dcmetrometricsApp')
         });
       });
 
+      $scope.showSummary = function() {
+        return $scope.$state.is("unit") ||
+          $scope.$state.is("unit.summary");
+      };
+
+      $scope.showStatuses = function() {
+        return $scope.$state.is("unit.statuses");
+      };
+
 
   }]);

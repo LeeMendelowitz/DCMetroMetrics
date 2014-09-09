@@ -8,6 +8,7 @@
 
 <div class="container">
 
+  <div class="row">
     <div class = "col-md-2 visible-md-block visible-lg-block" >
         <ul class="nav nav-pills nav-stacked dcmm-sidenav" affix offset-top="250">
           <li ng-class="{active : showEscalators()}"><a ui-sref="outages.escalators">Escalators</a></li>
@@ -17,56 +18,62 @@
 
     <div class = "col-xs-12 col-md-10">
 
-        <div class = "col-xs-12 hidden-md hidden-lg" >
-          <ul class="nav nav-pills">
-            <li ng-class="{active : showEscalators()}"><a ui-sref="outages.escalators">Escalators</a></li>
-            <li ng-class="{active : showElevators()}"><a ui-sref="outages.elevators">Elevators</a></li>
-          </ul>
+        <div class="row">
+          <div class = "col-xs-12 hidden-md hidden-lg" >
+            <ul class="nav nav-pills">
+              <li ng-class="{active : showEscalators()}"><a ui-sref="outages.escalators">Escalators</a></li>
+              <li ng-class="{active : showElevators()}"><a ui-sref="outages.elevators">Elevators</a></li>
+            </ul>
+          </div>
         </div>
 
-        <div class="col-xs-12 dcmm-fadeIn" ng-show="showEscalators()">
+        <div class="row">
+          <div class="col-xs-12 dcmm-fadeIn" ng-show="showEscalators()">
+            <h2 id = "sec-escalator">Escalator Outages</h2>
 
-          <h2 id = "sec-escalator">Escalator Outages</h2>
-
-          <table class = "table table-bordered table-condensed table-striped">
-            <tr>
-              <th>Unit</th>
-              <th>Station</th>
-              <th>Description</th>
-              <th>Status</th>
-            </tr>
-            <tr ng-repeat = "unit in escalatorOutages" ng-controller="UnitentryCtrl" >
-              <td><a ui-sref="unit.main({unitId: unit.unit_id})">{{ unit.unit_id.substring(0,6) }}</a></td>
-              <td><a ui-sref="stations.detail({station: directory.getStationShortName(unit)})">{{ directory.getStationName(unit) }} <lineColors lines="{{stationLines.join()}}"></lineColors></a></td>
-              <td>{{ directory.unitDescription(unit) }}</td>
-              <td>{{ unit.key_statuses.lastStatus.symptom_description}}</td>
-            </tr>
-          </table>
-
+            <table class = "table table-bordered table-condensed table-striped">
+              <tr>
+                <th>Unit</th>
+                <th>Station</th>
+                <th>Description</th>
+                <th>Status</th>
+              </tr>
+              <tr ng-repeat = "unit in escalatorOutages" ng-controller="UnitentryCtrl" >
+                <td><a ui-sref="unit({unitId: unit.unit_id})">{{ unit.unit_id.substring(0,6) }}</a></td>
+                <td><a ui-sref="stations.detail({station: directory.getStationShortName(unit)})">{{ directory.getStationName(unit) }} <lineColors lines="{{stationLines.join()}}"></lineColors></a></td>
+                <td>{{ directory.unitDescription(unit) }}</td>
+                <td>{{ unit.key_statuses.lastStatus.symptom_description}}</td>
+              </tr>
+            </table>
+          </div>
         </div>
 
-        <div class="col-xs-12 dcmm-fadeIn" ng-show="showElevators()">
+        <div class="row">
+          <div class="col-xs-12 dcmm-fadeIn" ng-show="showElevators()">
 
-          <h2 id="sec-elevator">Elevator Outages</h2> 
+            <h2 id="sec-elevator">Elevator Outages</h2> 
 
-          <table class = "table table-bordered table-condensed table-striped">
-            <tr>
-              <th>Unit</th>
-              <th>Station</th>
-              <th>Description</th>
-              <th>Status</th>
-            </tr>
-            <tr ng-repeat = "unit in elevatorOutages" ng-controller="UnitentryCtrl">
-              <td><a ui-sref="unit.main({unitId: unit.unit_id})">{{ unit.unit_id.substring(0,6) }}</a></td>
-              <td><a ui-sref="stations.detail({station: directory.getStationShortName(unit)})">{{ directory.getStationName(unit) }}<lineColors lines="{{stationLines.join()}}"></lineColors></a></td>
-              <td>{{ directory.unitDescription(unit) }}</td>
-              <td>{{ unit.key_statuses.lastStatus.symptom_description | capFirst }}</td>
-            </tr>
-          </table>
+            <table class = "table table-bordered table-condensed table-striped">
+              <tr>
+                <th>Unit</th>
+                <th>Station</th>
+                <th>Description</th>
+                <th>Status</th>
+              </tr>
+              <tr ng-repeat = "unit in elevatorOutages" ng-controller="UnitentryCtrl">
+                <td><a ui-sref="unit({unitId: unit.unit_id})">{{ unit.unit_id.substring(0,6) }}</a></td>
+                <td><a ui-sref="stations.detail({station: directory.getStationShortName(unit)})">{{ directory.getStationName(unit) }}<lineColors lines="{{stationLines.join()}}"></lineColors></a></td>
+                <td>{{ directory.unitDescription(unit) }}</td>
+                <td>{{ unit.key_statuses.lastStatus.symptom_description | capFirst }}</td>
+              </tr>
+            </table>
+          </div>
         </div>
-
 
     </div>
+
+  </div>
+
 
 
 
@@ -84,7 +91,7 @@
             <th>Status</th>
           </tr>
           <tr ng-repeat = "unit in escalatorOutages" ng-controller="UnitentryCtrl" >
-            <td><a ui-sref="unit.main({unitId: unit.unit_id})">{{ unit.unit_id.substring(0,6) }}</a></td>
+            <td><a ui-sref="unit({unitId: unit.unit_id})">{{ unit.unit_id.substring(0,6) }}</a></td>
             <td><a ui-sref="stations.detail({station: directory.getStationShortName(unit)})">{{ directory.getStationName(unit) }} <lineColors lines="{{stationLines.join()}}"></lineColors></a></td>
             <td>{{ directory.unitDescription(unit) }}</td>
             <td>{{ unit.key_statuses.lastStatus.symptom_description}}</td>
@@ -106,7 +113,7 @@
             <th>Status</th>
           </tr>
           <tr ng-repeat = "unit in elevatorOutages" ng-controller="UnitentryCtrl">
-            <td><a ui-sref="unit.main({unitId: unit.unit_id})">{{ unit.unit_id.substring(0,6) }}</a></td>
+            <td><a ui-sref="unit({unitId: unit.unit_id})">{{ unit.unit_id.substring(0,6) }}</a></td>
             <td><a ui-sref="stations.detail({station: directory.getStationShortName(unit)})">{{ directory.getStationName(unit) }}<lineColors lines="{{stationLines.join()}}"></lineColors></a></td>
             <td>{{ directory.unitDescription(unit) }}</td>
             <td>{{ unit.key_statuses.lastStatus.symptom_description | capFirst }}</td>

@@ -7,7 +7,7 @@ StatusGroupBase: Base class
 StatusGroup: Class used to summarize an ordered listing of consecutive statuses for a single
              escalator or elevator.
 
-Outage: Class used to summaraize an ordered listing of consecutive non-operational statuses
+Outage: Class used to summarize an ordered listing of consecutive non-operational statuses
         for a single escalator or elevator.
 """
 from collections import defaultdict, Counter
@@ -150,6 +150,8 @@ class StatusGroupBase(object):
     def metroOpenTime(self):
         return self.timeRange.metroOpenTime
 
+
+
     @computeOnce
     def symptomCategoryCounts(self):
         return Counter(s.symptom_category for s in self.statuses)
@@ -224,12 +226,28 @@ class StatusGroupBase(object):
     # Get the amount of metro open time allocated to each symptom category
     @computeOnce
     def timeAllocation(self):
+        """
+        Return the amount of metro open time allocated to each symptom category.
+        """
         symptomCategoryToTime = defaultdict(lambda: 0.0)
         for symptomCategory, trList in self.symptomCategoryToTimeRanges.iteritems():
             symptomCategoryToTime[symptomCategory] = sum(tr.metroOpenTime for tr in trList)
         totalTime = sum(symptomCategoryToTime.values())
         assert(abs(totalTime - self.timeRange.metroOpenTime) < 1E-3)
         return symptomCategoryToTime
+
+    @computeOnce
+    def timeAllocationPercentage(self):
+        """
+        Return the amount of metro open time allocated to each symptom category, as percentage.
+        """
+        totalTime = sum(self.timeAllocation.values())
+        assert(abs(totalTime - self.timeRange.metroOpenTime) < 1E-3)
+        timeAllocationPercentage = {}
+        for symptomCategory, time in self.timeAllocation.iteritems():
+            timeAllocationPercentage[symptomCategory] = float(time)/totalTime
+        return timeAllocationPercentage
+
 
     ######################################
     # Get the amount of absolute time allocated to each symptom category
@@ -301,6 +319,14 @@ class StatusGroupBase(object):
         if self.metroOpenTime > 0.0:
             brokenTimePercentage = float(brokenTime)/self.metroOpenTime
         return brokenTimePercentage
+
+    @computeOnce
+    def availability(self):
+        availability = 0.0
+        if self.metroOpenTime > 0.0:
+            availability = self.timeAllocation['ON']/self.metroOpenTime
+        return availability
+
 
     def printStatuses(self, handle = sys.stdout):
         p = lambda m: handle.write(str(m) + '\n')

@@ -39,10 +39,10 @@
           <th>Status</th>
         </tr>
         <tr ng-repeat = "unit in stationData.escalators" class = "{{statusTableUtils.getRowClass(unit.key_statuses.lastStatus)}}">
-          <td><a ui-sref="unit.main({unitId: unit.unit_id})">{{ unit.unit_id.substring(0,6) }}</a></td>
+          <td><a ui-sref="unit({unitId: unit.unit_id})">{{ unit.unit_id.substring(0,6) }}</a></td>
           <td ng-show = "escalators_have_station_descriptions">{{ unit.station_desc }} </td>
           <td>{{ unit.esc_desc }} </td>
-          <td>{{ unit.key_statuses.lastStatus.symptom_description}}</td>
+          <td>{{ unit.key_statuses.lastStatus.symptom_description  | capFirst }}</td>
         </tr>
       </table>
     </div>
@@ -59,7 +59,7 @@
           <th>Status</th>
         </tr>
         <tr ng-repeat = "unit in stationData.elevators" class = "{{statusTableUtils.getRowClass(unit.key_statuses.lastStatus)}}">
-          <td><a ui-sref="unit.main({unitId: unit.unit_id})">{{ unit.unit_id.substring(0,6) }}</a></td>
+          <td><a ui-sref="unit({unitId: unit.unit_id})">{{ unit.unit_id.substring(0,6) }}</a></td>
           <td ng-show = "elevators_have_station_descriptions">{{ unit.station_desc }}</td>
           <td>{{ unit.esc_desc }}</td>
           <td>{{ unit.key_statuses.lastStatus.symptom_description | capFirst }}</td>
@@ -86,7 +86,7 @@
           <tr ng-repeat="status in stationData.recent_statuses" ng-controller="StatusentryCtrl">
 
             <td>
-              <a ui-sref="unit.main({unitId: unit.unit_id})">{{ status.unit_id | unitIdToHuman }}</a> 
+              <a ui-sref="unit({unitId: unit.unit_id})">{{ status.unit_id | unitIdToHuman }}</a> 
             </td>
 
             <td>

@@ -100,14 +100,15 @@ app.config(function($stateProvider, $urlRouterProvider) {
       controller: 'HotcarpageCtrl'
     })
     .state('unit', {
-      abstract: true,
-      url: '/unit',
-      template: '<ui-view/>'
-    })
-    .state('unit.main', {
-      url: '/detail/:unitId',
+      url: '/unit/:unitId',
       templateUrl: '/views/unit.html',
       controller: 'UnitPageCtrl'
+    })
+    .state('unit.summary', {
+      url: '/summary'
+    })
+    .state('unit.statuses', {
+      url: '/statuses'
     });
 
 });

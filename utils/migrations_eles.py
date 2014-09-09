@@ -174,6 +174,8 @@ def write_json():
   # Write the recent updates
   jwriter.write_recent_updates()  
 
+
+
 def delete_recent_statuses(time_delta = timedelta(hours = 2)):
   """Delete statuses from the past two days.
   Recompute keystatuses for affected units"""
@@ -201,6 +203,21 @@ def recompute_key_statuses():
   for i, unit in enumerate(Unit.objects):
     print "Computing key statuses for unit %s: %i of %i (%.2f%%)"%(unit.unit_id, i, n, 100.0*i/n)
     unit.compute_key_statuses()
+    
+  elapsed = (datetime.now() - start).total_seconds()
+  print "%.2f seconds elapsed"%elapsed
+
+def recompute_performance_summaries():
+  """Recompute performance sumamries for all units"""
+  from dcmetrometrics.eles.models import Unit, UnitPerformanceSummary
+  units = Unit.objects
+  start = datetime.now()
+  n = len(units)
+  UnitPerformanceSummary.drop_collection()
+
+  for i, unit in enumerate(Unit.objects):
+    print "Computing performance summary for unit %s: %i of %i (%.2f%%)"%(unit.unit_id, i, n, 100.0*i/n)
+    unit.compute_performance_summary()
     
   elapsed = (datetime.now() - start).total_seconds()
   print "%.2f seconds elapsed"%elapsed
@@ -320,7 +337,6 @@ def update_2014_08_24():
   write_json()
 
 
-
 def update_2014_08_25():
     # If a hot car has a color of NONE, set to None.
     from dcmetrometrics.hotcars.models import HotCarReport
@@ -330,5 +346,31 @@ def update_2014_08_25():
       hc.color = None
       hc.save()
     print "Reset color on %i records"%count
+
+
+def strip_end_time():
+  """
+  Find units where the lastStatus has an end_time defined.
+
+  This is a mysterious scenario and requires further investigation. Where do
+  we set the end time on a status? We may need to use transactions to keep everything
+  sane.
+  """
+  from dcmetrometrics.eles.models import KeyStatuses
+  ret = []
+  for ks in KeyStatuses.objects:
+    if ks.lastStatus.end_time is not None:
+      ret.append(ks)
+
+  print "have %i units with lastStatus with defined end_time"%len(ret)
+  print [ks.unit.unit_id for ks in ret]
+
+  for ks in ret:
+    lastStatus = ks.lastStatus
+    lastStatus.end_time = None
+    lastStatus.clean()
+    lastStatus.save()
+
+
 
   

@@ -77,15 +77,6 @@ angular.module('dcmetrometricsApp')
 
       });
 
-
-
-
-      // Figure out which tab is active from state
-
-      $scope.escalatorTabActive = $state.is("outages.escalators");
-      $scope.elevatorTabActive = $state.is("outages.elevators");
-
-
       $scope.getSymptomClass = function(unit) {
 
           var catToClass = {
@@ -101,15 +92,6 @@ angular.module('dcmetrometricsApp')
 
       };
 
-      $scope.selectEscalatorTab = function() {
-        console.log("selected escalator tab");
-        $state.go("outages.escalators");
-      };
-
-      $scope.selectElevatorTab = function() {
-        console.log("selected elevator tab");
-        $state.go("outages.elevators");
-      };
 
       $scope.showEscalators = function() {
         return $scope.$state.is("outages.escalators") ||

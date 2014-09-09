@@ -20,74 +20,106 @@
 
 <div class="container">
 
-  <div class="col-xs-12">
-    <ol class="breadcrumb" ng-switch = "unitData.unit.unit_type">
-
-      <li><a ui-sref="stations.detail({station: stationData.short_name})">{{stationData.long_name}} <lineColors lines="{{stationData.all_lines.join(',')}}"></lineColors></a></li>
-      <li ng-switch-when="ESCALATOR">
-        <a ui-sref='stations.detail.escalators({station: stationData.short_name})'>
-        Escalators</a>
-      </li>
-      <li ng-switch-when="ELEVATOR">
-        <a ui-sref='stations.detail.elevators({station: stationData.short_name})'>
-        Elevators</a>
-      </li>
-      <li class="active">{{ unitId.substr(0, 6) }}</li>
-    </ol>
+  <div class = "row">
+    <div class = "col-xs-12">
+      <ol class="breadcrumb" ng-switch = "unitData.unit.unit_type">
+        <li><a ui-sref="stations.detail({station: stationData.short_name})">{{stationData.long_name}} <lineColors lines="{{stationData.all_lines.join(',')}}"></lineColors></a></li>
+        <li ng-switch-when="ESCALATOR">
+          <a ui-sref='stations.detail.escalators({station: stationData.short_name})'>
+          Escalators</a>
+        </li>
+        <li ng-switch-when="ELEVATOR">
+          <a ui-sref='stations.detail.elevators({station: stationData.short_name})'>
+          Elevators</a>
+        </li>
+        <li class="active">{{ unitId.substr(0, 6) }}</li>
+      </ol>
+    </div>
   </div>
 
-<!--   <table class = "table table-bordered">
-    <tr>
-      <th>Station</th>
-      <td><a href="#/stations/{{stationData.short_name}}">{{ stationData.long_name }}
-      <lineColors lines="{{stationData.all_lines.join(',')}}"></lineColors>
-      </a></td>
-    </tr>
-    <tr ng-show = "{{ unitData.unit.station_desc }}">
-      <th>Entrance</th>
-      <td>{{ unitData.unit.station_desc }}</td>
-    </tr>
-    <tr>
-      <th>Description</th>
-      <td>{{ unitData.unit.esc_desc }}</td>
-    </tr>
-  </table> -->
+  <div class="row">
 
-  <h2> Summary </h2>
+    <div class = "col-md-2 visible-md-block visible-lg-block" >
+        <ul class="nav nav-pills nav-stacked dcmm-sidenav" affix offset-top="250">
+          <li ng-class="{active : showSummary()}"><a ui-sref="unit.summary">Summary</a></li>
+          <li ng-class="{active : showStatuses()}"><a ui-sref="unit.statuses">Statuses</a></li>
+        </ul>
+    </div>
 
-  <table class = "table table-bordered table-condensed table-hover">
-    <tr>
-      <th># Breaks</th>
-      <td> </td>
-    </tr>
-    <tr>
-      <th># Inspections</th>
-      <td></td>
-    </tr>
-    <tr>
-      <th>Availability</th>
-      <td></td>
-    </tr>
-  </table>
 
-  <h3>Statuses</h3>
+    <div class="col-xs-12 col-md-10">
 
-  <table class = "table table-bordered table-hover table-condensed table-hover">
-    <thead>
-    <tr>
-      <th>Time</th>
-      <th>Status</th>
-      <th>Type</th>
-      <th>Duration</th>
-    </tr>
-    </thead>
-    <tbody>
-    <tr ng-repeat = "status in unitData.statuses" class = "{{statusTableUtils.getRowClass(status)}}">
-      <td> {{ status.time | date:'short' }} </td>
-      <td> {{ status.symptom_description | capFirst }} </td>
-      <td> {{ status.update_type }} </td>
-      <td> {{ statusTableUtils.getDuration(status) | duration }} </td>
-    </tr>
-    </tbody>
-  </table>
+<!--       <pre>
+      {{ unitData | json }}
+      </pre>
+ -->
+
+
+      <div class="row">
+        <div class="col-xs-12 dcmm-fadeIn" ng-show="showSummary()">
+
+          <h2>Performance Summary</h2>
+            <p> Here is a summary of the unit's all time and recent performance. <p>
+            <table class = "table table-bordered" ng-controller="UnitPerformanceAccordianCtrl">
+              <thead>
+                <tr>
+                  <th></th>
+                  <th ng-repeat = "h in headings">{{ h }}</th>
+                </tr>
+              </thead>
+              <tbody>
+
+                <tr>
+                  <th>Availability</th>
+                  <td ng-repeat = "k in keys">{{ unitData.performance_summary[k].availability | percentage:2 }}</td>
+                </tr>
+
+                <tr>
+                  <th>Broken Time Percentage</th>
+                  <td ng-repeat = "k in keys">{{ unitData.performance_summary[k].broken_time_percentage | percentage:2 }}</td>
+                </tr>
+
+                <tr>
+                  <th># Breaks</th>
+                  <td ng-repeat = "k in keys">{{ unitData.performance_summary[k].num_breaks }}</td>
+                </tr>
+
+                <tr>
+                  <th># Inspections</th>
+                  <td ng-repeat = "k in keys">{{ unitData.performance_summary[k].num_breaks }}</td>
+                </tr>
+
+              </tbody>
+            </table>
+
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-xs-12 dcmm-fadeIn" ng-show="showStatuses()">
+          <h2>Statuses</h2>
+            <table class = "table table-bordered table-hover table-condensed table-hover">
+              <thead>
+              <tr>
+                <th>Time</th>
+                <th>Status</th>
+                <th>Type</th>
+                <th>Duration</th>
+              </tr>
+              </thead>
+              <tbody>
+              <tr ng-repeat = "status in unitData.statuses" class = "{{statusTableUtils.getRowClass(status)}}">
+                <td> {{ status.time | date:'short' }} </td>
+                <td> {{ status.symptom_description | capFirst }} </td>
+                <td> {{ status.update_type }} </td>
+                <td> {{ statusTableUtils.getDuration(status) | duration }} </td>
+              </tr>
+              </tbody>
+            </table>
+        </div>
+      </div>
+    </div>
+
+  </div> <!-- end row -->
+
 </div>

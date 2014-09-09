@@ -54,7 +54,7 @@
 
     <tr ng-repeat="status in recentUpdates" ng-controller="StatusentryCtrl">
       <td>
-        <a ui-sref="unit.main({unitId: unit.unit_id})">{{ status.unit_id | unitIdToHuman }}</a> 
+        <a ui-sref="unit({unitId: unit.unit_id})">{{ status.unit_id | unitIdToHuman }}</a> 
       </td>
 
       <td>
