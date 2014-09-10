@@ -30,7 +30,7 @@ from ..common.globals import DATA_DIR, WWW_DIR
 from ..common.JSONifier import JSONWriter
 import dbUtils
 from .dbUtils import invert_dict, update_db_from_incident
-from .models import KeyStatuses, UnitStatus, SymptomCode, Unit
+from .models import KeyStatuses, UnitStatus, SymptomCode, Unit, EscalatorAppState
 from ..keys import WMATA_API_KEY
 from ..third_party.twitter import TwitterError
 from .Incident import Incident
@@ -45,6 +45,8 @@ SILENCE_GAP = 60*20
 # Maximum number of tweets allowed in a single tick. Otherwise
 # the tick is silenced
 MAX_TICK_TWEETS = 10
+
+PERFORMANCE_SUMMARY_INTERVAL = timedelta(hours = 2)
 
 def checkWMATAKey():
     """
@@ -130,6 +132,8 @@ class ELESApp(object):
 
         curTime = utcnow()
 
+        appState = EscalatorAppState.get()
+
         # Get the current list of WMATA Incidents
         INFO("Getting ELES incidents from WMATA API.")
         incidents = getELESIncidents()
@@ -148,17 +152,16 @@ class ELESApp(object):
         for t in tweets:
             print t, '\n\n'
 
-        # Update key statuses
+        # Update the unit's key statuses document.
         INFO("Updating key statuses.")
-        for (unit_id, old_status, new_status, key_status) in changed_units:
+        for (unit_id, unit, old_status, new_status, key_status) in changed_units:
             # Update the Key Statuses Document.
-            key_status.update(new_status)
+            unit.update(new_status)
 
         # Update static json files.
         INFO("Updating static json files.")
-        for (unit_id, old_status, new_status, key_status) in changed_units:
+        for (unit_id, unit, old_status, new_status, key_status) in changed_units:
             INFO("Writing json for unit: %s"%unit_id)
-            unit = Unit.objects.get(unit_id = unit_id)
             self.json_writer.write_unit(unit)
 
         if changed_units:
@@ -168,6 +171,30 @@ class ELESApp(object):
 
             INFO("Writing recent updates json.")
             self.json_writer.write_recent_updates()
+
+        # Periodically recompute all unit performance summaries.
+        # This takes about 2.5 minutes on my laptop, so we can
+        # afford to do it during the application tick. It just means
+        # some ticks will be long.
+        if not appState.lastPerformanceSummaryTime or \
+            (curTime - appState.lastPerformanceSummaryTime) > PERFORMANCE_SUMMARY_INTERVAL:
+
+            INFO("Recomputing all performance summaries.")
+            units = Unit.objects
+            n = len(units)
+            for i, unit in enumerate(units):
+                INFO("Computing performance summary for unit %s: %i of %i (%.2f%%)"%(unit.unit_id, i, n, 100.0*i/n))
+                unit.compute_performance_summary()
+                self.json_writer.write_unit(unit)
+
+            INFO("Writing station directory.")
+            self.json_writer.write_station_directory()
+
+            appState.lastPerformanceSummaryTime = curTime
+
+
+        appState.lastRunTime = curTime
+        appState.save()
 
 
         # TODO: Broadcast tweets on twitter
@@ -182,7 +209,7 @@ class ELESApp(object):
         - Add any new units or symptom codes that we are seeing for the first time.
         - Update the database with new statuses.
         - Return a list of units that have changed status as list of tuples:
-            (unit_id, old_status, new_status, key_status)
+            (unit_id, unit, old_status, new_status, key_status)
             old_status and new_status are instances of models.UnitStatus
             key_status is an instance of models.KeyStatuses
         """
@@ -196,22 +223,21 @@ class ELESApp(object):
         symptoms = list(SymptomCode.objects)
         symptom_description_to_symptom = dict((s.description, s) for s in symptoms)
 
+        units = list(Unit.objects.select_related(max_depth = 3))
+        unit_id_to_unit = dict((u.unit_id, u) for u in units)
+
         unit_id_to_incident = dict((i.UnitId, i) for i in incidents)
 
         # Make a dictionary of unit id to the new status
         unit_to_new_symptom_desc = dict((i.UnitId, i.SymptomDescription) for i in incidents)
         outage_units = set(unit_to_new_symptom_desc.keys())
 
-        # Get the list of Key Statuses, before updating with current statuses:
-        key_statuses = KeyStatuses.objects.select_related()
+        unit_id_to_old_symptom_desc = dict((unit.unit_id, unit.key_statuses.lastStatus.symptom_description) for unit in units)
 
-        unit_id_to_key_statuses = dict((ks.unit.unit_id, ks) for ks in key_statuses)
-        unit_to_old_symptom_desc = dict((ks.unit.unit_id, ks.lastStatus.symptom_description) for ks in key_statuses)
-
-        was_not_operationals = set(unit_id for unit_id, symptom_desc in unit_to_old_symptom_desc.iteritems() if \
+        was_not_operationals = set(unit_id for unit_id, symptom_desc in unit_id_to_old_symptom_desc.iteritems() if \
                              symptom_desc != "OPERATIONAL")
 
-        was_operationals = set(unit_id for unit_id, symptom_desc in unit_to_old_symptom_desc.iteritems() if \
+        was_operationals = set(unit_id for unit_id, symptom_desc in unit_id_to_old_symptom_desc.iteritems() if \
                              symptom_desc == "OPERATIONAL")
 
         now_out = was_operationals.intersection(outage_units)
@@ -244,13 +270,13 @@ class ELESApp(object):
 
         # Add units that still aren't operational but have change status.
         changed_unit_ids.extend(unit_id for unit_id in still_out if \
-                unit_to_new_symptom_desc[unit_id] != unit_to_old_symptom_desc[unit_id] )
+                unit_to_new_symptom_desc[unit_id] != unit_id_to_old_symptom_desc[unit_id] )
 
         changed_units = []
 
         for unit_id in changed_unit_ids:
-
-            key_status = unit_id_to_key_statuses[unit_id]
+            unit = unit_id_to_unit[unit_id]
+            key_status = unit.key_statuses
             old_status = key_status.lastStatus
             old_status._add_timezones()
 
@@ -264,14 +290,14 @@ class ELESApp(object):
 
             # Save new UnitStatus
             symptom = symptom_description_to_symptom[symptom_description]
-            new_status = UnitStatus(unit = key_status.unit, 
+            new_status = UnitStatus(unit = unit, 
                                         time = curTime,
                                         tickDelta = tickDelta,
                                         symptom = symptom)
             new_status.denormalize()
             new_status.save()
 
-            changed_units.append((unit_id, old_status, new_status, key_status))
+            changed_units.append((unit_id, unit, old_status, new_status, key_status))
 
         return changed_units
 
@@ -337,7 +363,7 @@ class ELESApp(object):
 
         tweet_msgs = []
 
-        for (unit_id, old_status, new_status, key_status) in changed_statuses:
+        for (unit_id, unit, old_status, new_status, key_status) in changed_statuses:
 
             new_symptom = new_status.symptom_description
             new_symptom_category = new_status.symptom_category
@@ -346,7 +372,6 @@ class ELESApp(object):
             last_symptom_category = old_status.symptom_category
 
             # Get 6 char escalator code
-            unit = key_status.unit
             station_code = unit.station_code
             unit_id_sort = unit_id[0:6]
             station_short_name = stations.codeToShortName[station_code]

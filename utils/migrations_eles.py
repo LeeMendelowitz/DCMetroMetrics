@@ -199,7 +199,6 @@ def recompute_key_statuses():
   units = Unit.objects
   start = datetime.now()
   n = len(units)
-  KeyStatuses.drop_collection()
   for i, unit in enumerate(Unit.objects):
     print "Computing key statuses for unit %s: %i of %i (%.2f%%)"%(unit.unit_id, i, n, 100.0*i/n)
     unit.compute_key_statuses()
@@ -209,11 +208,10 @@ def recompute_key_statuses():
 
 def recompute_performance_summaries():
   """Recompute performance sumamries for all units"""
-  from dcmetrometrics.eles.models import Unit, UnitPerformanceSummary
+  from dcmetrometrics.eles.models import Unit
   units = Unit.objects
   start = datetime.now()
   n = len(units)
-  UnitPerformanceSummary.drop_collection()
 
   for i, unit in enumerate(Unit.objects):
     print "Computing performance summary for unit %s: %i of %i (%.2f%%)"%(unit.unit_id, i, n, 100.0*i/n)
@@ -356,16 +354,18 @@ def strip_end_time():
   we set the end time on a status? We may need to use transactions to keep everything
   sane.
   """
-  from dcmetrometrics.eles.models import KeyStatuses
-  ret = []
-  for ks in KeyStatuses.objects:
+  from dcmetrometrics.eles.models import Unit
+
+  to_fix = []
+  key_statuses = (unit.key_statuses for unit in Unit.objects)
+  for ks in key_statuses:
     if ks.lastStatus.end_time is not None:
-      ret.append(ks)
+      to_fix.append(ks)
 
-  print "have %i units with lastStatus with defined end_time"%len(ret)
-  print [ks.unit.unit_id for ks in ret]
+  print "have %i units with lastStatus with defined end_time"%len(to_fix)
+  print [ks.unit_id for ks in to_fix]
 
-  for ks in ret:
+  for ks in to_fix:
     lastStatus = ks.lastStatus
     lastStatus.end_time = None
     lastStatus.clean()

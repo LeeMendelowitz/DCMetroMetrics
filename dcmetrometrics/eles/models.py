@@ -16,6 +16,195 @@ import sys
 import logging
 logger = logging.getLogger('ELESApp')
 
+
+class KeyStatuses(WebJSONMixin, EmbeddedDocument):
+
+  """
+  This record summarizes the most recent key statuses for a Unit.
+  These key statuses are used to figure out when the unit was last inspected, last broken, or
+  last fixed.
+
+  Definitions:
+
+    - lastFixStatus: The oldest operational status which follows the most recent break
+    - lastBreakStatus: The most recent broken status which has been fixed.
+    - lastInspectionStatus: The last inspection status
+    - lastOperationalStatus: The most recent operational status
+    - lastStatus: The most recent status
+    - lastBrokenStatus: The most recent broken status (whether or not it has been fixed).
+    - currentBreakStatus: The oldest broken status which is more recent than the lastOperationalStatus.
+                          This should be None if the escalator has been fixed since it's last break.
+
+      Note: If there is a transition between broken states, such as :
+      ... OPERATIONAL -> CALLBACK/REPAIR -> MINOR REPAIR -> OPERATIONAL,
+      then:
+
+        - the lastBreakStatus is that of the CALLBACK/REPAIR, since it is the
+          first broken status in the stretch of brokeness. (This is when the break happened).
+        - the lastBrokenStatus status is MINOR REPAIR, since it is the most recent broken
+          status
+
+  These key statuses can be used to determine things such as:
+    
+    Q1: When an escalator is fixed, how long was it down for?
+    A1: Check the lastOperationalStatus.
+
+    Q2: An escalator is now operational. It's last status was inspection. Should this new status count as a fix?
+    A2: Check if there is a currentBreakStatus. If so, then  this should count as a fix.
+  """
+  unit_id = StringField(required = True)
+  lastFixStatus = ReferenceField('UnitStatus') # The oldest operational status which is more recent than lastBreakStatus.
+  lastBreakStatus = ReferenceField('UnitStatus') # Mostrecent broken status which has been fixed.
+  lastInspectionStatus = ReferenceField('UnitStatus') # Most recent inspection status
+  lastOperationalStatus = ReferenceField('UnitStatus') # Most recent operational status
+  currentBreakStatus = ReferenceField('UnitStatus') # The oldest broken status which is more recent than the lastOperationalStatus.
+  lastStatus = ReferenceField('UnitStatus', required = True) # The most recent status
+  
+  web_json_fields = ['lastFixStatus', 'lastBreakStatus', 'lastInspectionStatus',
+  'lastOperationalStatus', 'currentBreakStatus', 'lastStatus']
+
+
+  @classmethod
+  def get_last_symptoms(cls, unit_ids = None):
+    raise RunTimeError("This method is deprecated!")
+    # if unit_ids:
+    #   q = cls.objects(unit__in = list(unit_ids)).scalar('unit', 'lastStatus')
+    # else:
+    #   q = cls.objects.scalar('unit', 'lastStatus')
+
+    # d = {}
+    # for unit, status in q:
+    #   if status is None:
+    #     d[unit.unit_id] = 'OPERATIONAL'
+    #   else:
+    #     d[unit.unit_id] = status.symptom.pk
+
+    # return d
+
+  @classmethod
+  def select_key_statuses(cls, statuses):
+    """
+      This is a helper method.
+
+      # From a list of statuses, select key statuses
+      # -lastFix: The oldest operational status which follows the most recent break
+      # -lastBreak: The most recent broken status which has been fixed.
+      # -lastInspection: The last inspection status
+      # -lastOp: The most recent operational status
+      # -lastStatus: The most recent status
+      # Note: If there is a transition between broken states, such as :
+      # ... OPERATIONAL -> CALLBACK/REPAIR -> MINOR REPAIR -> OPERATIONAL,
+      # then the lastBreak status is that of the CALLBACK/REPAIR, since it is the
+      # first broken status in the stretch of brokeness.
+
+    Return a KeyStatuses record, without saving.
+    """
+
+    checkAllTimesNotNaive(statuses)
+
+    # Check that these statuses concern a single escalator
+    escids = set(s.unit.unit_id for s in statuses)
+    if len(escids) > 1:
+        raise RuntimeError('get_key_statuses: received status list for multiple escalators!')
+
+    unit_id = escids.pop()
+
+    # Sort statuses by time in descending order
+    statusesRevCron = sorted(statuses, key = attrgetter('time'), reverse=True)
+    statusesCron = statusesRevCron[::-1]
+    statuses = statusesRevCron
+
+    # Add additional attributes to all statuses
+    #add_status_attributes(statuses)
+
+    # Organize the operational statuses and breaks.
+    # Associate each operational status with the next break which follows it
+    # Associate each break with the next operational status which follows it
+    ops = [rec for rec in statuses if rec.symptom_category == 'ON']
+    opTimes = [rec.time for rec in ops]
+    breaks = [rec for rec in statuses if rec.symptom_category == 'BROKEN']
+    breakTimes = [rec.time for rec in breaks]
+
+    breakTimeToFix = {}
+    opTimeToNextBreak = {}
+    for bt in breakTimes:
+        breakTimeToFix[bt] = get_first_status_since(ops, bt)
+    for opTime in opTimes:
+        opTimeToNextBreak[opTime] = get_first_status_since(breaks, opTime)
+
+    lastOp = ops[0] if ops else None
+    lastStatus = statuses[0] if statuses else None
+
+    def getStatus(timeToStatusDict):
+        keys = sorted(timeToStatusDict.keys(), reverse=True)
+        retVal = None
+        for k in keys:
+            retVal = timeToStatusDict[k]
+            if retVal is not None:
+                return retVal
+        return retVal
+
+    # Get the most recent break which has been fixed
+    lastBreak = getStatus(opTimeToNextBreak)
+
+    # Get the most recent fix
+    lastFix = getStatus(breakTimeToFix)
+
+    # Get the break since the most recent operational status, if it exists.
+    currentBreak = breaks[0] if breaks else None
+    if currentBreak and lastOp and currentBreak.time < lastOp.time:
+        currentBreak = None 
+
+    # Get the last inspection status
+    lastInspection = get_one(rec for rec in statuses if rec.symptom_category == 'INSPECTION')
+
+    data = { 'lastFixStatus' : lastFix,
+            'lastInspectionStatus' : lastInspection,
+            'lastBreakStatus': lastBreak,
+            'lastOperationalStatus' : lastOp,
+            'lastStatus' : lastStatus,
+            'currentBreakStatus' : currentBreak
+    }
+
+    return cls(unit_id = unit_id, **data)
+
+
+class UnitPerformancePeriod(WebJSONMixin, EmbeddedDocument):
+  """
+  A performance summary for a unit over a time period.
+  """
+  unit_id = StringField(required = True)
+  created = DateTimeField(default = utcnow) # Creation time of the document.
+  start_time = DateTimeField(required = True)
+  end_time = DateTimeField(required = True)
+  availability = FloatField(required = True)
+  broken_time_percentage = FloatField(required = True)
+  num_breaks = IntField(required = True)
+  num_inspections = IntField(required = True)
+
+  web_json_fields = ['unit_id', 'start_time', 'end_time', 'availability',
+    'broken_time_percentage', 'num_breaks', 'num_inspections']
+
+
+class UnitPerformanceSummary(WebJSONMixin, EmbeddedDocument):
+  """
+  A performance summary for a unit over several time periods.
+  """
+  unit = ReferenceField('Unit', required = True, primary_key = True)
+  unit_id = StringField(required = True, unique = True)
+
+  # Performance summaries
+  one_day = EmbeddedDocumentField(UnitPerformancePeriod)
+  three_day = EmbeddedDocumentField(UnitPerformancePeriod)
+  seven_day = EmbeddedDocumentField(UnitPerformancePeriod)
+  fourteen_day = EmbeddedDocumentField(UnitPerformancePeriod)
+  thirty_day = EmbeddedDocumentField(UnitPerformancePeriod)
+  all_time = EmbeddedDocumentField(UnitPerformancePeriod)
+
+  web_json_fields = ['one_day', 'three_day', 'seven_day', 'fourteen_day',
+                     'thirty_day', 'all_time']
+
+
 class SymptomCodeOld(Document):
   """
   The different states an escalator can be in.
@@ -218,13 +407,15 @@ class Unit(WebJSONMixin, Document):
   station_desc = StringField(required=False)
   esc_desc = StringField(required=True)
   unit_type = StringField(required=True, choices=('ESCALATOR', 'ELEVATOR'))
-
+  key_statuses = EmbeddedDocumentField(KeyStatuses)
+  performance_summary = EmbeddedDocumentField(UnitPerformanceSummary)
+  
   meta = {'collection' : 'escalators',
           'indexes': ['unit_id', 'station_code']}
 
   web_json_fields = ['unit_id', 'station_code', 'station_name',
                      'station_desc', 'esc_desc', 'unit_type',
-                     'key_statuses']
+                     'key_statuses', 'performance_summary']
 
   def is_elevator(self):
     return self.unit_type == 'ELEVATOR'
@@ -261,7 +452,9 @@ class Unit(WebJSONMixin, Document):
 
     # Add a new entry to the escalator_statuses collection if necessary
     status_count = UnitStatus.objects(unit = unit).count()
-    has_key_statuses = KeyStatuses.objects(unit = unit).count() > 0
+    has_key_statuses = unit.key_statuses is not None
+    has_performance_summary = unit.performance_summary is not None
+
     if status_count == 0:
 
         if curTime is None:
@@ -280,15 +473,18 @@ class Unit(WebJSONMixin, Document):
         logger.info("Saving first status for unit:\n" + str(first_status))
 
         unit.compute_key_statuses()
-        # key_statuses = KeyStatuses(unit = unit)
-        # key_statuses.lastOperationalStatus = first_status
-        # key_statuses.lastStatus = first_status
-        # key_statuses.save()
+        unit.compute_performance_summary()
 
-    elif not has_key_statuses:
-      # Compute key statuses from the unit's history.
-      logger.info("Could not find a key status entry for unit %s. Building one from the unit's status history\n"%unit.id)
-      unit.compute_key_statuses()
+    else:
+
+      if not has_key_statuses:
+        # Compute key statuses from the unit's history.
+        logger.info("Could not find a key status entry for unit %s. Building one from the unit's status history\n"%unit.id)
+        unit.compute_key_statuses()
+
+      if not has_performance_summary:
+        logger.info("Could not find a performance summary for unit %s. Building one from the unit's status history\n"%unit.id)
+        unit.compute_performance_summary()
 
   def get_statuses(self, *args, **kwargs):
     """
@@ -302,11 +498,8 @@ class Unit(WebJSONMixin, Document):
     """
 
     # If a record already exists, delete it.
-    try:
-      ups = UnitPerformanceSummary.objects(unit = self).get()
-      ups.delete()
-    except DoesNotExist:
-      ups = None
+    self.performance_summary = None
+
 
     statuses = self.get_statuses() # This resturn statuses in descending order, most recent first
     statuses = statuses[::-1] # Sort statuses in ascending order of time.
@@ -338,8 +531,88 @@ class Unit(WebJSONMixin, Document):
                                  )
       setattr(ups, key, upp)
 
-    ups.save()
+    self.performance_summary = ups
+    self.save()
+
     return ups
+
+  def update(self, unit_status):
+    """
+    Update a unit's history with a new unit status.
+
+    This will update the unit's key_status record.
+    """
+
+    if self.key_statuses is None:
+      self.compute_key_statuses()
+
+    key_statuses = self.key_statuses
+
+    # Check that the unit_status is for the same unit.
+    if not (unit_status.unit_id == self.unit_id):
+      raise RuntimeError("unit_status's unit does not match this unit!")
+
+    if (unit_status != key_statuses.lastStatus) and \
+       (unit_status.symptom_description == key_statuses.lastStatus.symptom_description):
+      raise RuntimeError("unit_status is different than lastStatus, but has same symptom id!")
+
+    # Check if there has been a change in status
+    # If not, do nothing.
+    if unit_status.symptom_description == key_statuses.lastStatus.symptom_description:
+      return
+
+    if unit_status.symptom_category == 'ON':
+      
+      key_statuses.lastOperationalStatus = unit_status
+
+      if key_statuses.currentBreakStatus:
+        # This new status is a "fix" which resolves the current break.
+        key_statuses.lastBreakStatus = key_statuses.currentBreakStatus
+        key_statuses.currentBreakStatus = None
+        key_statuses.lastFixStatus = unit_status
+        unit_status.update_type = 'Fix'
+      else:
+        unit_status.update_type = 'On'
+
+
+    elif unit_status.symptom_category == 'BROKEN':
+      key_statuses.lastBrokenStatus = unit_status
+
+      if not key_statuses.currentBreakStatus:
+        # This is a new break.
+        key_statuses.currentBreakStatus = unit_status
+        unit_status.update_type = 'Break'
+      else:
+        unit_status.update_type = 'Update'
+
+
+    elif unit_status.symptom_category == 'INSPECTION':
+
+      key_statuses.lastInspectionStatus = unit_status
+
+      if key_statuses.lastStatus.symptom_category == "ON":
+        unit_status.update_type = 'Off'
+      else:
+        unit_status.update_type = 'Update'
+
+    elif unit_status.symptom_category == 'OFF':
+
+      if key_statuses.lastStatus.symptom_category == "ON":
+        unit_status.update_type = "Off"
+      else:
+        unit_status.update_type = "Update"
+
+    # Update the end_time of the previous status.
+    key_statuses.lastStatus.end_time = unit_status.time
+    key_statuses.lastStatus.save()
+
+    # Update the keyStatus with the new status.
+    key_statuses.lastStatus = unit_status
+    unit_status.save()
+
+    # Save the updated key_statuses to self.
+    self.key_statuses = key_statuses
+    self.save()
 
 
   @staticmethod
@@ -418,46 +691,15 @@ class Unit(WebJSONMixin, Document):
       status.
       """
       statuses = self.get_statuses()
+      self.key_statuses = None
 
       if not statuses:
         return None
 
-      key_statuses = KeyStatuses.select_key_statuses(statuses)
-
-      try:
-        # If a KeyStatuses record already exists for this unit, delete it.
-        old_key_statuses = KeyStatuses.objects(unit = self).get()
-        old_key_statuses.delete()
-        logger.info("Deleting existing key statuses entry for unit: " + self.unit_id)
-      except DoesNotExist:
-        pass
-
-      logger.info("Saving key statuses entry for unit: " + self.unit_id)
-      key_statuses.save()
-      
-      return key_statuses
-
-  def get_key_statuses(self):
-      """Return the KeyStatus for this unit by database lookup.
-      """
-      try:
-        key_statuses = KeyStatuses.objects(unit = self).get().select_related()
-        return key_statuses
-      except DoesNotExist:
-        return None
-
-  @property
-  def key_statuses(self):
-    return self.get_key_statuses()
-
-  @property
-  def performance_summary(self):
-    try:
-      ups = UnitPerformanceSummary.objects(unit = self).get()
-    except DoesNotExist:
-      ups = None
-    return ups
-
+      logger.info("Computing key statuses entry for unit: " + self.unit_id)
+      self.key_statuses = KeyStatuses.select_key_statuses(statuses)
+      self.save()
+      return self.key_statuses
 
 
 #############################################
@@ -582,7 +824,7 @@ class UnitStatus(WebJSONMixin, Document):
   """
   Escalator or elevator status.
   """
-  unit = ReferenceField(Unit, required=True, db_field='escalator_id')
+  unit = ReferenceField('Unit', required=True, db_field='escalator_id')
   time = DateTimeField(required=True)
   end_time = DateTimeField()
   metro_open_time = FloatField() # Duration of status for which metro was open (seconds)
@@ -681,7 +923,6 @@ class UnitStatus(WebJSONMixin, Document):
 
 
 
-
 class ElevatorAppState(Document):
   """
   State of the MetroElevators app.
@@ -702,268 +943,23 @@ class EscalatorAppState(Document):
   id = IntField(required=True, default = 1, db_field = '_id', primary_key=True)
   lastRunTime = DateTimeField()
   lastDailyStatsTime = DateTimeField()
+  lastPerformanceSummaryTime = DateTimeField()
   meta = {'collection' : 'escalator_appstate'}
 
-  def __init__(self, *args, **kwargs):
-    kwargs['id'] = 1
-    super(self, EscalatorAppState).__init__(*args, **kwargs)
+  @classmethod 
+  def get(cls):
+    try:
+      obj = cls.objects.get(pk = 1)
+    except DoesNotExist:
+      obj = cls(id = 1)
+      obj.save()
 
-class KeyStatuses(WebJSONMixin, Document):
+    # Add time zones
+    if obj.lastRunTime:
+      obj.lastRunTime = toUtc(obj.lastRunTime, allow_naive = True)
+    if obj.lastDailyStatsTime:
+      obj.lastDailyStatsTime = toUtc(obj.lastDailyStatsTime, allow_naive = True)
+    if obj.lastPerformanceSummaryTime:
+      obj.lastPerformanceSummaryTime = toUtc(obj.lastPerformanceSummaryTime, allow_naive = True)
 
-  """
-  This record summarizes the most recent key statuses for a Unit.
-  These key statuses are used to figure out when the unit was last inspected, last broken, or
-  last fixed.
-
-  Definitions:
-
-    - lastFixStatus: The oldest operational status which follows the most recent break
-    - lastBreakStatus: The most recent broken status which has been fixed.
-    - lastInspectionStatus: The last inspection status
-    - lastOperationalStatus: The most recent operational status
-    - lastStatus: The most recent status
-    - lastBrokenStatus: The most recent broken status (whether or not it has been fixed).
-    - currentBreakStatus: The oldest broken status which is more recent than the lastOperationalStatus.
-                          This should be None if the escalator has been fixed since it's last break.
-
-      Note: If there is a transition between broken states, such as :
-      ... OPERATIONAL -> CALLBACK/REPAIR -> MINOR REPAIR -> OPERATIONAL,
-      then:
-
-        - the lastBreakStatus is that of the CALLBACK/REPAIR, since it is the
-          first broken status in the stretch of brokeness. (This is when the break happened).
-        - the lastBrokenStatus status is MINOR REPAIR, since it is the most recent broken
-          status
-
-  These key statuses can be used to determine things such as:
-    
-    Q1: When an escalator is fixed, how long was it down for?
-    A1: Check the lastOperationalStatus.
-
-    Q2: An escalator is now operational. It's last status was inspection. Should this new status count as a fix?
-    A2: Check if there is a currentBreakStatus. If so, then  this should count as a fix.
-  """
-  unit = ReferenceField(Unit, required=True, unique = True)
-  lastFixStatus = ReferenceField(UnitStatus) # The oldest operational status which is more recent than lastBreakStatus.
-  lastBreakStatus = ReferenceField(UnitStatus) # Mostrecent broken status which has been fixed.
-  lastInspectionStatus = ReferenceField(UnitStatus) # Most recent inspection status
-  lastOperationalStatus = ReferenceField(UnitStatus) # Most recent operational status
-  currentBreakStatus = ReferenceField(UnitStatus) # The oldest broken status which is more recent than the lastOperationalStatus.
-  lastStatus = ReferenceField(UnitStatus, required = True) # The most recent status
-  
-  #################################
-  meta = {'collection' : 'key_statuses',
-          'indexes': ['unit']
-  }
-
-  web_json_fields = ['lastFixStatus', 'lastBreakStatus', 'lastInspectionStatus',
-  'lastOperationalStatus', 'currentBreakStatus', 'lastStatus']
-
-
-  def update(self, unit_status):
-    """
-    Update a unit's key status record with a new unit status.
-    """
-
-    # Check that the unit_status is for the same unit.
-    if not (unit_status.unit_id == self.unit.unit_id):
-      raise RuntimeError("unit_status's unit does not match KeyStatuses unit")
-
-    if (unit_status != self.lastStatus) and \
-       (unit_status.symptom_description == self.lastStatus.symptom_description):
-      raise RuntimeError("unit_status is different than lastStatus, but has same symptom id!")
-
-    # Check if there has been a change in status
-    if unit_status.symptom_description == self.lastStatus.symptom_description:
-      return
-
-    if unit_status.symptom_category == 'ON':
-      
-      self.lastOperationalStatus = unit_status
-
-      if self.currentBreakStatus:
-        # This new status is a "fix" which resolves the current break.
-        self.lastBreakStatus = self.currentBreakStatus
-        self.currentBreakStatus = None
-        self.lastFixStatus = unit_status
-        unit_status.update_type = 'Fix'
-      else:
-        unit_status.update_type = 'On'
-
-
-    elif unit_status.symptom_category == 'BROKEN':
-      self.lastBrokenStatus = unit_status
-
-      if not self.currentBreakStatus:
-        # This is a new break.
-        self.currentBreakStatus = unit_status
-        unit_status.update_type = 'Break'
-      else:
-        unit_status.update_type = 'Update'
-
-
-    elif unit_status.symptom_category == 'INSPECTION':
-
-      self.lastInspectionStatus = unit_status
-
-      if self.lastStatus.symptom_category == "ON":
-        unit_status.update_type = 'Off'
-      else:
-        unit_status.update_type = 'Update'
-
-    elif unit_status.symptom_category == 'OFF':
-
-      if self.lastStatus.symptom_category == "ON":
-        unit_status.update_type = "Off"
-      else:
-        unit_status.update_type = "Update"
-
-    # Update the end_time of the previous status.
-    self.lastStatus.end_time = unit_status.time
-    self.lastStatus.save()
-
-    # Update the keyStatus with the new status.
-    self.lastStatus = unit_status
-    unit_status.save()
-    self.save()
-
-
-  @classmethod
-  def get_last_symptoms(cls, unit_ids = None):
-    if unit_ids:
-      q = cls.objects(unit__in = list(unit_ids)).scalar('unit', 'lastStatus')
-    else:
-      q = cls.objects.scalar('unit', 'lastStatus')
-
-    d = {}
-    for unit, status in q:
-      if status is None:
-        d[unit.unit_id] = 'OPERATIONAL'
-      else:
-        d[unit.unit_id] = status.symptom.pk
-
-    return d
-
-  @classmethod
-  def select_key_statuses(cls, statuses):
-    """
-      This is a helper method.
-
-      # From a list of statuses, select key statuses
-      # -lastFix: The oldest operational status which follows the most recent break
-      # -lastBreak: The most recent broken status which has been fixed.
-      # -lastInspection: The last inspection status
-      # -lastOp: The most recent operational status
-      # -lastStatus: The most recent status
-      # Note: If there is a transition between broken states, such as :
-      # ... OPERATIONAL -> CALLBACK/REPAIR -> MINOR REPAIR -> OPERATIONAL,
-      # then the lastBreak status is that of the CALLBACK/REPAIR, since it is the
-      # first broken status in the stretch of brokeness.
-
-    Return a KeyStatuses record, without saving.
-    """
-
-    checkAllTimesNotNaive(statuses)
-
-    # Check that these statuses concern a single escalator
-    escids = set(s.unit.pk for s in statuses)
-    if len(escids) > 1:
-        raise RuntimeError('get_key_statuses: received status list for multiple escalators!')
-
-    unit_pk = escids.pop()
-
-    # Sort statuses by time in descending order
-    statusesRevCron = sorted(statuses, key = attrgetter('time'), reverse=True)
-    statusesCron = statusesRevCron[::-1]
-    statuses = statusesRevCron
-
-    # Add additional attributes to all statuses
-    #add_status_attributes(statuses)
-
-    # Organize the operational statuses and breaks.
-    # Associate each operational status with the next break which follows it
-    # Associate each break with the next operational status which follows it
-    ops = [rec for rec in statuses if rec.symptom_category == 'ON']
-    opTimes = [rec.time for rec in ops]
-    breaks = [rec for rec in statuses if rec.symptom_category == 'BROKEN']
-    breakTimes = [rec.time for rec in breaks]
-
-    breakTimeToFix = {}
-    opTimeToNextBreak = {}
-    for bt in breakTimes:
-        breakTimeToFix[bt] = get_first_status_since(ops, bt)
-    for opTime in opTimes:
-        opTimeToNextBreak[opTime] = get_first_status_since(breaks, opTime)
-
-    lastOp = ops[0] if ops else None
-    lastStatus = statuses[0] if statuses else None
-
-    def getStatus(timeToStatusDict):
-        keys = sorted(timeToStatusDict.keys(), reverse=True)
-        retVal = None
-        for k in keys:
-            retVal = timeToStatusDict[k]
-            if retVal is not None:
-                return retVal
-        return retVal
-
-    # Get the most recent break which has been fixed
-    lastBreak = getStatus(opTimeToNextBreak)
-
-    # Get the most recent fix
-    lastFix = getStatus(breakTimeToFix)
-
-    # Get the break since the most recent operational status, if it exists.
-    currentBreak = breaks[0] if breaks else None
-    if currentBreak and lastOp and currentBreak.time < lastOp.time:
-        currentBreak = None 
-
-    # Get the last inspection status
-    lastInspection = get_one(rec for rec in statuses if rec.symptom_category == 'INSPECTION')
-
-    data = { 'lastFixStatus' : lastFix,
-            'lastInspectionStatus' : lastInspection,
-            'lastBreakStatus': lastBreak,
-            'lastOperationalStatus' : lastOp,
-            'lastStatus' : lastStatus,
-            'currentBreakStatus' : currentBreak
-    }
-
-    return cls(unit = unit_pk, **data)
-
-
-
-class UnitPerformancePeriod(WebJSONMixin, EmbeddedDocument):
-  """
-  A performance summary for a unit over a time period.
-  """
-  unit_id = StringField(required = True)
-  created = DateTimeField(default = utcnow) # Creation time of the document.
-  start_time = DateTimeField(required = True)
-  end_time = DateTimeField(required = True)
-  availability = FloatField(required = True)
-  broken_time_percentage = FloatField(required = True)
-  num_breaks = IntField(required = True)
-  num_inspections = IntField(required = True)
-
-  web_json_fields = ['unit_id', 'start_time', 'end_time', 'availability',
-    'broken_time_percentage', 'num_breaks', 'num_inspections']
-
-class UnitPerformanceSummary(WebJSONMixin, Document):
-  """
-  A performance summary for a unit over several time periods.
-  """
-  unit = ReferenceField(Unit, required = True, primary_key = True)
-  unit_id = StringField(required = True, unique = True)
-
-  # Performance summaries
-  one_day = EmbeddedDocumentField(UnitPerformancePeriod)
-  three_day = EmbeddedDocumentField(UnitPerformancePeriod)
-  seven_day = EmbeddedDocumentField(UnitPerformancePeriod)
-  fourteen_day = EmbeddedDocumentField(UnitPerformancePeriod)
-  thirty_day = EmbeddedDocumentField(UnitPerformancePeriod)
-  all_time = EmbeddedDocumentField(UnitPerformancePeriod)
-
-  web_json_fields = ['one_day', 'three_day', 'seven_day', 'fourteen_day',
-                     'thirty_day', 'all_time']
-
+    return obj
