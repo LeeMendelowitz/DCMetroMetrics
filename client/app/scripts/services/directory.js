@@ -87,7 +87,9 @@ angular.module('dcmetrometricsApp')
                      escalatorOutages: escalatorOutages,
                      elevatorOutages: elevatorOutages,
                      unitIdToUnit: unitIdToUnit };
+
           deferred.resolve(ret);
+          
         })
         .error(function() {
           deferred.reject();
@@ -139,6 +141,11 @@ angular.module('dcmetrometricsApp')
 
     this.getStationShortName = function(unit) {
         var sd = unit && codeToData && codeToData[unit.station_code];
+        return sd && sd.short_name;
+    };
+
+    this.codeToShortName = function(station_code) {
+        var sd = codeToData && codeToData[station_code];
         return sd && sd.short_name;
     };
 

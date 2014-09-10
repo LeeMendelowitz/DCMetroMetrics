@@ -1,0 +1,106 @@
+<div class="jumbotron dcmm-page-header">
+  <div class="container">
+      <h1>Escalator & Elevator Rankings</h1>
+  </div>
+</div>
+
+<div class="container">
+   
+    <div class="row">
+
+    
+        <div collapse="filtersAreCollapsed">
+            
+            <div class="well well-lg" style="position: relative; padding: 12px;">
+
+                <span class="dcmm-close" ng-click="hideFilters()">&times;</span>
+
+                <h3>Filters</h3>
+
+
+                   <!--  <h2 ng-show="!filtersAreCollapsed">Filter Criteria</h2> -->
+                    <div class = "row">
+
+                        <div class="form-group col-sm-4">
+                            <label for="select-rankings-period">Time Period</label>
+                            <select id="select-rankings-period" class="form-control input-sm" ng-model = "rankingsPeriod">
+                                <option label="All Time" value="all_time"></option>
+                                <option label="1 Day" value = "one_day"></option>
+                                <option label="3 Day" value = "three_day"></option>
+                                <option label="7 Day" value = "seven_day"></option>
+                                <option label="14 Day" value = "fourteen_day"></option>
+                                <option label="30 Day" value = "thirty_day"></option>
+                            </select>
+                        </div>
+
+                        <div class="form-group col-sm-4">
+                            <label for="select-unit-filter">Unit Types</label>
+                            <select id="select-unit-filter" class = "form-control input-sm" ng-model = "unitTypes">
+                                <option label="Escalators and Elevators" value="all_types"></option>
+                                <option label="Escalators Only" value = "escalators_only"></option>
+                                <option label="Elevators Only" value = "elevators_only"></option>
+                            </select>
+                        </div>
+
+                        <div class="col-sm-4">
+                            <label for="seach-filter">Search by unit or station</label>
+                            <div class="right-inner-addon">
+                                <span class="glyphicon glyphicon-search input-sm-addon"></span>
+                                <input id="search-filter" class="form-control input-sm" type="text"
+                                    ng-model="searchString" placeholder="Search">
+                            </div>
+                            <span class="help-block">e.g. "Dupont" or "E03W02"</span>
+                            
+                        </div>
+
+                    </div>
+
+                    <div class = "row">
+                        <div class="col-xs-6">
+                            <a ng-hide="filtersAreCollapsed" ng-click="hideFilters()">Hide Filters</a>
+                        </div>
+                        <div class="col-xs-6">
+                            <button class="btn btn-small btn-primary pull-right" ng-click="resetFilters()" ng-disabled="filtersArePristine()">Reset</button>
+                        </div>
+                    </div>
+
+            </div>
+        </div>
+
+        <a ng-show="filtersAreCollapsed" ng-click="showFilters()">Show Filters</a>
+
+    </div>
+
+    
+
+    
+    <div class="row">
+
+        <div ng-show="tableInitialized && !have_filtered_records" class="alert alert-warning" role="alert">
+            <strong>Shucks!</strong> No units matched your filter criteria. Try again!
+        </div>
+
+        <div ng-show="have_filtered_records">
+            <p>{{ filtered_records.length }} units match the filter criteria.</p>
+            <table ng-table="tableParams" class="table table-bordered table-striped table-condensed" >
+
+                <tr ng-repeat="data in $data">
+                    <td data-title="'Rank'" style="width: 5%;">{{ data.rank }}</td>
+                    <td class = 'col-sm-1' data-title="'Unit Id'" sortable="'unit_id'"><a ui-sref="unit({unitId: data.unit_id})">{{ data.unit_id.substring(0,6) }}</a></td>
+                    <td class = 'col-sm-1' data-title="'Unit Type'" sortable="'unit_type'">{{ data.unit_type | capFirst}}</td>
+                    <td class = 'col-sm-3' data-title="'Station'" sortable="'station'">
+                      <a ui-sref="stations.detail({station: directory.codeToShortName(data.station_code)})">
+                          {{ data.station }}
+                          <lineColors lines="{{ data.station_lines.join() }}"></lineColors>
+                      </a>
+                    </td>
+                    <td class = "col-sm-1" data-title="'Availability'" sortable="'availability'">{{ data.availability | percentage:2 }}</td>
+                    <td class = "col-sm-1" data-title="'Broken Percentage'" sortable="'broken_time_percentage'">{{ data.broken_time_percentage | percentage:2 }}</td>
+                    <td class = "col-sm-1" data-title="'Breaks'" sortable="'num_breaks'">{{ data.num_breaks }}</td>
+                    <td class = "col-sm-1" data-title="'Inspections'" sortable="'num_inspections'">{{ data.num_inspections }}</td>
+                </tr>
+            </table>
+        </div>
+    </div>
+
+</div>

@@ -109,6 +109,12 @@ app.config(function($stateProvider, $urlRouterProvider) {
     })
     .state('unit.statuses', {
       url: '/statuses'
+    })
+    .state('rankings', {
+      url: '/rankings?timePeriod&unitType&searchString',
+      templateUrl: '/views/rankings.html',
+      controller: 'RankingsCtrl',
+      reloadOnSearch: false // Search params will change frequently in this state as filters are applied to the rankings table.
     });
 
 });

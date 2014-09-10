@@ -190,3 +190,55 @@ body {
   color: black;
   text-decoration: none;
 }
+
+
+/* Styles for adding icons inside input. 
+Src: http://jsfiddle.net/KyleMit/cyCFS/;
+*/
+.left-inner-addon {
+    position: relative;
+}
+.left-inner-addon input {
+    padding-left: 30px;    
+}
+.left-inner-addon i, .left-inner-addon span  {
+    position: absolute;
+    padding: 10px 12px;
+    pointer-events: none;
+}
+
+.right-inner-addon {
+    position: relative;
+}
+.right-inner-addon input {
+    padding-right: 30px;    
+}
+.right-inner-addon i, .right-inner-addon span  {
+    position: absolute;
+    right: 0px;
+    padding: 18px 12px;
+    pointer-events: none;
+}
+.right-inner-addon i.input-sm-addon, .right-inner-addon span.input-sm-addon  {
+    padding: 11px 12px;
+}
+
+.dcmm-close {
+  position: absolute;
+  right: 10px;
+  top: 10px;
+  opacity: 0.4;
+  text-decoration: none;
+  font-size: 22.5px;
+  font-weight: bold;
+  line-height: 1;
+  color: black;
+}
+.dcmm-close:hover,
+.dcmm-close:focus {
+  color: black;
+  text-decoration: none;
+  cursor: pointer;
+  opacity: 0.5;
+  filter: alpha(opacity=50);
+}
