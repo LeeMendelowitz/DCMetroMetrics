@@ -346,13 +346,12 @@ def update_2014_08_25():
     print "Reset color on %i records"%count
 
 
-def strip_end_time():
+def fix_end_times():
   """
   Find units where the lastStatus has an end_time defined.
 
   This is a mysterious scenario and requires further investigation. Where do
-  we set the end time on a status? We may need to use transactions to keep everything
-  sane.
+  we set the end time on a status?
   """
   from dcmetrometrics.eles.models import Unit
 
@@ -372,5 +371,10 @@ def strip_end_time():
     lastStatus.save()
 
 
+def update_2014_09_10():
+  recompute_key_statuses()
+  fix_end_times()
+  recompute_performance_summaries()
+  write_json()
 
   
