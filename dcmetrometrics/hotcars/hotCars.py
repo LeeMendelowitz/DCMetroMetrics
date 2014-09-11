@@ -38,7 +38,7 @@ ME = 'MetroHotCars'.upper()
 mentions_forbidden_words = set(w.upper() for w in ['cold', 'cool'])
 
 def getHotCarUrl(carNum):
-    url = 'http://www.dcmetrometrics.com/#/hotcars/{carNum}'.format(carNum=carNum)
+    url = 'http://www.dcmetrometrics.com/hotcars/detail/{carNum}'.format(carNum=carNum)
     return url
 
 def getWundergroundAPI():
