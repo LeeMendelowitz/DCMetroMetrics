@@ -20,7 +20,7 @@ angular.module('dcmetrometricsApp')
 
         scope.$watch("lines", function(lines){
           scope.lineList = [];
-          if (scope.lines) scope.lineList = scope.lines.replace(/ /g, '').split(",");
+          if (scope.lines) { scope.lineList = scope.lines.replace(/ /g, '').split(","); }
         });
 
 

@@ -133,4 +133,4 @@ app.run(
       $rootScope.$stateParams = $stateParams;
     }
   ]
-)
+);

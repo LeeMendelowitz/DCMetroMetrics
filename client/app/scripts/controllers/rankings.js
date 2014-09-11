@@ -44,7 +44,7 @@ angular.module('dcmetrometricsApp')
         return $scope.rankingsPeriod === "all_time" &&
                $scope.unitTypes === "all_types" &&
                $scope.searchString === "";
-      }
+      };
 
       var reportsFilter = function(data, index) {
         var keep_escalators = $scope.unitTypes === "all_types" || $scope.unitTypes === "escalators_only";
@@ -84,7 +84,7 @@ angular.module('dcmetrometricsApp')
         $scope.filtered_records = filtered_records;
         $scope.have_filtered_records = filtered_records.length > 0;
         return filtered_records;
-      }
+      };
 
       // Get the unit directory
       $scope.rankings = {};
