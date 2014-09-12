@@ -31,6 +31,7 @@ angular.module('dcmetrometricsApp')
       $scope.rankingsPeriod = $scope.$stateParams.timePeriod || "all_time";
       $scope.searchString = $scope.$stateParams.searchString || "";
       $scope.unitTypes = $scope.$stateParams.unitType || "all_types";
+      $scope.searchStringSyntaxError = false;
 
       var parseSortingFromString = function(sortString) {
 
@@ -100,12 +101,14 @@ angular.module('dcmetrometricsApp')
         // Apply the search pattern
         try {
 
+          $scope.searchStringSyntaxError = false;
+
           if ($scope.searchString !== "") {
 
             var matchHandler = searchStringParser.parse($scope.searchString);
-
+            $scope.searchStringSyntaxError = false;
             filtered_records = $filter('filter')( filtered_records, function(rec) {
-              return matchHandler(queryParser.matcherFunction, rec)
+              return matchHandler(queryParser.matcherFunction, rec);
             });
 
           }
@@ -113,7 +116,8 @@ angular.module('dcmetrometricsApp')
         } catch (e) {
 
           if (e instanceof searchStringParser.SyntaxError) {
-            console.log("Caught somethign!", e);
+            // console.log("Caught something!", e);
+            $scope.searchStringSyntaxError = true;
             filtered_records =  [];
           } else {
             throw e;
@@ -211,21 +215,19 @@ angular.module('dcmetrometricsApp')
       });
 
       
-
+      //////////////////////////////////////////////////////////////////////////////////////
       // Perform a delayed call. If interrupted,
-      // by an additional call, reschedule the timeout.
+      // by an additional call, reschedule the timeout if postpone is true.
       // If the callback returns true, reschedule the callback.
-      var makeDelay = function () {
+      var makeDelay = function (postpone) {
+
+        
 
         var delayedTimeout = undefined;
 
-        var doIt = function(callback, delay) {
+        var doIt = function(callback, delay, postpone) {
 
-          // If a timeout is already scheduled, cancel it.
-          if(angular.isDefined(delayedTimeout)) {
-            // console.log("cancelling timeout!")
-            $timeout.cancel(delayedTimeout);
-          }
+          postpone = typeof postpone !== "undefined" ? postpone : true;
 
           var wrappedCall = function() {
             // console.log("in wrapped call");
@@ -243,7 +245,28 @@ angular.module('dcmetrometricsApp')
 
           };
 
-          delayedTimeout = $timeout(wrappedCall, delay);
+          if(!angular.isDefined(delayedTimeout)) {
+
+            delayedTimeout = $timeout(wrappedCall, delay);
+
+          } else {
+
+            // If a timeout is already scheduled, postpone it if necessary.
+            if(postpone) {
+
+              // console.log("postponing timeout!")
+              $timeout.cancel(delayedTimeout);
+              delayedTimeout = $timeout(wrappedCall, delay);
+
+            } else {
+
+              // Otherwise do nothing. The timeout is already scheduled and we are not supposed to postpone it.
+              // console.log("not setting timeout, already scheduled.")
+
+            }
+
+          }
+          
 
         };
 
@@ -251,35 +274,37 @@ angular.module('dcmetrometricsApp')
 
       };
 
-      // Define the callback for performing a table refresh
-      var delayedTableRefreshCallback = function() {
+      // Perform a table refresh
+      var tableRefresh = function() {
+        // console.log("Table refresh!", (new Date()).valueOf());
+        if(angular.isDefined($scope.tableParams) &&
+           angular.isDefined($scope.tableInitialized)) {
+          
+          $scope.tableParams.page(1); // Reset the table to page 1.
+          $scope.tableParams.reload();
+          return false;
 
-            if(angular.isDefined($scope.tableParams) &&
-               angular.isDefined($scope.tableInitialized)) {
-              
-              $scope.tableParams.page(1); // Reset the table to page 1.
-              $scope.tableParams.reload();
-              return false;
-
-            } else {
-              // console.log('rescheduling callback');
-              return true; // reschedule the timeout
-            }
+        } else {
+          // console.log('rescheduling callback');
+          return true; // reschedule the timeout
+        }
 
       };
 
+      // These delays are functions that are called under a timeout.
+      // If the delay is called before the timeout is finished, the
+      // original timeout can be canceled and rescheduled.
+      // Usage: tableRefreshDelay(callback, delay, postpone)
+      //  eg: tableRefreshDelay(tableRefresh, 500, true) // Postpone (i.e. reschedule) the callback if 
+      //                                                 // tableRefreshDelay called before event fires
       var tableRefreshDelay = makeDelay();
       var searchStringDelay = makeDelay();
 
-      // Schedule a delayed table refresh
-      var delayedTableRefresh = function(delay) {
-        tableRefreshDelay(delayedTableRefreshCallback, delay);
-      };
 
       $scope.$watch("rankingsPeriod", function (newVal, oldVal) {
 
           if(angular.isDefined(newVal) && newVal !== oldVal) {
-            delayedTableRefresh();
+            tableRefreshDelay(tableRefresh);
           }
 
           $scope.$stateParams.timePeriod = newVal;
@@ -293,7 +318,7 @@ angular.module('dcmetrometricsApp')
       $scope.$watch("unitTypes", function (newVal, oldVal) {
 
         if(angular.isDefined(newVal) && newVal !== oldVal) {
-          delayedTableRefresh();
+          tableRefreshDelay(tableRefresh, 0);
         }
 
         $scope.$stateParams.unitType = newVal;
@@ -308,10 +333,15 @@ angular.module('dcmetrometricsApp')
 
         if(angular.isDefined(newVal) && newVal !== oldVal) {
 
-          delayedTableRefresh(300);
+          // Refresh the table. Do not postpone the table refresh
+          // if search string continues to change in order to give
+          // the user feedback that query is working.
+          tableRefreshDelay(tableRefresh, 400, false);
 
+          // Postpone setting the state and the window location
+          // for efficiency.
           searchStringDelay(function() {
-            
+
             if (angular.isDefined($scope.searchString)) {
               $scope.$stateParams.searchString = $scope.searchString;
 
@@ -319,9 +349,10 @@ angular.module('dcmetrometricsApp')
               $location.search($scope.$stateParams);
               $location.replace();
             }
-          }, 300);
+            return false;
+          }, 500, true);
 
-        };
+        }
         
       });
 

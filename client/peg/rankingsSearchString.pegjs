@@ -1,5 +1,31 @@
 {
-
+  // The parser will return a compiled function of the form function isMatch(matcher, item).
+  // where matcher is a callback function you must provide which returns true if a query matches
+  // an item.
+  //
+  // For example, here a simple matching function assuming item and query are strings:
+  //
+  //    function matcher(item, query) {
+  //        return item.indexOf(query) >= 0;
+  //    }
+  //
+  //
+  //
+  // Assuming this parser module is built with pegjs into object named searchStringParser,
+  // here is the usage:
+  //
+  //  var phrase = '"green eggs" OR ham';
+  //  var s1 = "eggs are my favorite";
+  //  var s2 = "eggs with ham are my favorite";
+  //  var matcher = function(item, query) {
+  //        return item.indexOf(query) >= 0;
+  //  };
+  //  var compiled = searchStringParser.parse(phrase); 
+  //  compiled(matcher, s1); // Returns false
+  //  compiled(matcher, s2); // Returns true
+  //
+  //
+  
   var makeMatchFunc = function(query) {
 
     var isMatch = function(matcher, item) {
@@ -58,16 +84,16 @@ phrase
 
 ander
  = "&&"
- / "AND"
+ / "AND"i
  / "+"
 
 orer
   = "\|\|"
-  / "OR"
+  / "OR"i
 
 notter
   = "!"
-  / "NOT"
+  / "NOT"i
 
 primary
  =  notter ws? primary:primary { return negateFunction(primary);  }

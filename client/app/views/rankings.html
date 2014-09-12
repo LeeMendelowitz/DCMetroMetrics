@@ -43,13 +43,16 @@
                         </div>
 
                         <div class="col-sm-4">
-                            <label for="seach-filter">Search by unit or station</label>
-                            <div class="right-inner-addon">
-                                <span class="glyphicon glyphicon-search input-sm-addon"></span>
-                                <input id="search-filter" class="form-control input-sm" type="text"
-                                    ng-model="searchString" placeholder="Search" ng-disabled = "!tableInitialized">
+                            <div class="form-group" ng-class="{'has-error': searchStringSyntaxError}">
+                                <label for="seach-filter" class="control-label">Search by unit or station</label>
+                                <div class="right-inner-addon">
+                                    <span class="glyphicon glyphicon-search input-sm-addon"></span>
+                                    <input id="search-filter" class="form-control input-sm" type="text"
+                                        ng-model="searchString" placeholder="Search" ng-disabled = "!tableInitialized">
+                                </div>
+                                <span class="help-block" ng-show="searchStringSyntaxError">Your query has a syntax error.</span>
+                                <span class="help-block" ng-hide="searchStringSyntaxError">e.g. "Dupont" or "E03W02"</span>
                             </div>
-                            <span class="help-block">e.g. "Dupont" or "E03W02"</span>
                             
                         </div>
 
