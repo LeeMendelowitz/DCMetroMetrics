@@ -44,10 +44,10 @@ angular.module('dcmetrometricsApp')
         summary.count += 1;
 
         var oneDay = 24*3600*1000; // oneDay in ms
-        if(now - reportTime < oneDay) summary.d1 += 1;
-        if(now - reportTime < 3*oneDay) summary.d3 += 1;
-        if(now - reportTime < 7*oneDay) summary.d7 += 1;
-        if(now - reportTime < 14*oneDay) summary.d14 += 1;
+        if(now - reportTime < oneDay) {summary.d1 += 1;}
+        if(now - reportTime < 3*oneDay) {summary.d3 += 1;}
+        if(now - reportTime < 7*oneDay) {summary.d7 += 1;}
+        if(now - reportTime < 14*oneDay) {summary.d14 += 1;}
 
       };
 

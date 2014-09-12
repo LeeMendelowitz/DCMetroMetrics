@@ -79,7 +79,7 @@ angular.module('dcmetrometricsApp')
             colorString += color2code[report.color];
           }
           return colorString;
-        }
+        };
 
 
       }],
