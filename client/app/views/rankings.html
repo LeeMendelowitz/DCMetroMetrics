@@ -23,7 +23,7 @@
 
                         <div class="form-group col-sm-4">
                             <label for="select-rankings-period">Time Period</label>
-                            <select id="select-rankings-period" class="form-control input-sm" ng-model = "rankingsPeriod">
+                            <select id="select-rankings-period" class="form-control input-sm" ng-model = "rankingsPeriod" ng-disabled = "!tableInitialized">
                                 <option label="All Time" value="all_time"></option>
                                 <option label="1 Day" value = "one_day"></option>
                                 <option label="3 Day" value = "three_day"></option>
@@ -35,7 +35,7 @@
 
                         <div class="form-group col-sm-4">
                             <label for="select-unit-filter">Unit Types</label>
-                            <select id="select-unit-filter" class = "form-control input-sm" ng-model = "unitTypes">
+                            <select id="select-unit-filter" class = "form-control input-sm" ng-model = "unitTypes" ng-disabled = "!tableInitialized">
                                 <option label="Escalators and Elevators" value="all_types"></option>
                                 <option label="Escalators Only" value = "escalators_only"></option>
                                 <option label="Elevators Only" value = "elevators_only"></option>
@@ -47,7 +47,7 @@
                             <div class="right-inner-addon">
                                 <span class="glyphicon glyphicon-search input-sm-addon"></span>
                                 <input id="search-filter" class="form-control input-sm" type="text"
-                                    ng-model="searchString" placeholder="Search">
+                                    ng-model="searchString" placeholder="Search" ng-disabled = "!tableInitialized">
                             </div>
                             <span class="help-block">e.g. "Dupont" or "E03W02"</span>
                             
@@ -89,10 +89,12 @@
                     <td class = 'col-sm-1' data-title="'Unit Id'" sortable="'unit_id'"><a ui-sref="unit({unitId: data.unit_id})">{{ data.unit_id.substring(0,6) }}</a></td>
                     <td class = 'col-sm-1' data-title="'Unit Type'" sortable="'unit_type'">{{ data.unit_type | capFirst}}</td>
                     <td class = 'col-sm-3' data-title="'Station'" sortable="'station'">
-                      <a ui-sref="stations.detail({station: directory.codeToShortName(data.station_code)})">
-                          {{ data.station }}
-                          <lineColors lines="{{ data.station_lines.join() }}"></lineColors>
-                      </a>
+                        <a ui-sref="stations.detail({station: directory.codeToShortName(data.station_code)})">
+                            {{ data.station }}
+                            <lineColors lines="{{ data.station_lines.join() }}"></lineColors>
+                        </a>
+                        <br>
+                        {{ directory.unitDescription(data.unit) }}
                     </td>
                     <td class = "col-sm-1" data-title="'Availability'" sortable="'availability'">{{ data.availability | percentage:2 }}</td>
                     <td class = "col-sm-1" data-title="'Broken Percentage'" sortable="'broken_time_percentage'">{{ data.broken_time_percentage | percentage:2 }}</td>

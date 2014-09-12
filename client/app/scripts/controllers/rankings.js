@@ -8,12 +8,10 @@
  * Controller of the dcmetrometricsApp
  */
 angular.module('dcmetrometricsApp')
-  .controller('RankingsCtrl', ['$scope', '$state', 'directory', 'ngTableParams', '$filter',
+  .controller('RankingsCtrl', ['$scope', '$state', 'directory', 'queryParser', 'ngTableParams', '$filter',
     '$timeout', '$stateParams', '$location',
 
-     function ($scope, $state, directory, ngTableParams, $filter, $timeout, $stateParams, $location) {
-
-      console.log("RankingsCtrl top!");
+     function ($scope, $state, directory, queryParser, ngTableParams, $filter, $timeout, $stateParams, $location) {
 
       $scope.filtersAreCollapsed = false;
       $scope.tableInitialized = false;
@@ -34,6 +32,22 @@ angular.module('dcmetrometricsApp')
       $scope.searchString = $scope.$stateParams.searchString || "";
       $scope.unitTypes = $scope.$stateParams.unitType || "all_types";
 
+      var parseSortingFromString = function(sortString) {
+
+        if(!angular.isDefined(sortString) || sortString === "" || sortString === null) {
+          return;
+        }
+        var sortChar = sortString.substring(0, 1);
+        var sortCol = sortString.substring(1);
+        var sort = { };
+        sort[sortCol] = sortChar === "+" ? "asc" : "desc";
+        return sort;
+      };
+
+      $scope.sort = parseSortingFromString($scope.$stateParams.orderBy) || 
+        {broken_time_percentage: 'desc'};
+
+
       $scope.resetFilters = function() {
         $scope.rankingsPeriod = "all_time";
         $scope.unitTypes = "all_types";
@@ -46,7 +60,9 @@ angular.module('dcmetrometricsApp')
                $scope.searchString === "";
       };
 
-      var reportsFilter = function(data, index) {
+
+
+      var unitsFilter = function(data, index) {
         var keep_escalators = $scope.unitTypes === "all_types" || $scope.unitTypes === "escalators_only";
         var keep_elevators = $scope.unitTypes === "all_types" || $scope.unitTypes === "elevators_only";
         return (data.unit_type === "ESCALATOR" && keep_escalators) ||
@@ -78,12 +94,39 @@ angular.module('dcmetrometricsApp')
           record.rank = i + 1;
         }
 
-        // Apply filters
-        var filtered_records = $filter('filter')(orderedData, reportsFilter);
-        filtered_records = $filter('filter')( filtered_records, {$: $scope.searchString} );
+        // Apply unit filter
+        var filtered_records = $filter('filter')(orderedData, unitsFilter);
+
+        // Apply the search pattern
+        try {
+
+          if ($scope.searchString !== "") {
+
+            var matchHandler = searchStringParser.parse($scope.searchString);
+
+            filtered_records = $filter('filter')( filtered_records, function(rec) {
+              return matchHandler(queryParser.matcherFunction, rec)
+            });
+
+          }
+
+        } catch (e) {
+
+          if (e instanceof searchStringParser.SyntaxError) {
+            console.log("Caught somethign!", e);
+            filtered_records =  [];
+          } else {
+            throw e;
+          }
+
+        }
+
+
+        // filtered_records = $filter('filter')( filtered_records, {$: $scope.searchString} );
         $scope.filtered_records = filtered_records;
         $scope.have_filtered_records = filtered_records.length > 0;
         return filtered_records;
+
       };
 
       // Get the unit directory
@@ -98,8 +141,9 @@ angular.module('dcmetrometricsApp')
 
         $scope.data = data;
 
+        // Get rankings for the specified time period. Return an array
+        // of records.
         var getRankings = function(rankings_key) {
-
           
           var unit_data, station_data, unit, record;
           var records = [];
@@ -113,11 +157,14 @@ angular.module('dcmetrometricsApp')
             unit_data = data.unitIdToUnit[unitId];
             station_data = data.codeToData[unit_data.station_code];
 
-            record = {unit_id: unit_data.unit_id,
+            record = {unit: unit_data,
+                      unit_id: unit_data.unit_id,
                       unit_type: unit_data.unit_type,
                       station: station_data.long_name,
                       station_code: unit_data.station_code,
-                      station_lines: station_data.all_lines };
+                      station_lines: station_data.all_lines,
+                      station_desc: unit_data.station_desc,
+                      esc_desc: unit_data.esc_desc };
             
             // Copy attributes from the all_time performance summary into the record
             copyFromInto(unit_data.performance_summary[rankings_key], record);
@@ -146,9 +193,7 @@ angular.module('dcmetrometricsApp')
       $scope.tableParams = new ngTableParams({
           page: 1,            // show first page
           count: 20,           // count per page
-          sorting: {
-            broken_time_percentage: 'desc'
-          }
+          sorting: $scope.sort
         }, {
           total: 0, // length of data
           getData: function($defer, params) {
@@ -160,54 +205,81 @@ angular.module('dcmetrometricsApp')
               params.total(orderedData.length);  
               $defer.resolve(orderedData.slice((params.page() - 1) * params.count(), params.page() * params.count()));
               $scope.tableInitialized  = true;
+
             });
         }
       });
 
       
-      
-      // Perform a delayed refresh of the table.
-      // Delay any filters by 300 millisceonds
-      var delayedRefresh = (function () {
+
+      // Perform a delayed call. If interrupted,
+      // by an additional call, reschedule the timeout.
+      // If the callback returns true, reschedule the callback.
+      var makeDelay = function () {
 
         var delayedTimeout = undefined;
 
-        var doIt = function(delay) {
+        var doIt = function(callback, delay) {
 
-          // If a timeout is already scheduled, don't do anything.
+          // If a timeout is already scheduled, cancel it.
           if(angular.isDefined(delayedTimeout)) {
-            return;
+            // console.log("cancelling timeout!")
+            $timeout.cancel(delayedTimeout);
           }
 
-          // The callback will undo the timeout.
-          var callback = function() {
-            // console.log('in callback!');
-            if(angular.isDefined($scope.tableParams) &&
-               angular.isDefined($scope.tableInitialized)) {
-              // console.log('reloading from callback');
-              $scope.tableParams.page(1); // Reset the table to page 1.
-              $scope.tableParams.reload();
-              delayedTimeout = undefined;
+          var wrappedCall = function() {
+            // console.log("in wrapped call");
 
+            var ret = callback();
+            if (ret === true) {
+              // console.log("rescheduling timeout");
+              $timeout.cancel(delayedTimeout);
+              delayedTimeout = $timeout(wrappedCall, delay);
             } else {
-              // console.log('rescheduling callback');
-              delayedTimeout = $timeout(callback, delay);
-
+              // console.log("done with wrapped called.")
+              $timeout.cancel(delayedTimeout);
+              delayedTimeout = undefined;
             }
 
           };
 
-          delayedTimeout = $timeout(callback, delay);
+          delayedTimeout = $timeout(wrappedCall, delay);
 
         };
+
         return doIt;
 
-      }());
+      };
 
+      // Define the callback for performing a table refresh
+      var delayedTableRefreshCallback = function() {
+
+            if(angular.isDefined($scope.tableParams) &&
+               angular.isDefined($scope.tableInitialized)) {
+              
+              $scope.tableParams.page(1); // Reset the table to page 1.
+              $scope.tableParams.reload();
+              return false;
+
+            } else {
+              // console.log('rescheduling callback');
+              return true; // reschedule the timeout
+            }
+
+      };
+
+      var tableRefreshDelay = makeDelay();
+      var searchStringDelay = makeDelay();
+
+      // Schedule a delayed table refresh
+      var delayedTableRefresh = function(delay) {
+        tableRefreshDelay(delayedTableRefreshCallback, delay);
+      };
 
       $scope.$watch("rankingsPeriod", function (newVal, oldVal) {
+
           if(angular.isDefined(newVal) && newVal !== oldVal) {
-            delayedRefresh();
+            delayedTableRefresh();
           }
 
           $scope.$stateParams.timePeriod = newVal;
@@ -221,7 +293,7 @@ angular.module('dcmetrometricsApp')
       $scope.$watch("unitTypes", function (newVal, oldVal) {
 
         if(angular.isDefined(newVal) && newVal !== oldVal) {
-          delayedRefresh();
+          delayedTableRefresh();
         }
 
         $scope.$stateParams.unitType = newVal;
@@ -233,18 +305,34 @@ angular.module('dcmetrometricsApp')
       }, true); // Deep watch
 
       $scope.$watch("searchString", function (newVal, oldVal) {
+
         if(angular.isDefined(newVal) && newVal !== oldVal) {
-          delayedRefresh(300);
-        }
 
-        if (angular.isDefined($scope.searchString)) {
-          $scope.$stateParams.searchString = $scope.searchString;
+          delayedTableRefresh(300);
 
-          $state.go('rankings', $scope.$stateParams, {location: "replace"});
-          $location.search($scope.$stateParams);
-          $location.replace();
-        }
+          searchStringDelay(function() {
+            
+            if (angular.isDefined($scope.searchString)) {
+              $scope.$stateParams.searchString = $scope.searchString;
+
+              $state.go('rankings', $scope.$stateParams, {location: "replace"});
+              $location.search($scope.$stateParams);
+              $location.replace();
+            }
+          }, 300);
+
+        };
+        
       });
+
+      // Update state params when the table sort changes
+      $scope.$watch("tableParams.sorting()", function (newVal, oldVal) {
+        $scope.$stateParams.orderBy = $scope.tableParams.orderBy();
+        $state.go('rankings', $scope.$stateParams, {location: "replace"});
+        $location.search($scope.$stateParams);
+        $location.replace();
+      });
+
 
 
   }]);

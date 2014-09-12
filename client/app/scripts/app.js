@@ -111,7 +111,7 @@ app.config(function($stateProvider, $urlRouterProvider) {
       url: '/statuses'
     })
     .state('rankings', {
-      url: '/rankings?timePeriod&unitType&searchString',
+      url: '/rankings?timePeriod&unitType&searchString&orderBy',
       templateUrl: '/views/rankings.html',
       controller: 'RankingsCtrl',
       reloadOnSearch: false // Search params will change frequently in this state as filters are applied to the rankings table.

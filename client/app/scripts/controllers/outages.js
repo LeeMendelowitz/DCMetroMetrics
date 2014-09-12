@@ -65,8 +65,6 @@ angular.module('dcmetrometricsApp')
           }
         }
 
-        console.log(stationDict);
-
         $scope.stations_with_outage = stations_with_outage;
 
 
