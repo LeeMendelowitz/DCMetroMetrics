@@ -72,6 +72,9 @@ start
 ws
   = chars:[\t ]+ { return " "; }
 
+qt
+ = ['"]+
+
 word
  = chars:[a-zA-z0-9]+ { var q =  chars.join(""); return q; }
 
@@ -80,7 +83,7 @@ multiword
  / word
 
 phrase
- = '"' w:multiword '"' { return w; }
+ = qt w:multiword qt { return w; }
 
 ander
  = "&&"
