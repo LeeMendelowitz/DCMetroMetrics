@@ -22,6 +22,7 @@ import logging
 from dcmetrometrics.common.globals import DATA_DIR, REPO_DIR, DATA_DIR
 from dcmetrometrics.common.restartingGreenlet import RestartingGreenlet
 from dcmetrometrics.eles.ELESApp import ELESApp
+from dcmetrometrics.keys.keys import MetroEscalatorKeys, MetroElevatorKeys
 
 OUTPUT_DIR = DATA_DIR
 if OUTPUT_DIR is None:
@@ -57,7 +58,7 @@ class App(RestartingGreenlet):
         RestartingGreenlet.__init__(self, SLEEP=SLEEP, LIVE=LIVE)
         self.LIVE = LIVE # Tweet only if Live
         self.SLEEP = SLEEP # Sleep time after each tick
-        self.app = ELESApp()
+        self.app = ELESApp(LIVE, MetroEscalatorKeys, MetroElevatorKeys)
 
     def _run(self):
         while True:

@@ -193,6 +193,23 @@ def delete_recent_statuses(time_delta = timedelta(hours = 2)):
     print "computing key statuses for unit: %s"%u.unit_id
     u.compute_key_statuses()
 
+def delete_last_n_statuses(n):
+  """Delete the last n statuses"""
+  from dcmetrometrics.common import metroTimes
+
+  from dcmetrometrics.eles.models import UnitStatus
+
+  statuses = UnitStatus.objects().order_by('-time').limit(n)
+  units = set(s.unit for s in statuses)
+  print "Deleting %i recent statuses"%len(statuses)
+  for s in statuses:
+    s.delete()
+
+  for u in units:
+    print "computing key statuses for unit: %s"%u.unit_id
+    u.compute_key_statuses()
+
+
 def recompute_key_statuses():
   """Recompute key statuses for all units"""
   from dcmetrometrics.eles.models import Unit, KeyStatuses

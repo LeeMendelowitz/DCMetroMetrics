@@ -48,6 +48,10 @@ MAX_TICK_TWEETS = 10
 
 PERFORMANCE_SUMMARY_INTERVAL = timedelta(hours = 2)
 
+def url_maker(unit_id):
+    url = "http://www.dcmetrometrics.com/unit/{unit_id}"
+    return url.format(unit_id = unit_id)
+
 def checkWMATAKey():
     """
     Check that the WMATA_API_KEY has been properly set.
@@ -87,29 +91,34 @@ class ELESApp(object):
     Base class for ElevatorApp and EscalatorApp
     """
     
-    def __init__(self, log = sys.stdout, LIVE=True, QUIET=False):
+    def __init__(self,
+        LIVE=True,
+        escTwitterKeys = None,
+        eleTwitterKeys = None):
 
         self.LIVE = LIVE
-        self.QUIET = QUIET
-        self.twitterApi = None
 
-        self.escTwitterKeys = None
-        self.eleTwitterKeys = None
+        self.escTwitterKeys = escTwitterKeys
+        self.eleTwitterKeys = eleTwitterKeys
 
-        # Check if the Twitter Keys have been set.
-        # self.twitterKeys = self.getTwitterKeys()
-        # if not self.twitterKeys.isSet():
-        #     self.LIVE = False
+        self.escTwitter = None
+        self.eleTwitter = None
+
+        if self.escTwitterKeys:
+            self.escTwitter = twitterUtils.getApi(self.escTwitterKeys)
+
+        if self.eleTwitterKeys:
+            self.eleTwitter = twitterUtils.getApi(self.eleTwitterKeys)
 
         # Require that the WMATA Key is set.
         self.checkWMATAKey()
 
-        self.log = log
         self.dbg = dbGlobals.G()
 
         self.json_writer = JSONWriter(WWW_DIR)
 
     def getTwitterApi(self):
+
         if not self.LIVE:
             self.twitterApi = None
             return None
@@ -121,6 +130,7 @@ class ELESApp(object):
 
         if self.twitterApi is None:
             self.twitterApi = twitterUtils.getApi(self.twitterKeys)
+
         return self.twitterApi
 
     ######################################
@@ -134,6 +144,10 @@ class ELESApp(object):
 
         appState = EscalatorAppState.get()
 
+        time_since_last_tick = None
+        if appState.lastRunTime:
+            time_since_last_tick = (curTime - appState.lastRunTime).total_seconds()
+
         # Get the current list of WMATA Incidents
         INFO("Getting ELES incidents from WMATA API.")
         incidents = getELESIncidents()
@@ -142,15 +156,14 @@ class ELESApp(object):
 
         # Update the database with units that changed status.
         INFO("Processing changed units.")
-        changed_units = self.processIncidents(incidents, curTime, log = self.log)
+        changed_units = self.processIncidents(incidents, curTime)
+        INFO("Have %i changed units"%len(changed_units))
 
         # Make tweets, but do not send them.
         INFO("Generating Tweets")
-        tweets = self.generate_tweets(changed_units)
+        tweets = self.generate_tweets(changed_units, url_maker = url_maker)
 
-        # Print tweets to screen.
-        for t in tweets:
-            print t, '\n\n'
+
 
         # Update the unit's key statuses document.
         INFO("Updating key statuses.")
@@ -196,14 +209,30 @@ class ELESApp(object):
         appState.lastRunTime = curTime
         appState.save()
 
+        # Print tweets to screen.
+        for t in tweets:
+           INFO(t)
 
-        # TODO: Broadcast tweets on twitter
+        ###############################################
+        # Broadcast Tweets
+        assert(len(tweets) == len(changed_units))
+        units = [c[1] for c in changed_units]
+
+        if self.LIVE and \
+         len(tweets) <= MAX_TICK_TWEETS and \
+         self.escTwitter is not None and \
+         self.eleTwitter is not None:
+            INFO("Broadcasting Tweets")
+            self.broadcast_tweets(units, tweets)
+        else:
+            INFO("Not tweeting live.")
+
         INFO("Done tick.")
 
 
     #########################
     # Execute the tick
-    def processIncidents(self, incidents, curTime, tickDelta = 0.0, log = sys.stdout):
+    def processIncidents(self, incidents, curTime, tickDelta = 0.0):
         """
         - Compare the current list of ELES incidents to those we have in the database.
         - Add any new units or symptom codes that we are seeing for the first time.
@@ -301,49 +330,10 @@ class ELESApp(object):
 
         return changed_units
 
-
-    ##########################################################
-    # Send tweets which have been stored in the twitter outbox
-    # Only tweet if tweetLive is True
-    def sendTweets(self, tweetLive=False):
-
-        twitterApi = self.getTwitterApi()
-        tweetOutbox = self.getTweetOutbox()
-        log = self.log
-
-        # Purge the outbox of any stale tweets which have not been sent in last hour
-        curTime = utcnow()
-        staleTime = curTime - timedelta(hours=1)
-        log.write('Before removing stale tweets, outbox size %i\n'%tweetOutbox.count())
-        tweetOutbox.remove({'time' : {'$lt' : staleTime}})
-        log.write('After removing stale tweets, outbox size %i\n'%tweetOutbox.count())
-
-        toSend = list(tweetOutbox.find({'sent' : False}))
-        if tweetLive:
-            log.write('Tweets are live.\n')
-        else:
-            log.write('Tweets are not live.\n')
-        for doc in toSend:
-            msg = doc['msg']
-            log.write('Tweet Msg: %s\n'%msg)
-            try:
-                if tweetLive:
-                    twitterApi.PostUpdate(msg)
-                # Mark the tweet as sent
-                tweetOutbox.update({'_id' : doc['_id']}, {'$set' : {'sent' : True}})
-            except TwitterError as e:
-                log.write('Caught TwitterError: %s\n'%str(e))
-
-        # Remove all sent tweets from the outbox
-        tweetOutbox.remove({'sent' : True})
-
-
     ############################################################
     # Generate tweet msgs using the changedStatusDict
     # Return a list of tweets
-    def generate_tweets(self, changed_statuses, availabilityMaker=None, urlMaker=None):
-
-        dbg = self.dbg
+    def generate_tweets(self, changed_statuses, url_maker=None):
 
         if not changed_statuses:
             return []
@@ -426,21 +416,30 @@ class ELESApp(object):
                                            symptom1 = last_symptom,
                                            symptom2 = new_symptom)
 
-            # Tack on availability data
-            if availabilityMaker:
-                availabilityStr = availabilityMaker(escId)
-                if availabilityStr:
-                    tweet_msg = extend_tweet(tweet_msg, availabilityStr)
 
             # Tack on url string
-            if urlMaker:
-                urlStr = urlMaker(escId)
+            if url_maker:
+                urlStr = url_maker(unit_id)
                 if urlStr:
                     tweet_msg = extend_tweet_url(tweet_msg, urlStr)
 
             tweet_msgs.append(tweet_msg)
 
         return tweet_msgs
+
+    def broadcast_tweets(self, units, tweets):
+
+        for u, t in zip(units, tweets):
+            
+            T = self.escTwitter if u.is_escalator() else self.eleTwitter
+
+            try:
+
+                T.PostUpdate(t)
+
+            except TwitterError as e:
+                logger.error('Caught TwitterError when trying to tweet.\n\tmsg: %s\m\t%s'%(t, str(e)))
+            
 
 ####################################################
 # Convert seconds to a time string

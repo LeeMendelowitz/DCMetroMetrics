@@ -21,7 +21,7 @@ SCRIPT_DIR = os.path.join(REPO_DIR, 'scripts')
 DATA_DIR = os.environ['DATA_DIR']
 
 # Import application modules
-from ELESAppRunner import App as ELESApp
+from ELESAppRunner import App as ELESAppRunner
 # from elevatorApp import ElevatorApp
 from hotCarApp import HotCarApp
 
@@ -30,15 +30,12 @@ import gevent
 from gevent import monkey; monkey.patch_all() # Needed for bottle
 
 HOT_CAR_TWEET_LIVE = 'HOT_CAR_TWEET_LIVE' in os.environ
+ELES_TWEET_LIVE = 'ELES_TWEET_LIVE' in os.environ
 
-def run(LIVE = False):
-
-   # Do not run as live unless this module is main
-   if __name__ != "__main__":
-       LIVE = False
+def run():
 
    # Run MetroEscalators/MetroElevators twitter App
-   elesApp = ELESApp(LIVE = LIVE)
+   elesApp = ELESAppRunner(LIVE = ELES_TWEET_LIVE)
    elesApp.start()
 
    # Run HotCar twitter app
@@ -50,5 +47,4 @@ def run(LIVE = False):
        gevent.sleep(10)
 
 if __name__ == '__main__':
-   #run(LIVE=True)
-   run(LIVE = False)
+   run()
