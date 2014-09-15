@@ -421,11 +421,11 @@ def getForbiddenCarsByMention():
         time = makeUTCDateTime(tweet.created_at_in_seconds)
         return [(time, n) for n in hcd['cars']]
 
-    timeAndCarNums = [(time,carNum) for tweet in nonAutomatedTweets\
-                                    for time,carNum in getTimeCarPairs(tweet)]
+    timeAndCarNums = [(time, car_number) for tweet in nonAutomatedTweets\
+                                    for time,car_number in getTimeCarPairs(tweet)]
 
     # Add these car numbers to the hotcars_forbidden_by_mention database
-    for time, carNum in timeAndCarNums:
+    for time, car_number in timeAndCarNums:
         CarsForbiddenByMention.add(car_number = car_number, time = time)
 
     # Update the app state
