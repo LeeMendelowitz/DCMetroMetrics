@@ -5,11 +5,14 @@ from json import JSONEncoder, dumps
 import datetime
 import os
 from .utils import mkdir_p
+from datetime import timedelta
+from collections import defaultdict
 
 
 from ..eles.models import (Unit, UnitStatus, KeyStatuses, Station)
 from ..hotcars.models import (HotCarReport, Temperature)
 from ..common.WebJSONMixin import WebJSONMixin
+from ..common.metroTimes import tzutc
 
 class WebJSONEncoder(JSONEncoder):
   """JSON Encoder for DC Metro Metrics data types.
@@ -114,6 +117,54 @@ class JSONWriter(object):
 
     with open(outpath, 'w') as fout:
       fout.write(jdata)
+
+  def write_hotcars_by_day(self):
+    """
+    Write hot car counts by day.
+    """
+    all_reports = list(HotCarReport.objects.order_by('time').select_related())
+    day_to_count = defaultdict(int)
+
+    for r in all_reports:
+      r.time.replace(tzinfo=tzutc)
+      day_to_count[r.time.date()] += 1
+
+    day_to_temp = dict((t.date.date(), t.max_temp) for t in Temperature.objects.order_by('date'))
+
+    # Create time series for both temperate and counts
+    first_day = all_reports[0].time.date()
+    last_day = all_reports[-1].time.date()
+
+    def gen_days(s, e):
+      d = s
+      while d < e:
+        yield d
+        d = d + timedelta(days = 1)
+
+    days = gen_days(first_day, last_day + timedelta(days = 1))
+    count_series = [{'day': d, 'count' : day_to_count[d]} for d in days]
+
+    temp_series = [{'day':t.date.date(), 'temp': t.max_temp} for t in Temperature.objects.order_by('date')]
+
+    ret = {'counts' : count_series,
+           'temps' : temp_series}
+
+    jdata = dumps(ret, cls = WebJSONEncoder)
+
+    # Create the directory if necessary
+    outdir = os.path.join(self.basedir, 'json')
+    mkdir_p(outdir)
+
+    fname = 'hotcars_by_day.json'
+    outpath = os.path.join(outdir, fname)
+
+    with open(outpath, 'w') as fout:
+      fout.write(jdata)
+
+
+
+
+
 
 
 
