@@ -14,7 +14,7 @@ angular.module('dcmetrometricsApp')
       restrict: 'E',
       link: function postLink(scope, element, attrs) {
 
-        var totalWidth = 960;
+        var totalWidth = 900;
         var totalHeight = 500;
         
         var margin = {top: 20, right: 20, bottom: 30, left: 50},
@@ -231,7 +231,8 @@ angular.module('dcmetrometricsApp')
 
         });
 
-      } // end link
+      }, // end link
+      replace: true
 
     };
   }]);
