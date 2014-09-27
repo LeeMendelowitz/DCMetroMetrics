@@ -242,3 +242,70 @@ Src: http://jsfiddle.net/KyleMit/cyCFS/;
   opacity: 0.5;
   filter: alpha(opacity=50);
 }
+
+
+
+
+/* Styles for D3 Visualizations */
+.axis text {
+  font: 10px sans-serif;
+}
+
+.axis path,
+.axis line {
+  fill: none;
+  stroke: #000;
+  shape-rendering: crispEdges;
+}
+
+.x.axis path {
+  display: none;
+}
+
+.area {
+    fill: lightsteelblue;
+    stroke-width: 0;
+}
+
+.line {
+  fill: none;
+  stroke: steelblue;
+  stroke-width: 1.5px;
+}
+
+circle.countTracker {
+  fill: steelblue;
+  stroke: black;
+}
+
+.area.temperature {
+  fill: #E7D1D1;
+  fill-opacity: 0.6;
+  stroke-width: 0;
+}
+
+.line.temperature {
+  fill: none;
+  stroke: #8c1919;
+  stroke-width: 1.5px;
+}
+
+circle.tempTracker {
+  fill: #8c1919;
+  stroke: black;
+}
+
+
+div.hotcars-tooltip {   
+  position: absolute;           
+  text-align: center;        
+  width: auto;                  
+  height: auto;                 
+  padding: 5px;             
+  font: 12px sans-serif;        
+  background: black;
+  color: white;
+  border: 0px;      
+  border-radius: 8px;           
+  pointer-events: none;         
+}

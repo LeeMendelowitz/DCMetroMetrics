@@ -28,6 +28,10 @@ angular.module('dcmetrometricsApp')
 
     });
 
+    var dailyDataPromise = hotCarDirectory.get_daily_data();
+    dailyDataPromise.then( function(data) {
+      $scope.dailyCountData = data;
+    });
    
 
     // Set up the hot car leaderboard
@@ -74,7 +78,9 @@ angular.module('dcmetrometricsApp')
       return $scope.$state.is("hotcars.main") || $scope.$state.is("hotcars.main.tweets");
     };
 
-
+    $scope.showTimeseries = function() {
+      return $scope.$state.is("hotcars.main.timeseries");
+    };
 
 
   }]);

@@ -73,6 +73,11 @@ def checkWMATAKey():
     if not isinstance(WMATA_API_KEY,str):
         raise TypeError('WMATA_API_KEY must be a str. Check your keys.py')
 
+def daily_stats():
+    """
+    For each escalator, compute the statistics for the last 24 hours
+    """
+
 def getELESIncidents():
     """
     Get all escalator/elevator incidents from the WMATA API.

@@ -15,6 +15,10 @@ module.exports = function (grunt) {
   // Time how long tasks take. Can help when optimizing build times
   require('time-grunt')(grunt);
 
+  var modRewrite = require('connect-modrewrite')([
+    '!\\.ttf|\\.woff|\\.ttf|\\.eot|\\.html|\\.js|\\.coffee|\\.css|\\.png|\\.jpg|\\.gif|\\.svg$ /index.html [L]'
+  ]);
+
   // Configurable paths for the application
   var appConfig = {
     app: require('./bower.json').appPath || 'app',
@@ -64,7 +68,7 @@ module.exports = function (grunt) {
     },
 
     // The actual grunt server settings
-    connect: {
+    connect: {  
       options: {
         port: 9000,
         // Change this to '0.0.0.0' to access the server from outside.
@@ -76,6 +80,7 @@ module.exports = function (grunt) {
           open: true,
           middleware: function (connect) {
             return [
+              modRewrite,
               connect.static('.tmp'),
               connect().use(
                 '/bower_components',

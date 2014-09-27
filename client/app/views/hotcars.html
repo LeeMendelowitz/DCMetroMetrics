@@ -12,6 +12,8 @@
         <ul class="nav nav-pills nav-stacked dcmm-sidenav" affix offset-top="250">
           <li ng-class='{active: showTweets()}'><a ui-sref="hotcars.main.tweets">Tweets</a></li>
           <li ng-class='{active: showLeaderboard()}'><a ui-sref="hotcars.main.leaderboard" >Leaderboard</a></li>
+        
+          <li ng-class='{active: showTimeseries()}'><a ui-sref="hotcars.main.timeseries">Timeseries</a></li>
         </ul>
     </div>
 
@@ -110,6 +112,14 @@
 
             </div>
         </div>
+
+        <div class="col-sm-12" ng-show="showTimeseries()">
+          <hotcarstempcountplot><hotcarstempcountplot>
+          <pre>
+            {{ dailyCountData | json}}
+          </pre>
+        </div>
+
 
     </div> <!-- end cell -->
 

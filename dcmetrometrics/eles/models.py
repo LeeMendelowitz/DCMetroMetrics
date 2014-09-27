@@ -444,7 +444,9 @@ class Unit(WebJSONMixin, Document):
     unit_id = kwargs['unit_id']
 
     try:
+
       unit = Unit.objects.get(unit_id = unit_id)
+
     except DoesNotExist:
       logger.info("Adding Unit to DB: " + unit_id)
       unit = cls(**kwargs)
@@ -455,6 +457,8 @@ class Unit(WebJSONMixin, Document):
     has_key_statuses = unit.key_statuses is not None
     has_performance_summary = unit.performance_summary is not None
 
+    updated_unit = False
+
     if status_count == 0:
 
         if curTime is None:
@@ -463,7 +467,7 @@ class Unit(WebJSONMixin, Document):
         G = dbGlobals.G()
 
         
-        first_status = UnitStatus(escalator_id = unit.id,
+        first_status = UnitStatus(unit = unit,
                                   time = curTime - timedelta(seconds=1),
                                   tickDelta = 0,
                                   symptom_code = G.OPERATIONAL)
@@ -475,16 +479,24 @@ class Unit(WebJSONMixin, Document):
         unit.compute_key_statuses()
         unit.compute_performance_summary()
 
+        updated_unit = True
+
     else:
 
       if not has_key_statuses:
         # Compute key statuses from the unit's history.
         logger.info("Could not find a key status entry for unit %s. Building one from the unit's status history\n"%unit.id)
         unit.compute_key_statuses()
+        updated_unit = True
 
       if not has_performance_summary:
         logger.info("Could not find a performance summary for unit %s. Building one from the unit's status history\n"%unit.id)
         unit.compute_performance_summary()
+        updated_unit = True
+
+    if updated_unit:
+      unit.save()
+
 
   def get_statuses(self, *args, **kwargs):
     """
@@ -492,7 +504,7 @@ class Unit(WebJSONMixin, Document):
     """
     return self._get_unit_statuses(object_id = self.pk, *args, **kwargs)
 
-  def compute_performance_summary(self):
+  def compute_performance_summary(self, save = False):
     """
     Compute or recompute the historical performance summary for a unit.
     """
@@ -532,7 +544,9 @@ class Unit(WebJSONMixin, Document):
       setattr(ups, key, upp)
 
     self.performance_summary = ups
-    self.save()
+
+    if save:
+      self.save()
 
     return ups
 
@@ -680,7 +694,7 @@ class Unit(WebJSONMixin, Document):
 
     return statuses
 
-  def compute_key_statuses(self):
+  def compute_key_statuses(self, save = False):
       """
       Compute or recompute the KeyStatuses for a unit.
       Save the KeyStatuses doc and return it.
@@ -698,7 +712,8 @@ class Unit(WebJSONMixin, Document):
 
       logger.info("Computing key statuses entry for unit: " + self.unit_id)
       self.key_statuses = KeyStatuses.select_key_statuses(statuses)
-      self.save()
+      if save:
+        self.save()
       return self.key_statuses
 
 
@@ -850,7 +865,9 @@ class UnitStatus(WebJSONMixin, Document):
 
   meta = {'collection' : 'escalator_statuses',
           'index' : [('escalator_id', '-time'),
-                     ('station_code', '-time')]}
+                     ('station_code', '-time'),
+                     ('time', 'end_time'),
+                    ]}
 
   web_json_fields = ['unit_id', 'time', 'end_time', 'metro_open_time',
     'update_type',

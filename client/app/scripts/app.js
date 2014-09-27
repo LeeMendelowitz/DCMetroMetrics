@@ -89,10 +89,13 @@ app.config(function($stateProvider, $urlRouterProvider) {
       templateUrl: '/views/hotcars.html'
     })
     .state('hotcars.main.leaderboard', {
-      url: '/leaderboard',
+      url: '/leaderboard'
     })
     .state('hotcars.main.tweets', {
-      url: '/tweets',
+      url: '/tweets'
+    })
+    .state('hotcars.main.timeseries', {
+      url: '/timeseries'
     })
     .state('hotcars.detail', {
       url: '/detail/:carNumber',

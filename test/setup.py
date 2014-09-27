@@ -75,6 +75,12 @@ print 'DONE'
 print '*'*50 + '\n\n'
 
 
+from dcmetrometrics.common import dbGlobals
+
+def connect():
+    dbGlobals.connect()
+
+
 def setup_logging():
 
     print "Setting up logging"

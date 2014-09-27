@@ -11,13 +11,14 @@ angular.module('dcmetrometricsApp')
   .service('hotCarDirectory', ['$http', '$q', function hotCarDirectory($http, $q) {
     // AngularJS will instantiate a singleton by calling "new" on this function
 
-    var allReports;
+    var allReports, allSummaries, dailyCountData;
     var reportsByCar = {};
     var summaryByCar = {};
-    var allSummaries;
 
-    var url = "/json/hotcar_reports.json";
+    var reportsUrl = "/json/hotcar_reports.json";
+    var dailyDataUrl = "/json/hotcars_by_day.json";
 
+    // Get hotcar report data
     this.get_data = function() {
       
       // Return a promise that gives the station directory.
@@ -35,6 +36,8 @@ angular.module('dcmetrometricsApp')
           return deferred.promise;
       }
 
+      // Compute the one day, three day, seven day
+      // 14 day report counts.
       var updateSummary = function(report, now) {
 
         var summary = summaryByCar[report.car_number];
@@ -51,7 +54,8 @@ angular.module('dcmetrometricsApp')
 
       };
 
-      $http.get(url, { cache: true })
+      // Get hotcar reports
+      $http.get(reportsUrl, { cache: true })
         .success( function(data) {
 
           allReports = data;
@@ -107,6 +111,41 @@ angular.module('dcmetrometricsApp')
         })
         .error(function() {
           deferred.reject();
+        });
+
+      // Return a promise
+      return deferred.promise;
+
+    };
+
+    // Get daily data of report counts and temperatures
+    this.get_daily_data = function() {
+      
+      // Return a promise that gives the station directory.
+      var deferred = $q.defer();
+      var ret;
+
+      if (dailyCountData) {
+
+          ret = dailyCountData ;
+          deferred.resolve(ret);
+
+          return deferred.promise;
+      }
+
+      // Get hotcar reports
+      $http.get(dailyDataUrl, { cache: true })
+        .success( function(data) {
+
+          dailyCountData = data;
+          var ret = dailyCountData;
+          deferred.resolve(ret);
+
+        })
+        .error(function() {
+
+          deferred.reject();
+
         });
 
       // Return a promise
