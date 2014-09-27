@@ -14,43 +14,55 @@ angular.module('dcmetrometricsApp')
       restrict: 'E',
       link: function postLink(scope, element, attrs) {
 
-        var totalWidth = 900;
+        var totalWidth = 700;
         var totalHeight = 500;
         
-        var margin = {top: 20, right: 20, bottom: 30, left: 50},
+        var margin = {top: 10, right: 40, bottom: 100, left: 40},
+            margin2 = {top: 430, right: 40, bottom: 20, left: 40},
             width = totalWidth - margin.left - margin.right,
-            height = totalHeight - margin.top - margin.bottom;
+            height = totalHeight - margin.top - margin.bottom,
+            height2 = totalHeight - margin2.top - margin2.bottom;
 
         var parseDate = d3.time.format("%Y-%m-%d").parse;
         var bisectDate = d3.bisector(function(d) { return d.day; }).left; // Finds value in sorted array
 
-        var x = d3.time.scale()
-            .range([0, width]);
+        var x = d3.time.scale().range([0, width]),
+            x2 = d3.time.scale().range([0, width]),
+            y = d3.scale.linear().range([height, 0]),
+            y2 = d3.scale.linear().range([height2, 0]),
+            yTempScale = d3.scale.linear().clamp(true).range([height, 0]);
 
-        var y = d3.scale.linear()
-            .range([height, 0]);
+        var xAxis = d3.svg.axis().scale(x).orient("bottom"),
+            xAxis2 = d3.svg.axis().scale(x2).orient("bottom"),
+            yAxis = d3.svg.axis().scale(y).orient("left"),
+            yAxisTemp = d3.svg.axis().scale(yTempScale).orient("right").ticks(10);       
 
-        var yTempScale = d3.scale.linear()
-            .clamp(true)
-            .range([height, 0]);
+        var brush = d3.svg.brush()
+          .x(x2)
+          .on("brush", brushed);
 
-        var xAxis = d3.svg.axis()
-            .scale(x)
-            .orient("bottom");
-
-        var yAxis = d3.svg.axis()
-            .scale(y)
-            .orient("left");
-
-        var yAxisTemp = d3.svg.axis().scale(yTempScale)  // This is the new declaration for the 'Right', 'y1'
-            .orient("right").ticks(10);           // and includes orientation of the axis to the right.
+        function brushed() {
+            x.domain(brush.empty() ? x2.domain() : brush.extent());
+            // Re-draw the areas and x axis based on brush.
+            lineSvg.select(".area.count").attr("d", countArea);
+            lineSvg.select(".x.axis").call(xAxis);
+            lineSvg.select(".area.temperature").attr("d", tempArea);
+          }    
 
         var countArea = d3.svg.area()
+          .interpolate("monotone")
           .x(function(d) { return x(d.day); })
           .y0(height)
           .y1(function(d) { return y(d.count); });
 
+        var countArea2 = d3.svg.area()
+          .interpolate("monotone")
+          .x(function(d) { return x2(d.day); })
+          .y0(height2)
+          .y1(function(d) { return y2(d.count); });
+
         var tempArea = d3.svg.area()
+          .interpolate("monotone")
           .x(function(d) { return x(d.day); })
           .y0(height)
           .y1(function(d) { return yTempScale(d.temp); });
@@ -63,17 +75,21 @@ angular.module('dcmetrometricsApp')
             .x(function(d) { return x(d.day); })
             .y(function(d) { return yTempScale(d.temp); });
 
-        var svgRoot = d3.select(element[0]).append("svg")
+        var svg = d3.select(element[0]).append("svg")
             .attr("width", width + margin.left + margin.right)
             .attr("height", height + margin.top + margin.bottom);
 
-        var svg = svgRoot.append("g")
-            .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-
-        var svgRootElem = svgRoot[0][0];
         var svgElem = svg[0][0];
 
-        var lineSvg = svg.append("g");
+        svg.append("defs").append("clipPath")
+          .attr("id", "clip")
+          .append("rect")
+          .attr("width", width)
+          .attr("height", height);
+
+        var lineSvg = svg.append("g")
+            .attr("class", "line-svg")
+            .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
         var focus = svg.append("g")
           .style("display", "none");  
@@ -82,6 +98,11 @@ angular.module('dcmetrometricsApp')
         var tooltipDiv = d3.select("body").append("div")   
           .attr("class", "hotcars-tooltip")               
           .style("opacity", 0);
+
+        // This is the area that allows brushing
+        var context = svg.append("g")
+          .attr("class", "context")
+          .attr("transform", "translate(" + margin2.left + "," + margin2.top + ")");
 
         hotCarDirectory.get_daily_data().then( function(data) {
           
@@ -101,15 +122,17 @@ angular.module('dcmetrometricsApp')
 
           x.domain(d3.extent(countData, function(d) { return d.day; }));
           y.domain(d3.extent(countData, function(d) { return d.count; }));
+          x2.domain(x.domain());
+          y2.domain(y.domain());
           yTempScale.domain([60, d3.max(tempData, function(d) { return d.temp; })]);
           //yTempScale.domain(d3.extent(tempData, function(d) { return d.temp; }));
 
-          svg.append("g")
+          lineSvg.append("g")
               .attr("class", "x axis")
               .attr("transform", "translate(0," + height + ")")
               .call(xAxis);
 
-          svg.append("g")
+          lineSvg.append("g")
               .attr("class", "y axis")
               .call(yAxis)
             .append("text")
@@ -119,7 +142,7 @@ angular.module('dcmetrometricsApp')
               .style("text-anchor", "end")
               .text("Daily Count");
 
-          svg.append("g")
+          lineSvg.append("g")
             .attr("class", "y axis")
             .attr("transform", "translate(" + width + ",0)")
             .call(yAxisTemp)
@@ -134,23 +157,42 @@ angular.module('dcmetrometricsApp')
           lineSvg.append("path")
             .datum(tempData)
             .classed("area temperature", true)
+            .style('clip-path', 'rect(300,300')
             .attr("d", tempArea);
 
-          lineSvg.append("path")
-            .datum(tempData)
-            .classed("line temperature", true)
-            .attr("d", temperatureLine);
+          // lineSvg.append("path")
+          //   .datum(tempData)
+          //   .classed("line temperature", true)
+          //   .attr("d", temperatureLine);
 
           // This draws the daily count curve with filled area
           lineSvg.append("path")
             .datum(countData)
-            .attr("class", "area")
+            .attr("class", "area count")
+            .style('clip-path', 'url(#clip)')
             .attr("d", countArea);
 
-          lineSvg.append("path")
+          // lineSvg.append("path")
+          //   .datum(countData)
+          //   .attr("class", "line")
+          //   .attr("d", countLine);
+
+          context.append("path")
             .datum(countData)
-            .attr("class", "line")
-            .attr("d", countLine);
+            .attr("class", "area")
+            .attr("d", countArea2);
+
+          context.append("g")
+              .attr("class", "x axis")
+              .attr("transform", "translate(0," + height2 + ")")
+              .call(xAxis2);
+
+          context.append("g")
+              .attr("class", "x brush")
+              .call(brush)
+            .selectAll("rect")
+              .attr("y", -6)
+              .attr("height", height2 + 7);
 
 
           // append the circle at the intersection               // **********
@@ -212,17 +254,16 @@ angular.module('dcmetrometricsApp')
             tempTrackerPos = tempTracker[0][0].getBoundingClientRect();
             countTrackerPos = countTracker[0][0].getBoundingClientRect();
 
-            tooltipDiv.html(dCount.day.toDateString() + "<br>" + dTemp.temp + "F<br>" + dCount.count + " report" + (dCount.count != 1 ? "s" : ""))  
+            tooltipDiv.html(dCount.day.toDateString() + "<br>" + dTemp.temp + "F<br>" + dCount.count + " report" + (dCount.count !== 1 ? "s" : ""))  
                 .style("left", (tempTrackerPos.left + window.pageXOffset) + "px")     
-                .style("top", (d3.min([tempTrackerPos.top, countTrackerPos.top]) + window.pageYOffset
-                     - 80)  + "px");     
+                .style("top", (d3.min([tempTrackerPos.top, countTrackerPos.top]) + window.pageYOffset - 80)  + "px");     
 
             // tooltipDiv.transition().duration(200)    
             //     .style("opacity", .9);  
-            tooltipDiv.style("opacity", .9);  
+            tooltipDiv.style("opacity", 0.9);  
 
 
-          }                                                      // **********
+          } 
 
 
 
@@ -230,6 +271,8 @@ angular.module('dcmetrometricsApp')
 
 
         });
+
+
 
       }, // end link
       replace: true
