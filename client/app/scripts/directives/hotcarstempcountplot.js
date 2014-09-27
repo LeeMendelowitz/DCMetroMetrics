@@ -71,7 +71,7 @@ angular.module('dcmetrometricsApp')
             .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
         var svgRootElem = svgRoot[0][0];
-        var svgElem = svgRoot[0][0];
+        var svgElem = svg[0][0];
 
         var lineSvg = svg.append("g");
 
@@ -154,11 +154,11 @@ angular.module('dcmetrometricsApp')
 
 
           // append the circle at the intersection               // **********
-          focus.append("circle")                                 // **********
+          var countTracker = focus.append("circle")                                 // **********
               .attr("class", "countTracker")                                // **********
               .attr("r", 4);  
 
-          focus.append("circle")                                 // **********
+          var tempTracker = focus.append("circle")                                 // **********
               .attr("class", "tempTracker")                                // **********
               .attr("r", 4);       
                                                  // **********
@@ -169,24 +169,35 @@ angular.module('dcmetrometricsApp')
               .attr("height", height)                            // **********
               .style("fill", "none")                             // **********
               .style("pointer-events", "all")                    // **********
-              .on("mouseover", function() { focus.style("display", null); })
-              .on("mouseout", function() { focus.style("display", "none"); })
+              .on("mouseover", function() { 
+                  focus.style("display", null);
+              })
+              .on("mouseout", function() {
+
+                  focus.style("display", "none");
+
+                  tooltipDiv.transition()        
+                    .duration(200)    
+                    .style("opacity", 0.0);
+
+              })
               .on("mousemove", mousemove);                       // **********
 
           function mousemove() {    
-                                    // **********
+                                 
+            var tempTrackerPos, countTrackerPos;   // **********
+            
             var x0 = x.invert(d3.mouse(this)[0]),              // **********
                 i = bisectDate(countData, x0, 1),                   // **********
                 d0 = countData[i - 1],                              // **********
                 d1 = countData[i],                                  // **********
                 dCount = x0 - d0.day > d1.day - x0 ? d1 : d0;     // **********
 
-            i = bisectDate(tempData, x0, 1);                 // **********
+            i = d3.min([bisectDate(tempData, x0, 1), tempData.length -1]);                 // **********
             d0 = tempData[i - 1];                            // **********
             d1 = tempData[i];                                  // **********
             var dTemp = x0 - d0.day > d1.day - x0 ? d1 : d0;  
 
-            var svgPos = svgElem.getBoundingClientRect();
 
             focus.select("circle.countTracker")                           // **********
                 .attr("transform",                             // **********
@@ -197,15 +208,19 @@ angular.module('dcmetrometricsApp')
                 .attr("transform",                             // **********
                       "translate(" + x(dTemp.day) + "," +         // **********
                                      yTempScale(dTemp.temp) + ")");        // **********
-          
-            tooltipDiv.transition()        
-                .duration(200)      
-                .style("opacity", .8);   
 
-            tooltipDiv.html(dTemp.temp + "F<br>" + dCount.count + " reports.")  
-                .style("left", svgPos.left + window.pageXOffset + x(dCount.day) + "px")     
-                .style("top", (svgPos.top + window.pageYOffset + 
-                    d3.min([yTempScale(dTemp.temp), y(dCount.count)]) - 50)  + "px");     
+            tempTrackerPos = tempTracker[0][0].getBoundingClientRect();
+            countTrackerPos = countTracker[0][0].getBoundingClientRect();
+
+            tooltipDiv.html(dCount.day.toDateString() + "<br>" + dTemp.temp + "F<br>" + dCount.count + " report" + (dCount.count != 1 ? "s" : ""))  
+                .style("left", (tempTrackerPos.left + window.pageXOffset) + "px")     
+                .style("top", (d3.min([tempTrackerPos.top, countTrackerPos.top]) + window.pageYOffset
+                     - 80)  + "px");     
+
+            // tooltipDiv.transition().duration(200)    
+            //     .style("opacity", .9);  
+            tooltipDiv.style("opacity", .9);  
+
 
           }                                                      // **********
 
