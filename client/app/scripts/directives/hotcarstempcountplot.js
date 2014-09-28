@@ -15,11 +15,11 @@ angular.module('dcmetrometricsApp')
       link: function postLink(scope, element, attrs) {
 
         var totalWidth = 700;
-        var totalHeight = 1000;
+        var totalHeight = 700;
 
         var brushDim = {top: 10, mainHeight : 100};
-        var lineDim = {top: 150, mainHeight: 300};
-        var scatterDim = {top: 650, mainHeight: 300};
+        var lineDim = {top: 150, mainHeight: 200};
+        var scatterDim = {top: 400, mainHeight: 200};
         
         var margin = {top: lineDim.top, right: 50, bottom: totalHeight - (lineDim.top + lineDim.mainHeight), left: 50},
             margin2 = {top: brushDim.top, right: 50, bottom: totalHeight - (brushDim.top + brushDim.mainHeight), left: 50},
@@ -56,7 +56,11 @@ angular.module('dcmetrometricsApp')
           .on("brush", brushed);
 
         function brushed() {
-            x.domain(brush.empty() ? x2.domain() : brush.extent());
+
+            var e = brush.extent();
+
+            x.domain(brush.empty() ? x2.domain() : e);
+
             // Re-draw the areas and x axis based on brush.
             lineSvg.select(".x.axis").call(xAxis)
               .selectAll("text")
@@ -71,6 +75,20 @@ angular.module('dcmetrometricsApp')
             lineSvg.select(".area.temperature").attr("d", tempArea);
             lineSvg.select(".line.count").attr("d", countLine);
             lineSvg.select(".line.temperature").attr("d", temperatureLine);
+
+            // Apply classes to the relevant points in the scatter plot
+            if( brush.empty() ) {
+
+              scatter.selectAll(".hidden").classed("scatter-hidden", false);
+
+            } else {
+              // Hide scatter points outside of the date range.
+              scatter.selectAll("circle").classed("scatter-hidden", function(d) {
+                var startDay = e[0], endDay = e[1];
+                return d.day < startDay || d.day > endDay;
+              });
+            }
+            
           }    
 
         var countArea = d3.svg.area()
@@ -144,10 +162,9 @@ angular.module('dcmetrometricsApp')
           dailyData.forEach(function(d) {
             d.day = parseDate(d.day);
             d.temp = d.temp ? +d.temp : null;
-            d.count = d.count ? +d.count : null;
+            d.count = +d.count;
             d.year = d.day.getFullYear();
           });
-
 
           x.domain(d3.extent(dailyData, function(d) { return d.day; }));
           y.domain(d3.extent(dailyData, function(d) { return d.count; }));
@@ -269,14 +286,69 @@ angular.module('dcmetrometricsApp')
             .attr("x",0 - (heightScatter / 2))
             .attr("dy", "1em")
             .style("text-anchor", "middle")
-            .text("Daily Reports");
+            .text("Daily Report Count");
 
           scatter.append("text")
-            .attr("y", heightScatter + marginScatter.bottom)
+            .attr("y", heightScatter)
             .attr("x", width / 2)
-            .attr("dy", "-1em")
+            .attr("dy", "2.5em")
             .style("text-anchor", "middle")
             .text("Temperature");
+
+          function drawScatterLegend() {
+
+            // Get sorted unique values for years
+            var years = d3.set(dailyData.map(function(d) { return d.year; }))
+              .values()
+              .sort(d3.ascending);
+
+            var legendData = years.map(function(y) {
+              return {value: y,
+                      color: colorScatter(y)};
+            });
+
+            var lineHeight = 20;
+
+            var scatterLegend = scatter.append("g")
+              .attr("transform", "translate(10,0)");
+
+            scatterLegend  
+              .append("rect")
+              .attr("class", "legend-frame")
+              .attr("width", 100)
+              .attr("height", 10 + 10 + legendData.length * lineHeight);
+
+            var legendItems = scatterLegend
+              .selectAll("g.legend-item")
+              .data(legendData)
+              .enter()
+              .append("g")
+              .attr("class", "legend-item")
+              .attr("transform", function(d, i) {
+                return "translate(0," + (i+1)*lineHeight + ")";
+              });
+
+            legendItems
+              .append("circle")
+              .attr("r", 5)
+              .attr("cx", "1em")
+              .attr("cy", 0)
+              .style("fill", function(d, i) { return d.color; });
+
+            legendItems
+              .append("text")
+              .text(function(d, i) {
+                return d.value;
+              })
+              .attr('x', 0)
+              .attr('dx', "2em")
+              .attr('y', 0)
+              .attr('dy', '0.3em')
+              .attr('text-anchor', 'left')
+
+          }
+
+          drawScatterLegend();
 
           // append the circle at the intersection               // **********
           var countTracker = focus.append("circle")                                 // **********

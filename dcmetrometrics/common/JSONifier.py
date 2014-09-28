@@ -142,12 +142,12 @@ class JSONWriter(object):
         d = d + timedelta(days = 1)
 
     days = gen_days(first_day, last_day + timedelta(days = 1))
-    count_series = [{'day': d, 'count' : day_to_count[d]} for d in days]
+    daily_series = [{'day': d,
+                     'count' : day_to_count.get(d, 0),
+                     'temp' : day_to_temp.get(d, None)} for d in days]
+    # temp_series = [{'day':t.date.date(), 'temp': t.max_temp} for t in Temperature.objects.order_by('date')]
 
-    temp_series = [{'day':t.date.date(), 'temp': t.max_temp} for t in Temperature.objects.order_by('date')]
-
-    ret = {'counts' : count_series,
-           'temps' : temp_series}
+    ret = {'daily_series' : daily_series}
 
     jdata = dumps(ret, cls = WebJSONEncoder)
 

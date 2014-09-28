@@ -299,9 +299,20 @@ circle.scatter {
   fill-opacity: .7;
 }
 
+circle.scatter.scatter-hidden {
+  fill: #ccc !important;
+}
+
 .brush .extent {
   stroke: #fff;
   fill-opacity: .125;
+  shape-rendering: crispEdges;
+}
+
+.legend-frame {
+  fill: none;
+  stroke: #aaa;
+  stroke-width: 1px;
   shape-rendering: crispEdges;
 }
 
