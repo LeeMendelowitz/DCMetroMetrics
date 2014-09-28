@@ -16,7 +16,7 @@ module.exports = function (grunt) {
   require('time-grunt')(grunt);
 
   var modRewrite = require('connect-modrewrite')([
-    '!\\.ttf|\\.woff|\\.ttf|\\.eot|\\.html|\\.js|\\.coffee|\\.css|\\.png|\\.jpg|\\.gif|\\.svg$ /index.html [L]'
+    '!\\.ttf|\\.woff|\\.ttf|\\.eot|\\.html|\\.js|\\.json|\\.coffee|\\.css|\\.png|\\.jpg|\\.gif|\\.svg$ /index.html [L]'
   ]);
 
   // Configurable paths for the application
@@ -172,7 +172,18 @@ module.exports = function (grunt) {
       },
       app: {
         src: ['<%= yeoman.app %>/index.html'],
-        ignorePath:  /\.\.\//
+        ignorePath:  /\.\.\//,
+        // LMM 9/27/2014: Use absolute paths so we can avoid requiring
+        // the <base href="/"> tag, which screws up anchor links and 
+        // other things (svg clip-paths!)
+        fileTypes: {
+          html: {
+            replace: {
+              js: '<script src="/{{filePath}}"></script>',
+              css: '<link rel="stylesheet" href="/{{filePath}}" />'
+            }
+          }
+        }        
       }
     },
 
