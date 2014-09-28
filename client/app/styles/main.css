@@ -248,7 +248,7 @@ Src: http://jsfiddle.net/KyleMit/cyCFS/;
 
 /* Styles for D3 Visualizations */
 .axis text {
-  font: 10px sans-serif;
+  font: 14px sans-serif;
 }
 
 .axis path,
@@ -279,20 +279,24 @@ circle.countTracker {
 }
 
 .area.temperature {
-  fill: #E7D1D1;
+  fill: #debebe;
   fill-opacity: 0.6;
   stroke-width: 0;
 }
 
 .line.temperature {
   fill: none;
-  stroke: #8c1919;
+  stroke: #AE5E5E;
   stroke-width: 1.5px;
 }
 
 circle.tempTracker {
   fill: #8c1919;
   stroke: black;
+}
+
+circle.scatter {
+  fill-opacity: .7;
 }
 
 .brush .extent {
@@ -308,7 +312,7 @@ div.hotcars-tooltip {
   height: auto;                 
   padding: 5px;             
   font: 12px sans-serif;        
-  background: #384044;
+  background: #212628;
 /*  opacity: 0.8;*/
   color: white;
   border: 0px;      
