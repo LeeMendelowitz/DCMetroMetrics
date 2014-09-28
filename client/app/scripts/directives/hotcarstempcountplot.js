@@ -87,11 +87,13 @@ angular.module('dcmetrometricsApp')
           .attr("width", width)
           .attr("height", height);
 
-        var lineSvg = svg.append("g")
+        var mainSvg = svg.append("g")
             .attr("class", "line-svg")
             .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
-        var focus = svg.append("g")
+        var lineSvg = mainSvg.append("g");
+
+        var focus = mainSvg.append("g")
           .style("display", "none");  
 
         // Append a tooltip to the body
@@ -157,7 +159,7 @@ angular.module('dcmetrometricsApp')
           lineSvg.append("path")
             .datum(tempData)
             .classed("area temperature", true)
-            .style('clip-path', 'rect(300,300')
+            .attr('clip-path', 'url(#clip)')
             .attr("d", tempArea);
 
           // lineSvg.append("path")
@@ -169,7 +171,7 @@ angular.module('dcmetrometricsApp')
           lineSvg.append("path")
             .datum(countData)
             .attr("class", "area count")
-            .style('clip-path', 'url(#clip)')
+            .attr('clip-path', 'url(#clip)')
             .attr("d", countArea);
 
           // lineSvg.append("path")
@@ -206,7 +208,7 @@ angular.module('dcmetrometricsApp')
                                                  // **********
           
           // append the rectangle to capture mouse               // **********
-          svg.append("rect")                                     // **********
+          lineSvg.append("rect")                                     // **********
               .attr("width", width)                              // **********
               .attr("height", height)                            // **********
               .style("fill", "none")                             // **********
