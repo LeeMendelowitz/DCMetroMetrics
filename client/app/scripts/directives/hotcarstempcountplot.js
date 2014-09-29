@@ -7,7 +7,7 @@
  * # hotcarstempcountplot
  */
 angular.module('dcmetrometricsApp')
-  .directive('hotcarstempcountplot', ['hotCarDirectory', function (hotCarDirectory) {
+  .directive('hotcarstempcountplot', ['hotCarDirectory', '$compile', '$rootScope', function (hotCarDirectory, $compile, $rootScope) {
     return {
 
       template: '<div class="dcmm-chart"></div>',
@@ -43,6 +43,7 @@ angular.module('dcmetrometricsApp')
             yScatter = d3.scale.linear().range([heightScatter, 0]);
 
         var colorScatter = d3.scale.category10();
+        var scatterCircles; // to be defined when circles are drawn
 
         var xAxis = d3.svg.axis().scale(x).orient("bottom"),
             xAxis2 = d3.svg.axis().scale(x2).orient("bottom"),
@@ -53,10 +54,15 @@ angular.module('dcmetrometricsApp')
 
         var brush = d3.svg.brush()
           .x(x2)
+          .clamp(true)
+          .on("brushstart", function() {
+            console.log('brush start!');
+          })
+          .on("brushend", brushended)
           .on("brush", brushed);
 
         function brushed() {
-
+            console.log("brushed!")
             var e = brush.extent();
 
             x.domain(brush.empty() ? x2.domain() : e);
@@ -78,18 +84,52 @@ angular.module('dcmetrometricsApp')
 
             // Apply classes to the relevant points in the scatter plot
             if( brush.empty() ) {
-
-              scatter.selectAll(".hidden").classed("scatter-hidden", false);
+              console.log("showing all points: ");
+              scatterCircles.classed("scatter-hidden", false);
 
             } else {
               // Hide scatter points outside of the date range.
-              scatter.selectAll("circle").classed("scatter-hidden", function(d) {
+              console.log('hiding some points');
+              scatterCircles.classed("scatter-hidden", function(d) {
                 var startDay = e[0], endDay = e[1];
                 return d.day < startDay || d.day > endDay;
               });
             }
             
-          }    
+        }    
+
+        function brushended() {
+
+          console.log("brush end!")
+          console.log('source event: ', d3.event.sourceEvent);
+          
+          var extent0 = brush.extent(),
+              extent1 = extent0.map(d3.time.day.round);
+
+          console.log('extent0: ', extent0);
+          console.log('extent1: ', extent1);
+
+          // if empty when rounded, use floor & ceil instead
+          if (!brush.empty() && extent1[0] >= extent1[1]) {
+            extent1[0] = d3.time.day.floor(extent0[0]);
+            extent1[1] = d3.time.day.ceil(extent0[1]);
+          }
+
+          if (!d3.event.sourceEvent) return; // only transition after input.
+
+          if (brush.empty()){
+
+            d3.select(this).transition()
+              .call(brush.event); // This will trigger the brushstart, brush, and brushend events
+
+          } else {
+
+            d3.select(this).transition()
+              .call(brush.extent(extent1))
+              .call(brush.event); // This will trigger the brushstart, brush, and brushend events
+          }
+
+        }
 
         var countArea = d3.svg.area()
           .interpolate("monotone")
@@ -145,6 +185,20 @@ angular.module('dcmetrometricsApp')
           .attr("class", "hotcars-tooltip")               
           .style("opacity", 0);
 
+        // Angular template!
+        var tooltipHtml = '\
+        <table class="table table-striped table-bordered table-condensed">\
+          <tr><th>Date</th><td>{{ d.day | date : "EEE M/d/yy" }}</td></tr>\
+          <tr><th>Temperature:</th><td>{{ d.temp }}&deg;</td></tr>\
+          <tr><th>Report Count:</th><td>{{ d.count }}</td></tr>\
+        </table>';
+
+        var tLink = $compile(tooltipHtml);
+        var iScope = $rootScope.$new(true);
+        var t = tLink(iScope);
+        tooltipDiv.html("");
+        $(tooltipDiv[0][0]).append(t);
+
         // This is the area that allows brushing
         var context = svg.append("g")
           .attr("class", "context")
@@ -153,6 +207,25 @@ angular.module('dcmetrometricsApp')
         var scatter = svg.append("g")
           .attr("class", "scatter")
           .attr("transform", "translate(" + marginScatter.left + "," + marginScatter.top + ")");
+
+        // Style the selection according to the default styles
+        function scatterDefault(selection) {
+
+          selection
+            .attr("r", 2)
+            .classed('focused', false)
+            .style("fill", function(d) { return colorScatter(d.year); });
+
+        }
+
+        // Style the selection according to the focused styles.
+        function scatterFocused(selection) {
+
+          selection
+            .attr("r", 4)
+            .classed('focused', true);
+
+        }
 
         hotCarDirectory.get_daily_data().then( function(data) {
           
@@ -268,8 +341,9 @@ angular.module('dcmetrometricsApp')
             .attr("class", "scatter")
             .attr("cx", function(d) { return xScatter(d.temp + (Math.random() * .4)); })
             .attr("cy", function(d) { return yScatter(d.count + (Math.random() * .4)); })
-            .attr("r", 2)
-            .style("fill", function(d) { return colorScatter(d.year); });
+            .call(scatterDefault);
+
+          scatterCircles = scatter.selectAll("circle");
 
           scatter.append("g")
               .attr("class", "x axis")
@@ -357,7 +431,8 @@ angular.module('dcmetrometricsApp')
 
           var tempTracker = focus.append("circle")                                 // **********
               .attr("class", "tempTracker")                                // **********
-              .attr("r", 4);       
+              .attr("r", 4);      
+
                                                  // **********
           // append the rectangle to capture mouse               // **********
           lineSvg.append("rect")                                     // **********
@@ -376,8 +451,15 @@ angular.module('dcmetrometricsApp')
                     .duration(200)    
                     .style("opacity", 0.0);
 
+                  scatter.selectAll('circle.focused').call(scatterDefault);
+
               })
               .on("mousemove", mousemove);                       // **********
+
+
+
+
+
 
           function mousemove() {    
                                  
@@ -387,30 +469,55 @@ angular.module('dcmetrometricsApp')
                 i = bisectDate(dailyData, x0, 1),                   // **********
                 d0 = dailyData[i - 1],                              // **********
                 d1 = dailyData[i],                                  // **********
-                dCount = x0 - d0.day > d1.day - x0 ? d1 : d0;     // **********
-
-            i = d3.min([bisectDate(dailyData, x0, 1), dailyData.length -1]);                 // **********
-            d0 = dailyData[i - 1];                            // **********
-            d1 = dailyData[i];                                  // **********
-            var dTemp = x0 - d0.day > d1.day - x0 ? d1 : d0;  
-
+                d = x0 - d0.day > d1.day - x0 ? d1 : d0;     // **********
 
             focus.select("circle.countTracker")                           // **********
                 .attr("transform",                             // **********
-                      "translate(" + x(dCount.day) + "," +         // **********
-                                     y(dCount.count) + ")");        // **********
+                      "translate(" + x(d.day) + "," +         // **********
+                                     y(d.count) + ")");        // **********
 
             focus.select("circle.tempTracker")                           // **********
                 .attr("transform",                             // **********
-                      "translate(" + x(dTemp.day) + "," +         // **********
-                                     yTempScale(dTemp.temp) + ")");        // **********
+                      "translate(" + x(d.day) + "," +         // **********
+                                     yTempScale(d.temp) + ")");        // **********
+ 
+
+            var yCountText = y(d.count);
+            var yTempText = yTempScale(d.temp);
+
+            var minSpacing = 40;
+            
+            // Fix the spacing between them:
+            if (Math.abs(yCountText - yTempText) < minSpacing) {
+              if (yCountText < yTempText) {
+                yCountText = yTempText - minSpacing;
+              } else {
+                yTempText = yCountText - minSpacing;
+              }
+            }
+
+            // Reset styles on any points that are already focused
+            scatter.selectAll('circle.focused').call(scatterDefault);
+
+            // Find the data point in the scatterplot and style it!
+            scatterCircles.filter(function(ptData) {
+              return ptData.day === d.day;
+            }).call(scatterFocused);
+
 
             tempTrackerPos = tempTracker[0][0].getBoundingClientRect();
             countTrackerPos = countTracker[0][0].getBoundingClientRect();
 
-            tooltipDiv.html(dCount.day.toDateString() + "<br>" + dTemp.temp + "F<br>" + dCount.count + " report" + (dCount.count !== 1 ? "s" : ""))  
-                .style("left", (tempTrackerPos.left + window.pageXOffset) + "px")     
-                .style("top", (d3.min([tempTrackerPos.top, countTrackerPos.top]) + window.pageYOffset - 80)  + "px");     
+            // Update the data on the scope to update the tooltip.
+            iScope.$apply(function() {
+              iScope.d = d;
+            });
+
+            //tooltipDiv.html(d.day.toDateString() + "<br>" + d.temp + "F<br>" + d.count + " report" + (d.count !== 1 ? "s" : ""))  
+                
+            tooltipDiv
+                .style("left", (tempTrackerPos.left + window.pageXOffset + 30) + "px")     
+                .style("top", (d3.min([tempTrackerPos.top, countTrackerPos.top]) + window.pageYOffset)  + "px");     
 
             // tooltipDiv.transition().duration(200)    
             //     .style("opacity", .9);  

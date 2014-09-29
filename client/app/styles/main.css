@@ -295,8 +295,16 @@ circle.tempTracker {
   stroke: black;
 }
 
+
 circle.scatter {
   fill-opacity: .7;
+}
+
+circle.scatter.focused {
+/*  fill: black !important;*/
+  fill-opacity: 1;
+  stroke: black;
+  stroke-width: 1;
 }
 
 circle.scatter.scatter-hidden {
@@ -319,14 +327,18 @@ circle.scatter.scatter-hidden {
 div.hotcars-tooltip {   
   position: absolute;           
   text-align: left;        
-  width: 115  px;                  
-  height: auto;                 
-  padding: 5px;             
+  width: auto;                  
+  height: auto;          
   font: 12px sans-serif;        
   background: #212628;
-/*  opacity: 0.8;*/
-  color: white;
+  background: white;
+  opacity: 0.8;
+  color: black;
   border: 0px;      
-  border-radius: 8px;           
+/*  border-radius: 8px;  */         
   pointer-events: none;         
+}
+
+.hotcars-tooltip table.table {
+  margin-bottom: 0px;
 }
