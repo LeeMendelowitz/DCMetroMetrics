@@ -4,7 +4,6 @@ dcmetrometrics/keys/keys_private.py
 dcmetrometrics/keys/keys_private_digitalocean.py
 data/json
 data/webpages
-*.json
 .private
 .private/*
 *swp
