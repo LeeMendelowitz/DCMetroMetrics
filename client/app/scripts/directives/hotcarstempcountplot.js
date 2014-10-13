@@ -6,6 +6,7 @@
  * @description
  * # hotcarstempcountplot
  */
+
 angular.module('dcmetrometricsApp')
   .directive('hotcarstempcountplot', ['hotCarDirectory', '$compile', '$rootScope', function (hotCarDirectory, $compile, $rootScope) {
     return {
@@ -29,8 +30,6 @@ angular.module('dcmetrometricsApp')
             height2 = totalHeight - margin2.top - margin2.bottom,
             heightScatter = totalHeight - marginScatter.top - marginScatter.bottom;
 
-      
-
         var parseDate = d3.time.format("%Y-%m-%d").parse;
         var bisectDate = d3.bisector(function(d) { return d.day; }).left; // Finds value in sorted array
 
@@ -43,7 +42,9 @@ angular.module('dcmetrometricsApp')
             yScatter = d3.scale.linear().range([heightScatter, 0]);
 
         var colorScatter = d3.scale.category10();
-        var scatterCircles; // to be defined when circles are drawn
+        var scatterCircles, // to be defined when circles are drawn
+            scatterCoords = []; // An array of [x,y] for Report Count vs. Day scatter.
+        var dailyData = [], dailyDataInView = [];
 
         var xAxis = d3.svg.axis().scale(x).orient("bottom"),
             xAxis2 = d3.svg.axis().scale(x2).orient("bottom"),
@@ -61,11 +62,23 @@ angular.module('dcmetrometricsApp')
           .on("brushend", brushended)
           .on("brush", brushed);
 
+
         function brushed() {
+
             console.log("brushed!")
+
+            var scatterPtsNode = scatterPts[0][0];
             var e = brush.extent();
 
             x.domain(brush.empty() ? x2.domain() : e);
+            var domain = x.domain();
+
+            // Select the dailyData that is in view.
+            dailyDataInView = dailyData.filter(function(d) {
+              return d.day >= domain[0] && d.day <= domain[1];
+            });
+
+            console.log('data in view: ', dailyDataInView);
 
             // Re-draw the areas and x axis based on brush.
             lineSvg.select(".x.axis").call(xAxis)
@@ -83,22 +96,40 @@ angular.module('dcmetrometricsApp')
             lineSvg.select(".line.temperature").attr("d", temperatureLine);
 
             // Apply classes to the relevant points in the scatter plot
+
             if( brush.empty() ) {
+
               console.log("showing all points: ");
               scatterCircles.classed("scatter-hidden", false);
 
             } else {
+
               // Hide scatter points outside of the date range.
               console.log('hiding some points');
+
               scatterCircles.classed("scatter-hidden", function(d) {
                 var startDay = e[0], endDay = e[1];
                 return d.day < startDay || d.day > endDay;
               });
+
+              // Move scatterCircles that are in view to the "top" by appending.
+              // This will move them in the DOM.
+              scatterCircles.filter(function(d) {
+                var startDay = e[0], endDay = e[1];
+                return d.day >= startDay && d.day <= endDay;
+              }).each(function(d,i) {
+                scatterPtsNode.appendChild(this);
+              })
+
+
             }
+
+            
             
         }    
 
         function brushended() {
+          // Round the brush extent to the nearest day.
 
           console.log("brush end!")
           console.log('source event: ', d3.event.sourceEvent);
@@ -129,7 +160,53 @@ angular.module('dcmetrometricsApp')
               .call(brush.event); // This will trigger the brushstart, brush, and brushend events
           }
 
+          drawVoronoi(dailyDataInView);
+
         }
+
+        // Draw voronoi paths
+        function drawVoronoi(dailyDataInView) {
+
+          var polygon = function(d) {
+            return "M" + d.join("L") + "Z";
+          }
+
+          voronoi.x(function(d) {
+            return d.xScatter;
+          }).y(function(d) {
+            return d.yScatter;
+          });
+
+          var vData = voronoi(
+            d3.nest()
+              // .key(function(d) { return Math.round(d.xScatter) + "," + Math.round(d.yScatter); })
+              .key(function(d) { return d.xScatter + "," + d.yScatter; })
+              .rollup(function(v) { return v[0]; })
+              .entries(dailyDataInView)
+              .map(function(d) { return d.values; })
+          );
+
+          var paths = voronoiPath.selectAll("path").data(vData, polygon);
+
+          paths.exit().remove();
+
+          paths.enter().append("path")
+              .attr("class", "voronoi")
+              .attr("d", function(d) {
+                // Compute the polygon from the voronoi data
+                return polygon(d);
+              });
+
+          paths.on("mouseover" , function(d) {
+            d3.select(this).classed("voronoi--hover", true);
+          }).on("mouseout", function(d) {
+            d3.select(this).classed("voronoi--hover", false)
+          });
+
+
+        }
+
+
 
         var countArea = d3.svg.area()
           .interpolate("monotone")
@@ -175,9 +252,9 @@ angular.module('dcmetrometricsApp')
             .attr("class", "line-svg")
             .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
-        var lineSvg = mainSvg.append("g");
-
-        var focus = mainSvg.append("g")
+        var lineSvgRoot = mainSvg.append("g");
+        var lineSvg = lineSvgRoot.append("g");
+        var focus = lineSvgRoot.append("g")
           .style("display", "none");  
 
         // Append a tooltip to the body
@@ -187,10 +264,11 @@ angular.module('dcmetrometricsApp')
 
         // Angular template!
         var tooltipHtml = '\
-        <table class="table table-striped table-bordered table-condensed">\
+        <!-- <table class="table table-striped table-bordered table-condensed"> -->\
+        <table class="table-striped">\
           <tr><th>Date</th><td>{{ d.day | date : "EEE M/d/yy" }}</td></tr>\
-          <tr><th>Temperature:</th><td>{{ d.temp }}&deg;</td></tr>\
-          <tr><th>Report Count:</th><td>{{ d.count }}</td></tr>\
+          <tr><th>Temperature</th><td>{{ d.temp }}&deg;</td></tr>\
+          <tr><th>Report Count</th><td>{{ d.count }}</td></tr>\
         </table>';
 
         var tLink = $compile(tooltipHtml);
@@ -207,6 +285,11 @@ angular.module('dcmetrometricsApp')
         var scatter = svg.append("g")
           .attr("class", "scatter")
           .attr("transform", "translate(" + marginScatter.left + "," + marginScatter.top + ")");
+
+        var voronoi = d3.geom.voronoi().clipExtent([[0, 0], [width, heightScatter]]);
+        var scatterPts = scatter.append("g");
+        var scatterAxes = scatter.append("g");
+        var voronoiPath = scatter.append("g");
 
         // Style the selection according to the default styles
         function scatterDefault(selection) {
@@ -227,17 +310,25 @@ angular.module('dcmetrometricsApp')
 
         }
 
+        
         hotCarDirectory.get_daily_data().then( function(data) {
           
-          var dailyData = data.daily_series;
+          ////////////////////////////////////////////////
+          // Extract and process data
+          dailyData = data.daily_series;
 
           // Massage data for d3
           dailyData.forEach(function(d) {
+
+            d.dateString = d.day;
             d.day = parseDate(d.day);
             d.temp = d.temp ? +d.temp : null;
             d.count = +d.count;
             d.year = d.day.getFullYear();
+
           });
+
+          dailyDataInView = dailyData;
 
           x.domain(d3.extent(dailyData, function(d) { return d.day; }));
           y.domain(d3.extent(dailyData, function(d) { return d.count; }));
@@ -247,6 +338,15 @@ angular.module('dcmetrometricsApp')
           xScatter.domain(d3.extent(dailyData, function(d) { return d.temp; }));
           yScatter.domain([0, d3.max(dailyData, function(d) { return d.count; })]);
           //yTempScale.domain(d3.extent(dailyData, function(d) { return d.temp; }));
+
+          // Compute the scatter coordinates. Add some jitter.
+          dailyData.forEach(function(d) {
+            d.xScatter = xScatter(d.temp);
+            d.yScatter = yScatter(d.count);
+          });
+
+          ////////////////////////////////////////////////////////////
+          // Draw line graph
 
           lineSvg.append("g")
               .attr("class", "x axis")
@@ -261,25 +361,34 @@ angular.module('dcmetrometricsApp')
               .style("text-anchor", "end");
 
           lineSvg.append("g")
-              .attr("class", "y axis")
+              .attr("class", "y axis count")
               .call(yAxis)
-            .append("text")
+              .append("text")
               .attr("transform", "rotate(-90)")
-              .attr("y", 6)
-              .attr("dy", ".71em")
-              .style("text-anchor", "end")
-              .text("Daily Count");
+              .attr("y", 0 - margin.left)
+              .attr("x",0 - (height / 2))
+              .attr("dy", "1em")
+              .style("text-anchor", "middle")
+              .text("Daily Report Count");
+
 
           lineSvg.append("g")
-            .attr("class", "y axis")
+            .attr("class", "y axis temperature")
             .attr("transform", "translate(" + width + ",0)")
             .call(yAxisTemp)
             .append("text")
-              .attr("transform", "rotate(-90)")
-              .attr("y", 6)
-              .attr("dy", "-1em")
-              .style("text-anchor", "end")
-              .text("Temperature");
+            .attr("transform", "rotate(90)")
+            .attr("y", 0 - margin.right)
+            .attr("x", 0 + (height / 2))
+            .attr("dy", "1em")
+            .style("text-anchor", "middle")
+            .text("Temperature");
+            // .append("text")
+            //   .attr("transform", "rotate(-90)")
+            //   .attr("y", 6)
+            //   .attr("dy", "-1em")
+            //   .style("text-anchor", "end")
+            //   .text("Temperature");
 
           // This draws the daily temperature curve with filled area
           lineSvg.append("path")
@@ -333,28 +442,40 @@ angular.module('dcmetrometricsApp')
               .attr("height", height2 + 7);
 
 
-          scatter.append("g")
+          ///////////////////////////////////////////////////
+          // Draw scatter
+
+          scatterPts
             .selectAll("circle")
             .data(dailyData)
             .enter()
             .append("circle")
             .attr("class", "scatter")
-            .attr("cx", function(d) { return xScatter(d.temp + (Math.random() * .4)); })
-            .attr("cy", function(d) { return yScatter(d.count + (Math.random() * .4)); })
+            .attr("cx", function(d) { return d.xScatter; })
+            .attr("cy", function(d) { return d.yScatter; })
+            .attr("id", function(d) { return d.dateString; })
+            .datum( function(d) { 
+              d.scatterPt = this; // Little trick to add the scatterPoint to the dailyData.
+              return d;
+            })
             .call(scatterDefault);
 
-          scatterCircles = scatter.selectAll("circle");
+          scatterCircles = scatterPts.selectAll("circle");
 
-          scatter.append("g")
+          
+          drawVoronoi(dailyDataInView);
+          
+
+          scatterAxes.append("g")
               .attr("class", "x axis")
               .attr("transform", "translate(0," + heightScatter + ")")
               .call(xAxisScatter);
 
-          scatter.append("g")
+          scatterAxes.append("g")
             .attr("class", "y axis")
             .call(yAxisScatter);
 
-          scatter.append("text")
+          scatterAxes.append("text")
             .attr("transform", "rotate(-90)")
             .attr("y", 0 - marginScatter.left)
             .attr("x",0 - (heightScatter / 2))
@@ -362,7 +483,7 @@ angular.module('dcmetrometricsApp')
             .style("text-anchor", "middle")
             .text("Daily Report Count");
 
-          scatter.append("text")
+          scatterAxes.append("text")
             .attr("y", heightScatter)
             .attr("x", width / 2)
             .attr("dy", "2.5em")
@@ -383,14 +504,14 @@ angular.module('dcmetrometricsApp')
 
             var lineHeight = 20;
 
-            var scatterLegend = scatter.append("g")
+            var scatterLegend = scatterAxes.append("g")
               .attr("transform", "translate(10,0)");
 
-            scatterLegend  
-              .append("rect")
-              .attr("class", "legend-frame")
-              .attr("width", 100)
-              .attr("height", 10 + 10 + legendData.length * lineHeight);
+            // scatterLegend  
+            //   .append("rect")
+            //   .attr("class", "legend-frame")
+            //   .attr("width", 100)
+            //   .attr("height", 10 + 10 + legendData.length * lineHeight);
 
             var legendItems = scatterLegend
               .selectAll("g.legend-item")
@@ -424,22 +545,32 @@ angular.module('dcmetrometricsApp')
 
           drawScatterLegend();
 
-          // append the circle at the intersection               // **********
-          var countTracker = focus.append("circle")                                 // **********
-              .attr("class", "countTracker")                                // **********
+          // append the circle at the intersection              
+          var countTracker = focus.append("circle")                                
+              .attr("class", "countTracker")                               
               .attr("r", 4);  
+          var countTrackerElem = countTracker[0][0];
 
-          var tempTracker = focus.append("circle")                                 // **********
-              .attr("class", "tempTracker")                                // **********
-              .attr("r", 4);      
+          var tempTracker = focus.append("circle")                                
+              .attr("class", "tempTracker")                               
+              .attr("r", 4);
+          var tempTrackerElem = tempTracker[0][0];      
 
-                                                 // **********
-          // append the rectangle to capture mouse               // **********
-          lineSvg.append("rect")                                     // **********
-              .attr("width", width)                              // **********
-              .attr("height", height)                            // **********
-              .style("fill", "none")                             // **********
-              .style("pointer-events", "all")                    // **********
+          var lineTracker = focus.append("line")
+            .attr("class", "lineTracker")
+            .attr("x1", 0)
+            .attr("y1", 0)
+            .attr("x2", 0)
+            .attr("y2", height);
+
+
+                                                
+          // append the rectangle to capture mouse              
+          lineSvgRoot.append("rect")                                    
+              .attr("width", width)                             
+              .attr("height", height)                           
+              .style("fill", "none")                            
+              .style("pointer-events", "all")                   
               .on("mouseover", function() { 
                   focus.style("display", null);
               })
@@ -451,84 +582,80 @@ angular.module('dcmetrometricsApp')
                     .duration(200)    
                     .style("opacity", 0.0);
 
-                  scatter.selectAll('circle.focused').call(scatterDefault);
+                  scatterPts.selectAll('circle.focused').call(scatterDefault);
 
               })
-              .on("mousemove", mousemove);                       // **********
+              .on("mousemove", mousemove);                      
 
 
+          //////////////////////////////////////////////////
+          // Show the tracker line in the line series plot.
+          function setLinePlotTracker(datum, xCount, yCount, yTemp) {
 
+            focus.datum(datum);
 
+            focus.attr("transform", "translate(" + xCount + ",0)");
 
+            countTracker.attr("transform",                            
+                      "translate(0, " + yCount + ")");       
 
-          function mousemove() {    
-                                 
-            var tempTrackerPos, countTrackerPos;   // **********
-            
-            var x0 = x.invert(d3.mouse(this)[0]),              // **********
-                i = bisectDate(dailyData, x0, 1),                   // **********
-                d0 = dailyData[i - 1],                              // **********
-                d1 = dailyData[i],                                  // **********
-                d = x0 - d0.day > d1.day - x0 ? d1 : d0;     // **********
+            tempTracker.attr("transform", "translate(0, " + yTemp + ")");       
+                
+          }
 
-            focus.select("circle.countTracker")                           // **********
-                .attr("transform",                             // **********
-                      "translate(" + x(d.day) + "," +         // **********
-                                     y(d.count) + ")");        // **********
-
-            focus.select("circle.tempTracker")                           // **********
-                .attr("transform",                             // **********
-                      "translate(" + x(d.day) + "," +         // **********
-                                     yTempScale(d.temp) + ")");        // **********
- 
-
-            var yCountText = y(d.count);
-            var yTempText = yTempScale(d.temp);
-
-            var minSpacing = 40;
-            
-            // Fix the spacing between them:
-            if (Math.abs(yCountText - yTempText) < minSpacing) {
-              if (yCountText < yTempText) {
-                yCountText = yTempText - minSpacing;
-              } else {
-                yTempText = yCountText - minSpacing;
-              }
-            }
+          //////////////////////////////////////////////////
+          // Focus on a point in the scatter plot.
+          // Select the point based on its data.
+          function focusScatterPt(ptData) {
 
             // Reset styles on any points that are already focused
-            scatter.selectAll('circle.focused').call(scatterDefault);
+            scatterPts.selectAll('circle.focused').call(scatterDefault);
 
             // Find the data point in the scatterplot and style it!
-            scatterCircles.filter(function(ptData) {
-              return ptData.day === d.day;
+            // TODO: Make this more efficient by storing point in the data.
+            // this way we don't need to do a selection filter.
+            scatterCircles.filter(function(d) {
+              return d.day === ptData.day;
             }).call(scatterFocused);
 
+          }
 
-            tempTrackerPos = tempTracker[0][0].getBoundingClientRect();
-            countTrackerPos = countTracker[0][0].getBoundingClientRect();
+          //////////////////////////////////////////////////
+          function mousemove() {    
+                                 
+            var tempTrackerPos, countTrackerPos;  
+            
+            var x0 = x.invert(d3.mouse(this)[0]),             
+                i = bisectDate(dailyDataInView, x0, 1),                  
+                d0 = dailyDataInView[i - 1],                             
+                d1 = dailyDataInView[i],                                 
+                d = x0 - d0.day > d1.day - x0 ? d1 : d0;    
+
+            setLinePlotTracker(d, x(d.day), y(d.count), yTempScale(d.temp));
+            focusScatterPt(d);
+
+
+            tempTrackerPos = tempTrackerElem.getBoundingClientRect();
+            countTrackerPos = countTrackerElem.getBoundingClientRect();
 
             // Update the data on the scope to update the tooltip.
             iScope.$apply(function() {
               iScope.d = d;
             });
-
-            //tooltipDiv.html(d.day.toDateString() + "<br>" + d.temp + "F<br>" + d.count + " report" + (d.count !== 1 ? "s" : ""))  
                 
             tooltipDiv
                 .style("left", (tempTrackerPos.left + window.pageXOffset + 30) + "px")     
                 .style("top", (d3.min([tempTrackerPos.top, countTrackerPos.top]) + window.pageYOffset)  + "px");     
-
-            // tooltipDiv.transition().duration(200)    
-            //     .style("opacity", .9);  
+  
             tooltipDiv.style("opacity", 0.9);  
-
 
           } 
 
-
-
-
+          // Handle mouse movement in the scatter plot.
+          // Show the tooltip and highlight the day in the time series.
+          function mousemoveScatter() {   
+            // TODO!                        
+          } 
 
 
         });

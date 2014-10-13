@@ -115,10 +115,36 @@
         </div>
 
         <div class="col-sm-12" ng-show="showTimeseries()">
+
+          <div class="hotcars-tooltip">
+            <table class = "table-striped">
+              <tr>
+                <th>Test</th><td>Yankees</td>
+              </tr>
+              <tr>
+                <th>Row2!</th><td>Mets</td>
+                </tr>
+            </table>
+          </div>
+
+          <div style="height: 200px;"></div>
+          <div>
+            <table class="table table-bordered table-condensed table-striped">
+              <tr>
+                <td>Test</td><td>Yankees</td>
+              </tr>
+              <tr>
+                <td>Row2!</td><td>Mets</td>
+                </tr>
+            </table>
+          </div>
+
+          <div style="height: 200px;"></div>
+
           <hotcarstempcountplot><hotcarstempcountplot>
-          <pre>
+<!--           <pre>
             {{ dailyCountData | json}}
-          </pre>
+          </pre> -->
         </div>
 
 

@@ -342,3 +342,16 @@ div.hotcars-tooltip {
 .hotcars-tooltip table.table {
   margin-bottom: 0px;
 }
+
+path.voronoi {
+  fill: none;
+  stroke-width: 1px;
+  stroke-opacity: 0.2;
+  stroke: red;
+  pointer-events: all;
+}
+
+path.voronoi--hover {
+  fill: orange;
+  fill-opacity: .50;
+}
