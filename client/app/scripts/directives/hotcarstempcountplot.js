@@ -56,16 +56,11 @@ angular.module('dcmetrometricsApp')
         var brush = d3.svg.brush()
           .x(x2)
           .clamp(true)
-          .on("brushstart", function() {
-            console.log('brush start!');
-          })
           .on("brushend", brushended)
           .on("brush", brushed);
 
 
         function brushed() {
-
-            console.log("brushed!")
 
             var scatterPtsNode = scatterPts[0][0];
             var e = brush.extent();
@@ -74,11 +69,14 @@ angular.module('dcmetrometricsApp')
             var domain = x.domain();
 
             // Select the dailyData that is in view.
+            console.log("brushed. Domain: ", domain);
+
             dailyDataInView = dailyData.filter(function(d) {
               return d.day >= domain[0] && d.day <= domain[1];
             });
+            drawVoronoi(dailyDataInView);
 
-            console.log('data in view: ', dailyDataInView);
+            
 
             // Re-draw the areas and x axis based on brush.
             lineSvg.select(".x.axis").call(xAxis)
@@ -99,13 +97,11 @@ angular.module('dcmetrometricsApp')
 
             if( brush.empty() ) {
 
-              console.log("showing all points: ");
               scatterCircles.classed("scatter-hidden", false);
 
             } else {
 
               // Hide scatter points outside of the date range.
-              console.log('hiding some points');
 
               scatterCircles.classed("scatter-hidden", function(d) {
                 var startDay = e[0], endDay = e[1];
@@ -129,22 +125,19 @@ angular.module('dcmetrometricsApp')
         }    
 
         function brushended() {
+
           // Round the brush extent to the nearest day.
 
-          console.log("brush end!")
-          console.log('source event: ', d3.event.sourceEvent);
-          
           var extent0 = brush.extent(),
               extent1 = extent0.map(d3.time.day.round);
-
-          console.log('extent0: ', extent0);
-          console.log('extent1: ', extent1);
 
           // if empty when rounded, use floor & ceil instead
           if (!brush.empty() && extent1[0] >= extent1[1]) {
             extent1[0] = d3.time.day.floor(extent0[0]);
             extent1[1] = d3.time.day.ceil(extent0[1]);
           }
+
+
 
           if (!d3.event.sourceEvent) return; // only transition after input.
 
@@ -159,9 +152,7 @@ angular.module('dcmetrometricsApp')
               .call(brush.extent(extent1))
               .call(brush.event); // This will trigger the brushstart, brush, and brushend events
           }
-
-          drawVoronoi(dailyDataInView);
-
+          
         }
 
         // Draw voronoi paths
@@ -177,14 +168,23 @@ angular.module('dcmetrometricsApp')
             return d.yScatter;
           });
 
+          console.log("voronoi entries before processing: ", dailyDataInView.filter(function(d) { return d.temp !== null; }));
           var vData = voronoi(
             d3.nest()
               // .key(function(d) { return Math.round(d.xScatter) + "," + Math.round(d.yScatter); })
               .key(function(d) { return d.xScatter + "," + d.yScatter; })
               .rollup(function(v) { return v[0]; })
-              .entries(dailyDataInView)
+              .entries(dailyDataInView.filter(function(d) { return d.temp !== null; }))
               .map(function(d) { return d.values; })
           );
+
+          var lbefore = vData.length;
+          vData = vData.filter(function(d) {
+              return (d.length > 0) && angular.isDefined(d.point);
+            });
+
+          var lafter = vData.length;
+          console.log("vdata filter. length before: ", lbefore, " length after: ", lafter);
 
           var paths = voronoiPath.selectAll("path").data(vData, polygon);
 
@@ -199,6 +199,7 @@ angular.module('dcmetrometricsApp')
 
           paths.on("mouseover" , function(d) {
             d3.select(this).classed("voronoi--hover", true);
+            focusScatterPt(d.point);
           }).on("mouseout", function(d) {
             d3.select(this).classed("voronoi--hover", false)
           });
@@ -307,6 +308,19 @@ angular.module('dcmetrometricsApp')
           selection
             .attr("r", 4)
             .classed('focused', true);
+
+        }
+
+        //////////////////////////////////////////////////
+        // Focus on a point in the scatter plot.
+        // Select the point based on its data.
+        function focusScatterPt(ptData) {
+
+          // Reset styles on any points that are already focused
+          scatterPts.selectAll('circle.focused').call(scatterDefault);
+
+          // Find the data point in the scatterplot and style it!
+          d3.select(ptData.scatterPt).call(scatterFocused);
 
         }
 
@@ -447,7 +461,7 @@ angular.module('dcmetrometricsApp')
 
           scatterPts
             .selectAll("circle")
-            .data(dailyData)
+            .data(dailyData.filter(function(d){ return d.temp !== null; }))
             .enter()
             .append("circle")
             .attr("class", "scatter")
@@ -603,22 +617,7 @@ angular.module('dcmetrometricsApp')
                 
           }
 
-          //////////////////////////////////////////////////
-          // Focus on a point in the scatter plot.
-          // Select the point based on its data.
-          function focusScatterPt(ptData) {
 
-            // Reset styles on any points that are already focused
-            scatterPts.selectAll('circle.focused').call(scatterDefault);
-
-            // Find the data point in the scatterplot and style it!
-            // TODO: Make this more efficient by storing point in the data.
-            // this way we don't need to do a selection filter.
-            scatterCircles.filter(function(d) {
-              return d.day === ptData.day;
-            }).call(scatterFocused);
-
-          }
 
           //////////////////////////////////////////////////
           function mousemove() {    
