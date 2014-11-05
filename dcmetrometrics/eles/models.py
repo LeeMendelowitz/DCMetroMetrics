@@ -181,9 +181,12 @@ class UnitPerformancePeriod(WebJSONMixin, EmbeddedDocument):
   broken_time_percentage = FloatField(required = True)
   num_breaks = IntField(required = True)
   num_inspections = IntField(required = True)
+  day_to_break_count = DictField(required = False)
+  break_days = ListField(DateTimeField(), required = False) # Days where the escalator was broken
 
   web_json_fields = ['unit_id', 'start_time', 'end_time', 'availability',
-    'broken_time_percentage', 'num_breaks', 'num_inspections']
+    'broken_time_percentage', 'num_breaks', 'num_inspections',
+    'break_days', 'day_to_break_count']
 
 
 class UnitPerformanceSummary(WebJSONMixin, EmbeddedDocument):
@@ -504,7 +507,7 @@ class Unit(WebJSONMixin, Document):
     """
     return self._get_unit_statuses(object_id = self.pk, *args, **kwargs)
 
-  def compute_performance_summary(self, save = False):
+  def compute_performance_summary(self, save = False, end_time = None):
     """
     Compute or recompute the historical performance summary for a unit.
     """
@@ -541,6 +544,23 @@ class Unit(WebJSONMixin, Document):
                                  num_breaks = len(sg.breakStatuses),
                                  num_inspections = len(sg.inspectionStatuses)
                                  )
+
+      # To avoid redundancy, only set break_days  and day_to_break_count
+      # for the all_time performance summary:
+      if(key == 'all_time'):
+
+          day_to_break_count = sg.day_to_break_count
+
+          # This throws a ValidationError in MongoEngine. Likely a MongoEngine Bug. Instead, save a simpler dict to the DictField.
+          # upp.day_to_break_count = day_to_break_count 
+          
+          day_to_break_count_str_keys = dict( (d.strftime('%Y-%m-%d'), c) for
+             d,c in day_to_break_count.iteritems())
+
+          upp.day_to_break_count = day_to_break_count_str_keys
+          
+          upp.break_days = sg.break_days
+
       setattr(ups, key, upp)
 
     self.performance_summary = ups

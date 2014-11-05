@@ -1,4 +1,4 @@
-from datetime import date, datetime, time
+from datetime import date, datetime, time, timedelta
 from collections import defaultdict
 import sys
 
@@ -156,3 +156,10 @@ def mkdir_p(path):
         if exc.errno == errno.EEXIST and os.path.isdir(path):
             pass
         else: raise
+
+def gen_days(s, e):
+    """Generate days between start_day s and end_day e (exclusive)"""
+    d = s
+    while d < e:
+        yield d
+        d = d + timedelta(days = 1)

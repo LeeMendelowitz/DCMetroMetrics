@@ -232,7 +232,7 @@ def recompute_performance_summaries():
 
   for i, unit in enumerate(Unit.objects):
     print "Computing performance summary for unit %s: %i of %i (%.2f%%)"%(unit.unit_id, i, n, 100.0*i/n)
-    unit.compute_performance_summary()
+    unit.compute_performance_summary(save = True)
     
   elapsed = (datetime.now() - start).total_seconds()
   print "%.2f seconds elapsed"%elapsed
@@ -369,6 +369,8 @@ def fix_end_times():
 
   This is a mysterious scenario and requires further investigation. Where do
   we set the end time on a status?
+
+  If the last status has an end time defined, it will screw up the StatusGroup
   """
   from dcmetrometrics.eles.models import Unit
 

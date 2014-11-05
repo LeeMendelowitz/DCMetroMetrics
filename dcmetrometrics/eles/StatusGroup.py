@@ -12,12 +12,15 @@ Outage: Class used to summarize an ordered listing of consecutive non-operationa
 """
 from collections import defaultdict, Counter
 from copy import deepcopy
+from datetime import timedelta
 import sys
 
 from ..common.descriptors import setOnce, computeOnce
+from ..common.utils import gen_days
 from ..common import metroTimes
 from ..common.metroTimes import TimeRange, isNaive
 from .misc_utils import *
+
 
 ###############################################################################
 # StatusGroupBase: Summarizes a list of consecutive statuses for a single escalator.
@@ -85,8 +88,10 @@ class StatusGroupBase(object):
             start_time = statuses[0].time
 
         last_status_end_time = getattr(statuses[-1], 'end_time', None)
-        if last_status_end_time and end_time > last_status_end_time:
-            end_time = last_status_end_time
+        if last_status_end_time and \
+            end_time > last_status_end_time and \
+            last_status_end_time > start_time:
+                end_time = last_status_end_time
 
         self.start_time = start_time
         self.end_time = end_time
@@ -149,7 +154,6 @@ class StatusGroupBase(object):
     @computeOnce
     def metroOpenTime(self):
         return self.timeRange.metroOpenTime
-
 
 
     @computeOnce
@@ -381,6 +385,33 @@ class StatusGroup(StatusGroupBase):
             if outage.start_time >= start_time:
                 yield outage
 
+    @computeOnce
+    def breakOutages(self):
+        return [o for o in self.outageStatuses if o.is_break]
+
+    @computeOnce 
+    def day_to_break_count(self):
+        """
+        Return the day to number of new breaks that day.
+        """
+        ret = defaultdict(int)
+        for o in self.breakOutages:
+            ret[o.start_time.date()] += 1
+        return ret
+
+    @computeOnce
+    def break_days(self):
+        """
+        Return a sorted list of calendar days on which the escalator
+        was broken (even if it's just part of the day)
+        """   
+        days = set()
+        for b in self.breakOutages:
+            days.update(b.days)
+        days = sorted(list(days))
+        return days
+
+
 ###############################################################################
 # Outage
 # Used to represent an escalator outage (a list of consecutive non-operational statuses)
@@ -467,6 +498,14 @@ class Outage(StatusGroupBase):
     @computeOnce
     def categories(self):
         return set(s.symptom_category for s in self.allStatuses)
+
+    @computeOnce
+    def days(self):
+        """Return a list of calendar days this outage covers"""
+        start_date = self.start_time.date()
+        end_date = self.end_time.date() + timedelta(1)
+        return list(gen_days(start_date, end_date))
+
 
 #############################################################            
             
