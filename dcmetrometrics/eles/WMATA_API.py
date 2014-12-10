@@ -23,6 +23,7 @@ class WMATA_API(object):
 
         self.API_KEY = key
         self.URL_BASE = 'http://api.wmata.com'
+        self.TIMEOUT = 10 # timeout requests after 10 seconds.
 
     # Check if a request is okay. If it isn't raise WMATA_API_ERROR
     def checkRequest(self, req):    
@@ -33,14 +34,14 @@ class WMATA_API(object):
         payload = { 'api_key' : self.API_KEY }
         if params is not None:
             payload.update(params)
-        r = requests.get(url, params=payload)
+        r = requests.get(url, params=payload, timeout = self.TIMEOUT)
         self.checkRequest(r)
         return r
 
     # Request the static webpage with elevator/escalator status
     def getEscalatorWebpageStatus(self):
         url = 'http://www.wmata.com/rider_tools/metro_service_status/elevator_escalator.cfm'
-        r = requests.get(url)
+        r = requests.get(url, timeout = self.TIMEOUT)
         return r
 
     def getStations(self, params = None):
