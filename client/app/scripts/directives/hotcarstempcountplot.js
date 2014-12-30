@@ -125,9 +125,6 @@ angular.module('dcmetrometricsApp')
 
 
             }
-
-            
-            
         }    
 
         function brushended() {
@@ -160,6 +157,62 @@ angular.module('dcmetrometricsApp')
           }
           
         }
+
+
+        // On the scatter plot, we use hidden voronoi polygons to focus on the 
+        // closest scatter point.
+        // This class assists in showing/hiding the focus.
+        // NOTE: It's not necessary to use this provided we don't transition/fade the
+        // tooltip. Browsers seems to handle a path exit before entering another.
+        // var scatterFocusTracker = (function() {
+
+        //   var curPoint;
+        //   var num_enters = 0;
+        //   var num_exits = 0;
+
+        //   return {
+
+        //     handle_exit: function(point) {
+        //       num_exits += 1;
+        //       console.log("handle_exit: ", curPoint === point, num_exits);
+        //       console.log(d3.select(point).datum().point);
+
+        //       if (point !== curPoint) {
+        //         // Some other point is active, so don't do anything with
+        //         // respect to showing/hiding tooltips
+        //         return;
+        //       }
+
+        //       // We must hide the focus.
+        //       curPoint = null;
+
+        //       focus.style("display", "none");
+
+        //       // Fadeout the tooltip
+        //       tooltipDiv.style("opacity", 0.0);
+
+        //       scatterPts.selectAll('circle.focused').call(scatterDefault);
+
+        //     },
+
+        //     handle_enter: function(point) {
+
+        //       num_enters += 1;
+        //       console.log("handle_enter: ", curPoint === point, num_enters);
+        //       console.log(d3.select(point).datum().point);
+
+        //       curPoint = point;
+
+        //       // Show the focus element
+        //       focus.style("display", null);
+
+
+
+        //     }
+
+        //   };
+
+        // }());
 
         // Draw voronoi paths
         function drawVoronoi(dailyDataInView) {
@@ -230,6 +283,8 @@ angular.module('dcmetrometricsApp')
 
           paths.on("mouseover" , function(d) {
 
+            // scatterFocusTracker.handle_enter(this);
+
             // Show the focus element
             focus.style("display", null);
 
@@ -255,7 +310,17 @@ angular.module('dcmetrometricsApp')
             tooltipDiv.style("opacity", 0.9);  
 
 
-          });
+          }).on("mouseout", function() {
+            // scatterFocusTracker.handle_exit(this);
+
+            focus.style("display", "none");
+
+            // Fadeout the tooltip
+            tooltipDiv.style("opacity", 0.0);
+
+            scatterPts.selectAll('circle.focused').call(scatterDefault);
+       
+          })
 
 
         }
@@ -678,9 +743,7 @@ angular.module('dcmetrometricsApp')
                   focus.style("display", "none");
 
                   // Fadeout the tooltip
-                  tooltipDiv.transition()        
-                    .duration(200)    
-                    .style("opacity", 0.0);
+                  tooltipDiv.style("opacity", 0.0);
 
                   scatterPts.selectAll('circle.focused').call(scatterDefault);
 
@@ -720,11 +783,6 @@ angular.module('dcmetrometricsApp')
 
           } 
 
-          // Handle mouse movement in the scatter plot.
-          // Show the tooltip and highlight the day in the time series.
-          function mousemoveScatter() {   
-
-          } 
 
 
         });
