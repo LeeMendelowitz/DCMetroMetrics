@@ -12,7 +12,7 @@ from collections import defaultdict
 from ..eles.models import (Unit, UnitStatus, KeyStatuses, Station)
 from ..hotcars.models import (HotCarReport, Temperature)
 from ..common.WebJSONMixin import WebJSONMixin
-from ..common.metroTimes import tzutc
+from ..common.metroTimes import tzutc, isNaive, toUtc
 
 class WebJSONEncoder(JSONEncoder):
   """JSON Encoder for DC Metro Metrics data types.
@@ -23,7 +23,12 @@ class WebJSONEncoder(JSONEncoder):
     # Convert dates to string
     if isinstance(o, datetime.datetime) or \
        isinstance(o, datetime.date):
-       return o.isoformat()
+
+      # If the datetime is naive, assume it is in UTC timezone.
+      if isNaive(o):
+        o = toUtc(o, allow_naive = True)
+
+      return o.isoformat()
 
     # Convert ELES models
     elif isinstance(o, (WebJSONMixin)):

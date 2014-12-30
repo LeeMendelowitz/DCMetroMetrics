@@ -19,6 +19,9 @@ from dcmetrometrics.hotcars.twitter_api import TwitterError, getTwitterAPI
 from datetime import timedelta
 import logging
 
+from dcmetrometrics.common.JSONifier import JSONWriter
+from dcmetrometrics.common.globals import WWW_DIR
+
 ##########################
 def update_twitter_handles():
     """
@@ -69,3 +72,7 @@ def denormalize_reports():
   """
   for doc in HotCarReport.iter_reports():
     doc.denormalize()
+
+def write_json():
+  jwriter = JSONWriter(WWW_DIR)
+  jwriter.write_hotcars()

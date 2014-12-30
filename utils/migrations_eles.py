@@ -16,6 +16,7 @@ from dcmetrometrics.common.dbGlobals import G
 from dcmetrometrics.eles import dbUtils
 from dcmetrometrics.eles.models import Unit, SymptomCode, UnitStatus
 from datetime import timedelta
+from dcmetrometrics.common.globals import WWW_DIR
 
 
 def denormalize_unit_statuses():
@@ -160,7 +161,8 @@ def write_json():
   from dcmetrometrics.common.JSONifier import JSONWriter
   import os
 
-  jwriter = JSONWriter(basedir = os.path.join('client', 'app'))
+  jwriter = JSONWriter(WWW_DIR)
+  # jwriter = JSONWriter(basedir = os.path.join('client', 'app'))
 
   from dcmetrometrics.eles.models import Unit
   num_units = Unit.objects.count()

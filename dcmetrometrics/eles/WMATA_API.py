@@ -22,7 +22,7 @@ class WMATA_API(object):
             raise TypeError('WMATA_API key should be str')
 
         self.API_KEY = key
-        self.URL_BASE = 'https://wmataapibeta.azure-api.net'
+        self.URL_BASE = 'http://api.wmata.com'
         self.TIMEOUT = 10 # timeout requests after 10 seconds.
 
     # Check if a request is okay. If it isn't raise WMATA_API_ERROR
