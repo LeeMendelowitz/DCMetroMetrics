@@ -194,11 +194,16 @@ def tick(tweetLive = False):
                 logger.error('Caught DoesNotExist when trying to mark tweet %i as acknowledged!:\n%s'%(tweetId, str(e)))
 
     # Write hotcar json file for website if data has changed
+    jwriter = JSONWriter(WWW_DIR)
     if tweetResponses:
         logger.info('Writing json data.')
-        jwriter = JSONWriter(WWW_DIR)
         jwriter.write_hotcars()
 
+    # Update daily maximum temperatures if necessary
+    logger.info("Updating latest temperatures")
+    wu = getWundergroundAPI()
+    Temperature.update_latest_temperatures(wu)
+    jwriter.write_hotcars_by_day()
 
 ##################################################
 # Get the UTC time of the tweet, from sec since epoch
@@ -497,7 +502,6 @@ def getMentions(curTime):
         lastMentionsTweetId = maxMentionsTweetId)
 
     return mentions
-
 
 ###################################################################
 # Code below is old and might be dead. TBD.

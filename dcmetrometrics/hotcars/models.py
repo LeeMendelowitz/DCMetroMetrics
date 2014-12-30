@@ -6,7 +6,7 @@ from mongoengine import *
 from ..common.WebJSONMixin import WebJSONMixin
 from ..common.metroTimes import utcnow, tzutc
 
-from datetime import timedelta
+from datetime import timedelta, datetime, date
 from collections import defaultdict
 
 class HotCarAppState(Document):
@@ -202,3 +202,24 @@ class Temperature(WebJSONMixin, Document):
 
   meta = {'collection' : 'temperatures'}
   web_json_fields = ['date', 'max_temp']
+
+  @classmethod
+  def update_latest_temperatures(cls, wunderground_api):
+    ZIP_CODE = '20009'
+    temps = cls.objects.order_by('-date')
+    today = date.today()
+    yesterday = today - timedelta(days = 1)
+    if temps.count() == 0:
+      last_day = yesterday
+    else:
+      last_day = temps[0].date.date()
+
+    num_days = (today - last_day).days
+    for i in range(num_days):
+      day = last_day + timedelta(days = i + 1)
+      rec = wunderground_api.getHistory(day, ZIP_CODE, sleep=True)
+      max_temp = rec['dailysummary'][0]['maxtempi']
+      new_temp_record = cls(date = day, max_temp = max_temp)
+      new_temp_record.save()
+
+

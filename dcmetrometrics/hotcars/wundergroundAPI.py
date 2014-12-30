@@ -9,6 +9,8 @@ from datetime import date, datetime, timedelta
 from time import sleep as do_sleep
 import requests
 
+TIMEOUT = 10.0
+
 class WundergroundError(Exception):
     pass
 
@@ -64,7 +66,7 @@ class WundergroundAPI(object):
         if self.enforceRateLimit:
             self.callTimes.append(datetime.now())
 
-        r = requests.get(url)
+        r = requests.get(url, timeout = TIMEOUT)
         if r.status_code != requests.codes.ok:
             msg = 'RequestError! URL=%s, StatusCode=%i'%(r.url, r.status_code)
             raise WundergroundError(msg)
