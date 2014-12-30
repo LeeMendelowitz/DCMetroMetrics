@@ -7,6 +7,12 @@
  * # hotcarstempcountplot
  */
 
+/*
+  LMM: Warning: this directive is a complete mess and hard to work with. Would be better
+  to use Angular controllers to manage state. Instead, this directive is built in a "non-Angular" way
+  as one massive complicated D3 script. You've been warned.
+*/
+
 angular.module('dcmetrometricsApp')
   .directive('hotcarstempcountplot', ['hotCarDirectory', '$compile', '$rootScope', function (hotCarDirectory, $compile, $rootScope) {
     return {
@@ -69,7 +75,7 @@ angular.module('dcmetrometricsApp')
             var domain = x.domain();
 
             // Select the dailyData that is in view.
-            console.log("brushed. Domain: ", domain);
+            // console.log("brushed. Domain: ", domain);
 
             dailyDataInView = dailyData.filter(function(d) {
               return d.day >= domain[0] && d.day <= domain[1];
@@ -159,24 +165,28 @@ angular.module('dcmetrometricsApp')
         function drawVoronoi(dailyDataInView) {
 
           var polygon = function(d) {
+            // console.log("polygon d: ", d);
             return "M" + d.join("L") + "Z";
           }
 
+          // Set functions for accessing the x & y coordinates from data.
           voronoi.x(function(d) {
             return d.xScatter;
           }).y(function(d) {
             return d.yScatter;
           });
 
-          console.log("voronoi entries before processing: ", dailyDataInView.filter(function(d) { return d.temp !== null; }));
-          var vData = voronoi(
-            d3.nest()
-              // .key(function(d) { return Math.round(d.xScatter) + "," + Math.round(d.yScatter); })
+          // console.log("voronoi entries before processing: ", dailyDataInView.filter(function(d) { return d.temp !== null; }));
+
+          // Use d3.nest to remove duplicate scatter points before calling Voronoi.
+          // Using voronoi with conincident scatter points will cause problems.
+          var unique_data = d3.nest()
               .key(function(d) { return d.xScatter + "," + d.yScatter; })
               .rollup(function(v) { return v[0]; })
-              .entries(dailyDataInView.filter(function(d) { return d.temp !== null; }))
-              .map(function(d) { return d.values; })
-          );
+              .entries(dailyDataInView.filter(function(d) { return d.temp !== null; })) // This concludes the nest part
+              .map(function(d) { return d.values; }) // This extracts the unique values from the nest operation.
+
+          var vData = voronoi(unique_data);
 
           var lbefore = vData.length;
           vData = vData.filter(function(d) {
@@ -184,12 +194,33 @@ angular.module('dcmetrometricsApp')
             });
 
           var lafter = vData.length;
-          console.log("vdata filter. length before: ", lbefore, " length after: ", lafter);
 
+          // console.log("vdata filter. length before: ", lbefore, " length after: ", lafter);
+          // console.log("vData: ", vData);
+
+          // Join data on the voronoi polygon paths.
+          // We use the polygon as the key function.
+          // The voronoi geom will assign the data
+          // it computes the voronoi path from as the "point" attribute on the array.
+          // For eaxmple, see the use of ".datum(function(d) { return d.point; })" 
+          // here: http://bl.ocks.org/mbostock/8033015
+          //
+          // Example of d.point:
+          // { count: 7
+          //      dateString: "2013--5-28",
+          //      day: [date object],
+          //      scatterPt: [circle svg element],
+          //      temp: 85,
+          //      xScatter: 495.0,
+          //      yScatter: 173.58,
+          //      year: 2013
+          //    
           var paths = voronoiPath.selectAll("path").data(vData, polygon);
 
+          // Remove paths which have been deleted
           paths.exit().remove();
 
+          // Add new paths.
           paths.enter().append("path")
               .attr("class", "voronoi")
               .attr("d", function(d) {
@@ -198,10 +229,32 @@ angular.module('dcmetrometricsApp')
               });
 
           paths.on("mouseover" , function(d) {
+
+            // Show the focus element
+            focus.style("display", null);
+
             d3.select(this).classed("voronoi--hover", true);
             focusScatterPt(d.point);
-          }).on("mouseout", function(d) {
-            d3.select(this).classed("voronoi--hover", false)
+
+            // Populate the tooltip 
+            // Set the locations of the countTracker, tempTracker, and lineTracker
+            setLinePlotTracker(d.point, x(d.point.day), y(d.point.count), yTempScale(d.point.temp));
+
+            var tempTrackerPos = tempTrackerElem.getBoundingClientRect();
+            var countTrackerPos = countTrackerElem.getBoundingClientRect();
+
+            // Update the data on the scope to update the tooltip.
+            tooltipScope.$apply(function() {
+              tooltipScope.d = d.point;
+            });
+                
+            tooltipDiv
+                .style("left", (tempTrackerPos.left + window.pageXOffset + 30) + "px")     
+                .style("top", (d3.min([tempTrackerPos.top, countTrackerPos.top]) + window.pageYOffset)  + "px");     
+  
+            tooltipDiv.style("opacity", 0.9);  
+
+
           });
 
 
@@ -255,34 +308,78 @@ angular.module('dcmetrometricsApp')
 
         var lineSvgRoot = mainSvg.append("g");
         var lineSvg = lineSvgRoot.append("g");
+
+        // Element for showing line data points in focus based on mouse
         var focus = lineSvgRoot.append("g")
           .style("display", "none");  
+
+        // Circle which highlights the active hot car report data point in the line plot          
+        var countTracker = focus.append("circle")                                
+            .attr("class", "countTracker")                               
+            .attr("r", 4);  
+
+        var countTrackerElem = countTracker[0][0];
+
+        // Circle which highlights the active temperature data point in the line plot
+        var tempTracker = focus.append("circle")                                
+            .attr("class", "tempTracker")                               
+            .attr("r", 4);
+
+        var tempTrackerElem = tempTracker[0][0];      
+
+        // Line which shows the actively selected day in the line plot
+        var lineTracker = focus.append("line")
+          .attr("class", "lineTracker")
+          .attr("x1", 0)
+          .attr("y1", 0)
+          .attr("x2", 0)
+          .attr("y2", height);
+
+        //////////////////////////////////////////////////
+        // Show the tracker line in the line series plot.
+        function setLinePlotTracker(datum, xCount, yCount, yTemp) {
+          // console.log("setLinePlotTracker: ", datum, xCount, yCount, yTemp);
+          focus.datum(datum);
+          focus.attr("transform", "translate(" + xCount + ",0)");
+          countTracker.attr("transform",                            
+                    "translate(0, " + yCount + ")");       
+          tempTracker.attr("transform", "translate(0, " + yTemp + ")");       
+              
+        }
+
+
 
         // Append a tooltip to the body
         var tooltipDiv = d3.select("body").append("div")   
           .attr("class", "hotcars-tooltip")               
           .style("opacity", 0);
 
+
+
+
         // Angular template!
         var tooltipHtml = '\
-        <!-- <table class="table table-striped table-bordered table-condensed"> -->\
-        <table class="table-striped">\
+        <table class="table table-striped table-bordered table-condensed">\
+        <!-- <table class="table-striped"> -->\
           <tr><th>Date</th><td>{{ d.day | date : "EEE M/d/yy" }}</td></tr>\
           <tr><th>Temperature</th><td>{{ d.temp }}&deg;</td></tr>\
           <tr><th>Report Count</th><td>{{ d.count }}</td></tr>\
         </table>';
 
-        var tLink = $compile(tooltipHtml);
-        var iScope = $rootScope.$new(true);
-        var t = tLink(iScope);
+        // Compile the tooltip html and link it with a new
+        // scope.
+        var tooltipLink = $compile(tooltipHtml);
+        var tooltipScope = $rootScope.$new(true);
+        var tooltipElem = tooltipLink(tooltipScope);
         tooltipDiv.html("");
-        $(tooltipDiv[0][0]).append(t);
+        $(tooltipDiv[0][0]).append(tooltipElem);
 
         // This is the area that allows brushing
         var context = svg.append("g")
           .attr("class", "context")
           .attr("transform", "translate(" + margin2.left + "," + margin2.top + ")");
 
+        // This is the scatter plot of number of reports vs daily temperature
         var scatter = svg.append("g")
           .attr("class", "scatter")
           .attr("transform", "translate(" + marginScatter.left + "," + marginScatter.top + ")");
@@ -321,6 +418,9 @@ angular.module('dcmetrometricsApp')
 
           // Find the data point in the scatterplot and style it!
           d3.select(ptData.scatterPt).call(scatterFocused);
+
+          // Show the tooltip
+
 
         }
 
@@ -559,23 +659,7 @@ angular.module('dcmetrometricsApp')
 
           drawScatterLegend();
 
-          // append the circle at the intersection              
-          var countTracker = focus.append("circle")                                
-              .attr("class", "countTracker")                               
-              .attr("r", 4);  
-          var countTrackerElem = countTracker[0][0];
 
-          var tempTracker = focus.append("circle")                                
-              .attr("class", "tempTracker")                               
-              .attr("r", 4);
-          var tempTrackerElem = tempTracker[0][0];      
-
-          var lineTracker = focus.append("line")
-            .attr("class", "lineTracker")
-            .attr("x1", 0)
-            .attr("y1", 0)
-            .attr("x2", 0)
-            .attr("y2", height);
 
 
                                                 
@@ -590,8 +674,10 @@ angular.module('dcmetrometricsApp')
               })
               .on("mouseout", function() {
 
+
                   focus.style("display", "none");
 
+                  // Fadeout the tooltip
                   tooltipDiv.transition()        
                     .duration(200)    
                     .style("opacity", 0.0);
@@ -599,28 +685,11 @@ angular.module('dcmetrometricsApp')
                   scatterPts.selectAll('circle.focused').call(scatterDefault);
 
               })
-              .on("mousemove", mousemove);                      
+              .on("mousemove", mousemoveLinePlot);                  
 
 
           //////////////////////////////////////////////////
-          // Show the tracker line in the line series plot.
-          function setLinePlotTracker(datum, xCount, yCount, yTemp) {
-
-            focus.datum(datum);
-
-            focus.attr("transform", "translate(" + xCount + ",0)");
-
-            countTracker.attr("transform",                            
-                      "translate(0, " + yCount + ")");       
-
-            tempTracker.attr("transform", "translate(0, " + yTemp + ")");       
-                
-          }
-
-
-
-          //////////////////////////////////////////////////
-          function mousemove() {    
+          function mousemoveLinePlot() {    
                                  
             var tempTrackerPos, countTrackerPos;  
             
@@ -630,6 +699,7 @@ angular.module('dcmetrometricsApp')
                 d1 = dailyDataInView[i],                                 
                 d = x0 - d0.day > d1.day - x0 ? d1 : d0;    
 
+            // Set the locations of the countTracker, tempTracker, and lineTracker
             setLinePlotTracker(d, x(d.day), y(d.count), yTempScale(d.temp));
             focusScatterPt(d);
 
@@ -638,8 +708,8 @@ angular.module('dcmetrometricsApp')
             countTrackerPos = countTrackerElem.getBoundingClientRect();
 
             // Update the data on the scope to update the tooltip.
-            iScope.$apply(function() {
-              iScope.d = d;
+            tooltipScope.$apply(function() {
+              tooltipScope.d = d;
             });
                 
             tooltipDiv
@@ -653,7 +723,7 @@ angular.module('dcmetrometricsApp')
           // Handle mouse movement in the scatter plot.
           // Show the tooltip and highlight the day in the time series.
           function mousemoveScatter() {   
-            // TODO!                        
+
           } 
 
 

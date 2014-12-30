@@ -295,6 +295,12 @@ circle.tempTracker {
   stroke: black;
 }
 
+line.lineTracker {
+  stroke: black;
+  stroke-width: 1px;
+  stroke-dasharray: 5,5;
+}
+
 
 circle.scatter {
   fill-opacity: .7;
@@ -345,13 +351,14 @@ div.hotcars-tooltip {
 
 path.voronoi {
   fill: none;
-  stroke-width: 1px;
+/*  stroke-width: 1px;
   stroke-opacity: 0.2;
-  stroke: red;
+  stroke: red;*/
+  stroke: none;
   pointer-events: all;
 }
 
-path.voronoi--hover {
+/*path.voronoi--hover {
   fill: orange;
   fill-opacity: .50;
-}
+}*/
