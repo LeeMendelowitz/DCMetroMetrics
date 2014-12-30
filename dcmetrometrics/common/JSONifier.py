@@ -25,7 +25,7 @@ class WebJSONEncoder(JSONEncoder):
        isinstance(o, datetime.date):
 
       # If the datetime is naive, assume it is in UTC timezone.
-      if isNaive(o):
+      if isinstance(o, datetime.datetime) and isNaive(o):
         o = toUtc(o, allow_naive = True)
 
       return o.isoformat()

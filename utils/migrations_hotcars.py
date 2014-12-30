@@ -76,3 +76,4 @@ def denormalize_reports():
 def write_json():
   jwriter = JSONWriter(WWW_DIR)
   jwriter.write_hotcars()
+  jwriter.write_hotcars_by_day()
