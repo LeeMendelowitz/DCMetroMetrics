@@ -2,7 +2,7 @@
 getTwitterAPI: Return the python_twitter
 """
 from ..common import twitterUtils
-from ..third_party.twitter import TwitterError
+from twitter import TwitterError
 
 T = None
 def getTwitterAPI():

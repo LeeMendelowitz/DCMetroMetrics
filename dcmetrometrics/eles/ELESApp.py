@@ -32,7 +32,7 @@ import dbUtils
 from .dbUtils import invert_dict, update_db_from_incident
 from .models import KeyStatuses, UnitStatus, SymptomCode, Unit, EscalatorAppState
 from ..keys import WMATA_API_KEY
-from ..third_party.twitter import TwitterError
+from twitter import TwitterError
 from .Incident import Incident
 from .WMATA_API import WMATA_API_ERROR, WMATA_API
 from .defs import symptomToCategory, OPERATIONAL_CODE as OP_CODE

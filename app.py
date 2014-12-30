@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 """
-This is the main program. Running this module will cause
-the twitter accounts to live tweet.
+This is the main program.
 
-For testing purposes, run the test_app.py program, which
-disables live tweeting.
+If you are testing, your environment needs to be properly initialized for this script to work.
+For testing:
+python test/test_app.py
 """
 
 import imp
@@ -13,6 +13,8 @@ import sys
 import subprocess
 import argparse
 import copy
+import gevent
+from gevent import monkey; monkey.patch_all()
 
 
 PY_DIR = os.environ['PYTHON_DIR']
@@ -22,12 +24,9 @@ DATA_DIR = os.environ['DATA_DIR']
 
 # Import application modules
 from ELESAppRunner import App as ELESAppRunner
+
 # from elevatorApp import ElevatorApp
 from hotCarApp import HotCarApp
-
-# Import the web server and web page generator
-import gevent
-from gevent import monkey; monkey.patch_all() # Needed for bottle
 
 HOT_CAR_TWEET_LIVE = 'HOT_CAR_TWEET_LIVE' in os.environ
 ELES_TWEET_LIVE = 'ELES_TWEET_LIVE' in os.environ
@@ -42,9 +41,7 @@ def run():
    hotCarApplication = HotCarApp(LIVE = HOT_CAR_TWEET_LIVE)
    hotCarApplication.start()
 
-   # Run forever
-   while True:
-       gevent.sleep(10)
+   gevent.wait()
 
 if __name__ == '__main__':
    run()

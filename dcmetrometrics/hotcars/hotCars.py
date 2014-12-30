@@ -21,7 +21,7 @@ from .process_tweets import (preprocessText, getHotCarDataFromText,
         uniqueTweets, tweetIsValidReport, isRetweet)
 from .models import (HotCarAppState, HotCarTweet, HotCarTweeter, HotCarReport, CarsForbiddenByMention, Temperature)
 
-from ..third_party.twitter import TwitterError
+from twitter import TwitterError
 from ..common.globals import WWW_DIR
 from ..common import twitterUtils
 from ..common import dbGlobals
@@ -34,8 +34,13 @@ logger.setLevel(logging.DEBUG)
     
 ME = 'MetroHotCars'.upper()
 
-# Words which are not allowed in tweets which mention MetroHotCars
-mentions_forbidden_words = set(w.upper() for w in ['cold', 'cool'])
+# Words which are not allowed in hot car report tweets
+all_forbidden_words = set(w.upper() for w in ['cold', 'cool', 'freeze', 'freezing'])
+def hasForbiddenWord(t):
+    text = t.text.upper()
+    count = sum(1 for w in all_forbidden_words if w in text)
+    return count > 0
+
 
 def getHotCarUrl(carNum):
     url = 'http://www.dcmetrometrics.com/hotcars/detail/{carNum}'.format(carNum=carNum)
@@ -59,20 +64,20 @@ def tick(tweetLive = False):
     dbGlobals.connect()
     curTime = utcnow()
     curTimeLocal = toLocalTime(curTime)
-    logger.info('Running HotCar Tick. %s\n'%(str(curTimeLocal)))
-    logger.info('Tweeting Live: %s\n'%str(tweetLive))
+    logger.info('Running HotCar Tick. %s'%(str(curTimeLocal)))
+    logger.info('Tweeting Live: %s'%str(tweetLive))
             
     appState = HotCarAppState.get()
     lastTweetId = appState.lastTweetId if appState.lastTweetId else 0
 
     T = getTwitterAPI()
 
-    logger.info('last tweet id: %i\n'%lastTweetId)
+    logger.info('last tweet id: %i'%lastTweetId)
 
     # Generate reponse tweets for any tweets which have not yet been acknowledged
     tweetResponses = []
     unacknowledged = list(HotCarTweet.objects(acknowledged = False))
-    logger.info('Found %i unacknowledged tweets\n'%(len(unacknowledged)))
+    logger.info('Found %i unacknowledged tweets'%(len(unacknowledged)))
     for tweet in unacknowledged:
         response = genResponseTweet(tweet.handle, getHotCarDataFromText(tweet.text))
         tweetResponses.append((tweet.tweet_id, response))
@@ -87,23 +92,30 @@ def tick(tweetLive = False):
     # Get the latest tweets about WMATA hotcars. Ignore tweets which
     # mention MetroHotCars, as these will be processed by getMentions
     queries = ['wmata hotcar', 'wmata hot car', 'wmata hotcars', 'wmata hot cars']
+    logger.info('Searching for hot car tweets...')
     tweets = []
     for q in queries:
         queryResult = T.GetSearch(q, count=100, since_id = lastTweetId, result_type='recent', include_entities=True)
-        tweets.extend(t for t in queryResult if not tweetMentionsMe(t))
+        qtweets = (t for t in queryResult if not tweetMentionsMe(t))
+        tweets.extend(qtweets)
+    logger.info("Search return %i tweets", len(tweets))
+    for i, tweet in enumerate(tweets):
+        logger.info("\tTweet from %s: %s", tweet.user.screen_name, tweet.text)
 
     # Find the max tweet id seen through twitter search
     maxTweetId = max([t.id for t in tweets]) if tweets else 0
     maxTweetId = max(maxTweetId, lastTweetId)
 
+    logger.info("Getting mentions from twitter.")
     # Get tweets which mention MetroHotCars
     tweets.extend(getMentions(curTime=curTime))
+    logger.info("Done getting mentions.")
 
     # Make a set of unique tweets
     tweets = uniqueTweets(tweets)
-    logger.info('Twitter search returned %i unique tweets\n'%len(tweets))
+    logger.info('Twitter search returned %i unique tweets'%len(tweets))
 
-    def filterPass(t):
+    def filterSelfRetweets(t):
         """ Only consider reports that are not retweets and
         not tweets from MetroHotCars.
         """
@@ -117,21 +129,26 @@ def tick(tweetLive = False):
 
         return True
 
-    filteredTweets = [t for t in tweets if filterPass(t)]
+
+    filteredTweets = [t for t in tweets if filterSelfRetweets(t)]
     tweetIds = set(t.id for t in filteredTweets)
 
     # Make sure we have a set of unique tweets.
     assert(len(tweetIds) == len(filteredTweets))
 
-    logger.info('Filtered to %i tweets after removing re-/self-tweets\n'%len(filteredTweets))
+    logger.info('Filtered to %i tweets after removing re-/self-tweets'%len(filteredTweets))
+
+    filteredTweets = [t for t in filteredTweets if not hasForbiddenWord(t)]
+
+    logger.info('Filtered to %i tweets after removing tweets with forbidden words'%len(filteredTweets))
 
     tweetData = [(t, getHotCarDataFromText(t.text)) for t in filteredTweets]
     tweetData = [(t, hcd) for t,hcd in tweetData if tweetIsValidReport(t, hcd)]
     tweetData = filterDuplicateReports(tweetData)
     tweetIds = set(t.id for t,hcd in tweetData)
 
-    logger.info('Filtered to %i tweets after removing invalid and duplicate reports\n'%len(tweetData))
-    logger.info('Have %i tweets about hot cars\n'%len(tweetData))
+    logger.info('Filtered to %i tweets after removing invalid and duplicate reports'%len(tweetData))
+    logger.info('Have %i tweets about hot cars'%len(tweetData))
 
     for tweet, hotCarData in tweetData:
         validTweet = tweetIsValidReport(tweet, hotCarData)
@@ -156,7 +173,7 @@ def tick(tweetLive = False):
         if response is None:
             continue
 
-        logger.info('Response for Tweet %i: %s\n'%(tweetId, response))
+        logger.info('Response for Tweet %i: %s'%(tweetId, response))
 
         if tweetLive:
 
@@ -202,14 +219,14 @@ def updateDBFromTweet(tweet, hotCarData):
     hotCarData: The data extracted from the tweet.
     """
 
-    #logger.info('hotcars_tweets has %i docs\n'%(db.hotcars_tweets.count()))
-    logger.info('Updating hotcar_tweets collection with tweet %i\n'%tweet.id)
+    #logger.info('hotcars_tweets has %i docs'%(db.hotcars_tweets.count()))
+    logger.info('Updating hotcar_tweets collection with tweet %i'%tweet.id)
     tweetText = tweet.text.encode('utf-8', errors='ignore')
 
     # Check if this is a duplicate, and abort if so.
     try:
         tweet = models.HotCarTweet.objects(pk = tweet.id).get()
-        logging.info('No update made. Tweet %i is a duplicate.\n'%tweet.id)
+        logging.info('No update made. Tweet %i is a duplicate.'%tweet.id)
         return False
     except DoesNotExist:
         pass
@@ -224,7 +241,7 @@ def updateDBFromTweet(tweet, hotCarData):
         embed_html = embedding['html']
     except TwitterError as e:
         msg = 'Tweet Id: %i'%tweetId +\
-              '\nCaught Twitter error when trying to get Status Oembed: %s\n'%(str(e))
+              '\nCaught Twitter error when trying to get Status Oembed: %s'%(str(e))
         logger.error(msg)
 
     # Save the tweet.
@@ -342,11 +359,11 @@ def filterDuplicateReports(tweetData):
                                                           and (d['time'] < tweetTime))
         if (prevSelfReports > 0):
             logger.info('Skipping Tweet %i by %s on car %i because there is a previous self-report' \
-                      ' in last 30 days\n'%(tweet_id, screen_name, carNumber))
+                      ' in last 30 days'%(tweet_id, screen_name, carNumber))
             continue
         if (otherUserReports > 0):
             logger.info('Skipping Tweet %i by %s on car %i because it mentions another report ' \
-                      ' from last 30 days\n'%(tweet_id, screen_name, carNumber))
+                      ' from last 30 days'%(tweet_id, screen_name, carNumber))
             continue
         filteredTweetData.append((tweet, hotCarData))
 
@@ -465,11 +482,6 @@ def getMentions(curTime):
     mentions = T.GetMentions(include_entities = True, since_id = lastMentionsTweetId)
     maxMentionsTweetId = max(t.id for t in mentions) if mentions else 0
     maxMentionsTweetId = max(maxMentionsTweetId, lastMentionsTweetId)
-
-    def hasForbiddenWord(t):
-        text = t.text.upper()
-        count = sum(1 for w in mentions_forbidden_words if w in text)
-        return count > 0
 
     # Get car numbers which are forbidden to be submitted by mention
     forbiddenCarNumbers = getForbiddenCarsByMention()
