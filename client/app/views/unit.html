@@ -42,6 +42,7 @@
     <div class = "col-md-2 visible-md-block visible-lg-block" >
         <ul class="nav nav-pills nav-stacked dcmm-sidenav" affix offset-top="250">
           <li ng-class="{active : showSummary()}"><a ui-sref="unit.summary">Summary</a></li>
+          <li ng-class="{active : showCalendar()}"><a ui-sref="unit.calendar">Calendar View</a></li>
           <li ng-class="{active : showStatuses()}"><a ui-sref="unit.statuses">Statuses</a></li>
         </ul>
     </div>
@@ -53,7 +54,6 @@
       {{ unitData.performance_summary | json }}
       </pre>
  -->
-
 
       <div class="row">
         <div class="col-xs-12 dcmm-fadeIn" ng-show="showSummary()">
@@ -95,6 +95,61 @@
         </div>
       </div>
 
+
+      <div class="row">
+        <div class="col-xs-12 dcmm-fadeIn" ng-show="showCalendar()">
+
+          <h2>Calendar View</h2>
+
+          <unit-calendar-heatmap
+            type='break'
+            unitid="{{unitId}}"
+            header="Outages"
+            description="Days with an unexpected outage."
+            data="unitData.day_has_outage"
+            legend="[1]"
+            legend-min-color="#e3e3e3"
+            legend-max-color="#cc3333">
+          </unit-calendar-heatmap>
+
+
+    <!--       <unit-calendar-heatmap
+            type='break'
+            unitid="{{unitId}}"
+            data="unitData.performance_summary.all_time.day_seconds_to_break_count"
+            header="Daily Break Counts"
+            legend="[1,2,3]"
+            legend-min-color="#e3e3e3"
+            legend-max-color="blue">
+          </unit-calendar-heatmap>
+
+     -->
+
+          <unit-calendar-heatmap
+            type='break'
+            unitid="{{unitId}}"
+            header="Inspections"
+            description="Days with an inspection."
+            data="unitData.day_has_inspection"
+            legend="[1]"
+            legend-min-color="#e3e3e3"
+            legend-max-color="green">
+          </unit-calendar-heatmap>
+
+
+          <unit-calendar-heatmap
+            type='break'
+            unitid="{{unitId}}"
+            header="Rehabilitations"
+            description="Days where the escalator was closed for rehabilitation/modernization work."
+            data="unitData.day_has_rehab"
+            legend="[1]"
+            legend-min-color="#e3e3e3"
+            legend-max-color="orange">
+          </unit-calendar-heatmap>
+        </div>
+      </div>
+
       <div class="row">
         <div class="col-xs-12 dcmm-fadeIn" ng-show="showStatuses()">
           <h2>Statuses</h2>
@@ -118,6 +173,9 @@
             </table>
         </div>
       </div>
+
+
+
     </div>
 
   </div> <!-- end row -->

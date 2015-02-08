@@ -36,5 +36,9 @@ angular.module('dcmetrometricsApp')
         return $scope.$state.is("unit.statuses");
       };
 
+      $scope.showCalendar = function() {
+        return $scope.$state.is("unit.calendar");
+      };
+
 
   }]);

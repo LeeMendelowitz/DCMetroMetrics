@@ -392,7 +392,7 @@ def fix_end_times():
     lastStatus.save()
 
 
-def update_2014_09_10():
+def update_2015_02_08():
   recompute_key_statuses()
   fix_end_times()
   recompute_performance_summaries()

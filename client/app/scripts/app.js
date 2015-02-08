@@ -116,6 +116,9 @@ app.config(function($stateProvider, $urlRouterProvider) {
     .state('unit.statuses', {
       url: '/statuses'
     })
+    .state('unit.calendar', {
+      url: '/calendar'
+    })
     .state('rankings', {
       url: '/rankings?timePeriod&unitType&searchString&orderBy',
       templateUrl: '/views/rankings.html',
