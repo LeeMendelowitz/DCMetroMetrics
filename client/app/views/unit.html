@@ -63,7 +63,7 @@
           <p>Current Status: {{ key_statuses.lastStatus.symptom_description }} since {{ key_statuses.lastStatus.start_time.format("MMM D, YYYY") }} ( {{ key_statuses.lastStatus.start_time.fromNow() }})<br>
 
           <span ng-hide="key_statuses.lastStatus.isOperational()">
-          Last worked on  {{ key_statuses.lastFixStatus.end_time.format("MMM D, YYYY")}} ({{ key_statuses.lastFixStatus.end_time.fromNow() }})<br></span>
+          Last worked on  {{ key_statuses.lastOperationalStatus.end_time.format("MMM D, YYYY")}} ({{ key_statuses.lastOperationalStatus.end_time.fromNow() }})<br></span>
 
           <span ng-show="key_statuses.lastStatus.isOperational()">
           Last broke on  {{ key_statuses.lastBreakStatus.end_time.format("MMM D, YYYY")}} ({{ key_statuses.lastBreakStatus.end_time.fromNow() }})<br></span>
