@@ -27,6 +27,7 @@ angular.module('dcmetrometricsApp')
       // Convert times to moments with the East coast time zone
       this.end_time = moment.tz(this.end_time, zone);
       this.time = moment.tz(this.time, zone);
+      this.start_time = this.time; 
 
     };
 
@@ -47,6 +48,18 @@ angular.module('dcmetrometricsApp')
 
         return ret;
         
+      },
+      isBroken : function() {
+        return this.symptom_category === "BROKEN";
+      },
+      isInspection: function() {
+        return this.symptom_category === "INSPECTION";
+      },
+      isOff: function() {
+        return this.symptom_category === "OFF";
+      },
+      isOperational: function() {
+        return this.symptom_category === "ON";
       }
 
 

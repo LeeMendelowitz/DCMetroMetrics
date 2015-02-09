@@ -58,8 +58,21 @@
       <div class="row">
         <div class="col-xs-12 dcmm-fadeIn" ng-show="showSummary()">
 
-          <h2>Performance Summary</h2>
-            <p> Here is a summary of the unit's all time and recent performance. <p>
+          <h2>Summary</h2>
+
+          <p>Current Status: {{ key_statuses.lastStatus.symptom_description }} since {{ key_statuses.lastStatus.start_time.format("MMM D, YYYY") }} ( {{ key_statuses.lastStatus.start_time.fromNow() }})<br>
+
+          <span ng-hide="key_statuses.lastStatus.isOperational()">
+          Last worked on  {{ key_statuses.lastFixStatus.end_time.format("MMM D, YYYY")}} ({{ key_statuses.lastFixStatus.end_time.fromNow() }})<br></span>
+
+          <span ng-show="key_statuses.lastStatus.isOperational()">
+          Last broke on  {{ key_statuses.lastBreakStatus.end_time.format("MMM D, YYYY")}} ({{ key_statuses.lastBreakStatus.end_time.fromNow() }})<br></span>
+
+          Last inspected on {{ key_statuses.lastInspectionStatus.end_time.format("MMM D, YYYY")}} ({{ key_statuses.lastInspectionStatus.end_time.fromNow() }})</p>
+
+          <p> Here is a summary of the unit's all time and recent performance.</p>
+          <br>
+
             <table class = "table table-bordered" ng-controller="UnitPerformanceAccordianCtrl">
               <thead>
                 <tr>

@@ -35,8 +35,8 @@ angular.module('dcmetrometricsApp')
       link: function postLink(scope, element, attrs) {
 
 
-        console.log('unit calendar heatmap!', scope.id_pfx);
-        console.log(element);
+        // console.log('unit calendar heatmap!', scope.id_pfx);
+        // console.log(element);
 
         var children = element.children();
 

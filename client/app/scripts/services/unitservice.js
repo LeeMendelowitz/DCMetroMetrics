@@ -115,7 +115,18 @@ angular.module('dcmetrometricsApp')
 
     };
 
-
+    var convertKeyStatuses = function(data) {
+      var ks = data.unit.key_statuses;
+      var k, s;
+      for(k in ks) {
+        if (ks.hasOwnProperty(k)) {
+          s = ks[k];
+          if (s) {
+            ks[k] = new UnitStatus(s);
+          }
+        }
+      }
+    }
 
     this.getUnitData = function(unitId) {
 
@@ -133,11 +144,19 @@ angular.module('dcmetrometricsApp')
       $http.get(url, { cache: true })
         .success( function(data) {
 
-          data.statuses_objs = data.statuses.map(function(d) { return new UnitStatus(d); });
+          data.statuses_objs = data.statuses.map(function(d) {
+            if(d) {
+              return new UnitStatus(d); 
+            }
+            return null;
+          });
+          convertKeyStatuses(data);
+
           fixDateToBreakCount(data);
           computeOutageDays(data);
           computeInspectionDays(data);
           computeRehabDays(data);
+
 
           unitToData[unitId] = data;
           deferred.resolve(data);
