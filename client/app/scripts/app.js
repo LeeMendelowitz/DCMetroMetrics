@@ -46,6 +46,15 @@ app.config(function($stateProvider, $urlRouterProvider) {
       templateUrl: "/views/main.html",
       controller: 'OutagesCtrl'
     })
+    .state('about', {
+      url: "/about",
+      templateUrl: "/views/about.html"
+    })
+    .state('dashboard', {
+      url: "/dashboard",
+      templateUrl: "/views/dashboard.html",
+      controller: 'OutagesCtrl'
+    })
     .state('outages', {
       url: "/outages",
       templateUrl: '/views/outages.html',

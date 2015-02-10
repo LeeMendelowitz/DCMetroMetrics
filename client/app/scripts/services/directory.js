@@ -9,15 +9,23 @@
  */
 angular.module('dcmetrometricsApp')
 
-  .service('directory', ['$http', '$q', function directory($http, $q) {
+  .service('directory', ['$http', '$q', 'Unit', 'UnitStatus', function directory($http, $q, Unit, UnitStatus) {
     
     // AngularJS will instantiate a singleton by calling "new" on this function
+    var self = this;
 
     var directoryUrl = "/json/station_directory.json";
     var recentUpdateUrl = "/json/recent_updates.json";
 
-    var stationDirectory, shortNameToData, codeToData, escalatorOutages, elevatorOutages;
-    var recentUpdates, unitIdToUnit;
+    var stationDirectory,
+        shortNameToData,
+        codeToData,
+        escalatorOutages,
+        elevatorOutages,
+        daily_break_count, // Number of new breaks per day. 
+        daily_broken_count, // Number of broken units on a day.
+        recentUpdates,
+        unitIdToUnit;
 
 
     this.get_directory = function() {
@@ -113,6 +121,8 @@ angular.module('dcmetrometricsApp')
 
       $http.get(recentUpdateUrl, { cache: true })
         .success( function(d) {
+          d = d.map(function(v) { return new UnitStatus(v); });
+          console.log(d);
           recentUpdates = d;
           deferred.resolve(d);
         })
@@ -124,6 +134,116 @@ angular.module('dcmetrometricsApp')
       return deferred.promise;
 
     };
+
+    // Get daily break counts.
+    this.get_daily_break_count = function() {
+
+      var deferred = $q.defer();
+
+      var ret = { escalators: {},
+                  elevators: {}
+                };
+
+      if (daily_break_count) {
+        deferred.resolve(daily_break_count);
+        return deferred.promise;
+      }
+
+      self.get_directory().then(
+
+          // on success:
+          function(directory) {
+            var unit, unit_id, day, day_to_break_count, d;
+            var unit_dict = directory.unitIdToUnit;
+            for (unit_id in unit_dict) {
+              if(unit_dict.hasOwnProperty(unit_id)) {
+                unit = new Unit(unit_dict[unit_id]);
+                if (unit.isEscalator()) { 
+                  d = ret.escalators;
+                } else {
+                  d = ret.elevators;
+                }
+                day_to_break_count = unit.performance_summary.all_time.day_to_break_count;
+                for(day in day_to_break_count) {
+                  if(d.hasOwnProperty(day)) {
+                    d[day] += day_to_break_count[day];
+                  } else {
+                    d[day] = day_to_break_count[day];
+                  }
+                }
+              }
+            }
+
+            daily_break_count = ret;
+            deferred.resolve(ret);
+          },
+
+          // on failure:
+          function() {
+            deferred.reject("Failed to get directory.");
+          }
+
+      );
+
+      return deferred.promise;
+
+    };
+
+    // Get the number of units that had an broken outage by day
+    this.get_daily_broken_count = function() {
+
+      var deferred = $q.defer();
+      var ret = {escalators: {},
+                 elevators: {}
+                };
+
+      if (daily_broken_count) {
+        deferred.resolve(daily_broken_count);
+        return deferred.promise;
+      }
+
+      self.get_directory().then(
+
+          // on success:
+          function(directory) {
+            var unit, unit_id, day, break_days, i, d;
+            var unit_dict = directory.unitIdToUnit;
+            for (unit_id in unit_dict) {
+              if(unit_dict.hasOwnProperty(unit_id)) {
+                unit = new Unit(unit_dict[unit_id]);
+                if (unit.isEscalator()) { 
+                  d = ret.escalators;
+                } else {
+                  d = ret.elevators;
+                }
+                break_days = unit.performance_summary.all_time.break_days;
+                for(i = 0; i < break_days.length; i++) {
+                  day = break_days[i];
+                  if(d.hasOwnProperty(day)) {
+                    d[day] += 1;
+                  } else {
+                    d[day] = 1;
+                  }
+                }
+              }
+            }
+
+            daily_broken_count = ret;
+            deferred.resolve(ret);
+          },
+
+          // on failure:
+          function() {
+            deferred.reject("Failed to get directory.");
+          }
+
+      );
+
+      return deferred.promise;
+
+    };
+
+
 
     // Get the station url for a unit.
     this.getStationUrl = function(unit) {

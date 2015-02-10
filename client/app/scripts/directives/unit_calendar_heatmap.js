@@ -17,19 +17,20 @@ angular.module('dcmetrometricsApp')
         unitid : '@',
         data : '=',
         legend: '@',
+        legendColors: '@',
         legendMinColor: '@',
         legendMaxColor: '@',
         header: '@',
-        description: '@'
+        description: '@',
+        tooltip: '@',
+        displayLegend: '@',
+        considerMissingDataAsZero: '@'
       }, 
 
       controller: ['$scope', function($scope) {
+
         $scope.id_pfx = 'dcmm-unit-cal-heatmap-' + $scope.type + '-' + $scope.unitid;
-        $scope.legend = eval($scope.legend);
-        $scope.legendColors = {
-          min: $scope.legendMinColor,
-          max: $scope.legendMaxColor
-        };
+ 
       }],
 
       link: function postLink(scope, element, attrs) {
@@ -46,7 +47,19 @@ angular.module('dcmetrometricsApp')
         // Look for data changes, and redraw the calendar
         scope.$watch('data', function(data) {
           
+
           if (!data) { return; }
+
+          var tooltip = eval(scope.tooltip);
+          var legend = eval(scope.legend);
+          var legendColors = scope.$eval(scope.legendColors);
+          var displayLegend = eval(scope.displayLegend);
+          var considerMissingDataAsZero = eval(scope.considerMissingDataAsZero) || false;
+
+          //TODO: Get the display legend to work. Clean up all of these evals?
+
+          console.log(scope);
+
 
           if(cal) { cal = cal.destroy(); }
 
@@ -71,14 +84,14 @@ angular.module('dcmetrometricsApp')
             },
             subDomainTextFormat: "%d",
             domainDynamicDimension: false,
-            legend: [1],
-            legendColors: scope.legendColors,
-            displayLegend: false,
+            legend: legend,
+            legendColors: legendColors,
+            displayLegend: displayLegend,
             minDate : new Date(2013, 5, 1),
             maxDate : new Date(),
-            tooltip: false,
+            tooltip: tooltip,
             weekStartOnMonday: false,
-            considerMissingDataAsZero: true
+            considerMissingDataAsZero: considerMissingDataAsZero
           });
 
         });

@@ -163,3 +163,13 @@ def gen_days(s, e):
     while d < e:
         yield d
         d = d + timedelta(days = 1)
+
+def gen_dates(s, e):
+    """Generate days between start_day s and end_day e (exclusive) as datetimes, utc"""
+    from .metroTimes import tzutc
+    def day_to_date(d):
+        return datetime(d.year, d.month, d.day, tzinfo = tzutc)
+    d = s
+    while d < e:
+        yield day_to_date(d)
+        d = d + timedelta(days = 1)

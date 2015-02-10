@@ -8,6 +8,8 @@
 
 <div class="container">
 
+  <div class="row">
+
     <div class = "col-md-2 visible-md-block visible-lg-block" >
         <ul class="nav nav-pills nav-stacked dcmm-sidenav" affix offset-top="250">
           <li ng-class='{active: showTweets()}'><a ui-sref="hotcars.main.tweets">Tweets</a></li>
@@ -21,7 +23,7 @@
     <div class = "col-xs-12 col-md-10">
 
         <div class="col-sm-12 hidden-md hidden-lg">
-            <ul class="nav nav-pills">
+            <ul class="nav nav-pills dcmm-topnav" affix offset-top="250">
             <li ng-class='{active: showTweets()}'><a ui-sref="hotcars.main.tweets">Tweets</a></li>
             <li ng-class='{active: showLeaderboard()}'><a ui-sref="hotcars.main.leaderboard" >Leaderboard</a></li>
             <li ng-class='{active: showTimeseries()}'><a ui-sref="hotcars.main.timeseries">Timeseries</a></li>

@@ -147,6 +147,16 @@ body {
 }
 */
 
+.dcmm-topnav.affix {
+  width: 100%;
+  top: 45px;
+  left: 0px;
+  padding-bottom: 2px;
+  box-sizing: border-box;
+  background-color: white;
+  z-index: 100;
+}
+
 .dcmm-sidenav.affix {
   top: 70px;
   box-sizing: border-box;
@@ -159,7 +169,7 @@ body {
 }
 
 @media (min-width: 1200px) {
-  .dcmm-hotcarnav.affix {
+  .dcmm-sidenav.affix {
     width: 165px;
   }
 }

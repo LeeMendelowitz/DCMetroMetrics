@@ -16,7 +16,7 @@ from datetime import timedelta
 import sys
 
 from ..common.descriptors import setOnce, computeOnce
-from ..common.utils import gen_days
+from ..common.utils import gen_dates, gen_days
 from ..common import metroTimes
 from ..common.metroTimes import TimeRange, isNaive
 from .misc_utils import *
@@ -504,7 +504,7 @@ class Outage(StatusGroupBase):
         """Return a list of calendar days this outage covers"""
         start_date = self.start_time.date()
         end_date = self.end_time.date() + timedelta(1)
-        return list(gen_days(start_date, end_date))
+        return list(gen_dates(start_date, end_date))
 
 
 #############################################################            

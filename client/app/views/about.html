@@ -1,1 +1,47 @@
-<p>This is the about view.</p>
+
+<div class="jumbotron dcmm-page-header">
+  <div class="container">
+
+    <h1>About DC Metro Metrics</h1>
+
+    <h3>Tracking escalator outages, elevator breakdowns, and 
+    <a href="https://twitter.com/idiot3qu3/statuses/493882919341940736" target="_blank">#wmata</a> 
+    <a href="https://twitter.com/be_rettDC/statuses/361835301057998848" target="_blank">#hotcar</a>'s since 2013.</h3>
+ 
+  </div>
+</div>
+
+<div class="container">
+
+  <div class="row">
+    <div class="col-md-10">
+
+    <h2>What?</h2>
+
+    <p>DC Metro Metrics is website that tracks escalator outages, elevator outages, and rider <a href="https://twitter.com/Mijbo603/status/453617916060385280" target="_blank">#hotcar</a> reports in the WMATA Metrorail system. We have the performance history for every escalator and elevator since the summer of 2013. See the <a ui-sref="rankings">rankings</a> page for the best and worst performing escalators and elevators in the system.</p>
+
+    <h2>Why?</h2>
+
+    <p>Escalator outages are <a href="http://www.nytimes.com/2011/07/02/us/02escalators.html?_r=0" target="_blank">often</a> <a href="http://www.washingtonpost.com/blogs/dr-gridlock/post/five-injured-on-lenfant-plaza-escalator/2012/08/07/349f506e-e095-11e1-a19c-fcfa365396c8_blog.html">cited</a> <a href="http://www.tbd.com/blogs/tbd-on-foot/2012/03/how-metro-explains-all-the-transit-system-s-broken-idle-escalators-14914.html">again</a> and <a href="http://www.washingtonpost.com/local/commuting/love-hate-relationships-with-metro-escalators/2011/04/16/AFU3ZBXE_story.html">again</a> as one of Metrorail's most prevalent problems.</p>
+
+    <p>When I first learned that WMATA had an open data feed listing the current escalator outages, I initially decided to build a Twitter bot (<a href='https://twitter.com/MetroEscalators' target="_blank">@MetroEscalators</a>, launched March 2013). It makes for an interesting type of data visualization, but isn't all that useful. But it did get some love
+    from the <a href="http://dcist.com/2013/05/a_guide_to_recognizing_your_metro_c.php" target="_blank">dcist</a>.</p>
+
+    <p>I realized it would be possible to take this a step further and compile the performance history for every escalator in the system. This is a unique dataset that helps us objectively answer questions about escalator reliability that we couldn't answer previously.</p>
+
+    <p>I started tracking #wmata #hotcar's in the summer of 2013. The #hotcar thing <a href="http://unsuckdcmetro.blogspot.com/2011/07/guest-blogger-fixwmata-tracker-of-hot.html" target="_blank">got started</a> in summer 2011 thanks to @FixWMATA (now <a href="https://twitter.com/FixMetro" target="_blank">@FixMetro</a>). He decided he didn't want to track the reports anymore, so I decided to automate the process of collecting the reports.</p>
+    
+    <h2>How?</h2>
+
+    <p>We source all of our escalator and elevator data in realtime from the <a href="https://developer.wmata.com/" target="_blank">WMATA API</a>, and <a href="https://twitter.com/RevRRLewis/status/491715504717832192" target="_blank">#hotcar</a> reports from riders over the <a href=
+    "https://dev.twitter.com/rest/public" target="_blank">Twitter API</a>.</p>
+
+    <p>The back end is implemented with <a href="https://python.org" target="_blank">Python</a> and <a href="http://www.mongodb.org" target="_blank">MongoDB</a> and deployed on <a href="https://www.digitalocean.com" target="_blank">DigitalOcean</a>. The front end is implemented using <a href="https://angularjs.org" target="_blank">AngularJS</a>. <a href="http://d3js.org" target="_blank">D3.js</a> is used for the hotcar visualization, <a href="https://github.com/kamisama/cal-heatmap" target="_blank">cal-heatmap</a> is used for the calendar visualization. The project is open source under GPLv2 and available on <a href="https://github.com/LeeMendelowitz/DCMetroMetrics" target="_blank">GitHub.</a> Contributions are welcome!</p>
+
+    <h2>Contact</h2>
+
+    You can reach me at <a href="mailto:Lee.Mendelowitz@gmail.com">Lee.Mendelowitz@gmail.com</a>.
+
+    </div>
+  </div>
+</div>

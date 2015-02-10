@@ -16,6 +16,10 @@ angular.module('dcmetrometricsApp')
       $scope.statusTableUtils = statusTableUtils;
       $scope.elevatorOutages = undefined;
       $scope.escalatorOutages = undefined;
+      $scope.dailyBreakCount = undefined;
+      $scope.dailyBrokenCount = undefined;
+      $scope.dailyBreakCountHeatCal = undefined;
+      $scope.dailyBrokenCountHeatCal = undefined;
 
       // Get the unit directory
       directory.get_directory().then( function(data) {
@@ -71,9 +75,44 @@ angular.module('dcmetrometricsApp')
         // Get recent statuses
         directory.get_recent_updates().then( function(data) {
           $scope.recentUpdates = data;
+          $scope.mostRecent = $scope.recentUpdates[0];
+        });
+
+
+        // Get outage counts.
+
+        var convertDailyCountsForHeatCal = function(d) {
+          var ret = {};
+          var num, k, new_k;
+          for(k in d) {
+            if(d.hasOwnProperty(k)) {
+              new_k = moment(k).unix();
+              ret[new_k] = d[k];
+            }
+          }
+          return ret;
+
+        };
+
+        directory.get_daily_break_count().then( function(data) {
+          $scope.dailyBreakCount = data;
+          $scope.dailyBreakCountHeatCal = {
+            escalators: convertDailyCountsForHeatCal(data.escalators),
+            elevators: convertDailyCountsForHeatCal(data.elevators)
+          }
+        });
+
+        directory.get_daily_broken_count().then( function(data) {
+          $scope.dailyBrokenCount = data;
+          $scope.dailyBrokenCountHeatCal = {
+            escalators: convertDailyCountsForHeatCal(data.escalators),
+            elevators: convertDailyCountsForHeatCal(data.elevators)
+          }
         });
 
       });
+
+
 
       $scope.getSymptomClass = function(unit) {
 
@@ -99,6 +138,10 @@ angular.module('dcmetrometricsApp')
       $scope.showElevators = function() {
         return $scope.$state.is("outages.elevators");
       };
+
+      $scope.getMostRecentOutageTime = function() {
+
+      }
 
 
 

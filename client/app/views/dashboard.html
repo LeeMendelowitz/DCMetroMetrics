@@ -1,0 +1,105 @@
+Most recent status was {{ recentUpdates[0].time.fromNow() }} at {{ recentUpdates[0].time.format() }}. 
+
+<pre>
+{{ recentUpdates[0] | json }}
+</pre>
+
+<div class="container">
+
+  <unit-calendar-heatmap
+    type='break'
+    unitid='daily-outage-count-escalators'
+    header="Daily Escalator Outages"
+    description="Number of escalators with an unexpected outage on a given day."
+    data="dailyBrokenCountHeatCal.escalators"
+    legend="[50, 70, 80, 90, 100]"
+    display-legend="true"
+    legend-colors="{'min': '#fae157', 'max': '#cc3333'}"
+    tooltip="true"
+    consider-missing-data-as-zero="false"
+    >
+  </unit-calendar-heatmap>
+
+  <unit-calendar-heatmap
+    type='break'
+    unitid='daily-break-count-elevators'
+    header="Daily Elevator Outages"
+    description="Number of elevators with an unexpected outage on a given day."
+    data="dailyBrokenCountHeatCal.elevators"
+    legend="[5, 10, 15, 20, 25]"
+    display-legend="true"
+    legend-colors="{'min': '#fae157', 'max': '#cc3333'}"
+    tooltip="true"
+    consider-missing-data-as-zero="false"
+  >
+  </unit-calendar-heatmap>
+
+  <unit-calendar-heatmap
+    type='break'
+    unitid='daily-break-count-escalators'
+    header="New Escalator Outages by Day"
+    description="Number of new escalator outages by day."
+    data="dailyBreakCountHeatCal.escalators"
+    legend="[50, 70, 80, 90, 100]"
+    display-legend="true"
+    legend-colors="{'min': '#fae157', 'max': '#cc3333'}"
+    tooltip="true"
+    consider-missing-data-as-zero="false"    
+  >
+  </unit-calendar-heatmap>
+
+  <unit-calendar-heatmap
+    type='break'
+    unitid='daily-break-count-elevators'
+    header="New Elevator Outages by Day"
+    description="Number of new elevator outages by day."
+    data="dailyBreakCountHeatCal.elevators"
+    legend="[5, 10, 15, 20, 25]"
+    display-legend="true"
+    legend-colors="{'min': '#fae157', 'max': '#cc3333'}"
+    tooltip="true"
+    consider-missing-data-as-zero="false"
+>
+  </unit-calendar-heatmap>
+
+
+  <!-- Table of recent outages -->
+  <h4>Recent Updates</h4>
+
+  <table class="table table-bordered table-condensed table-striped">
+    <thead>
+      <tr>
+        <th class="col-sm-2">Unit</th>
+        <th class="col-sm-5">Description</th>
+        <th class="col-sm-2">Status</th>
+        <th class="col-sm-1">Type</th>
+        <th class="col-sm-2">When</th>
+      </tr>
+    </thead>
+
+    <tr ng-repeat="status in recentUpdates" ng-controller="StatusentryCtrl">
+      <td>
+        <a ui-sref="unit({unitId: unit.unit_id})">{{ status.unit_id | unitIdToHuman }}</a> 
+      </td>
+
+      <td>
+
+        <a ui-sref="stations.detail({station: directory.getStationShortName(unit)})">
+        {{ directory.getStationName(directory.unitFromStatus(status)) }}
+        <lineColors lines="{{directory.getStationLinesForStatus(status).join()}}"></lineColors>
+        </a>
+        <br>
+        {{ directory.unitDescription(unit) }}
+
+      </td>
+<!--        <td><a ng-href="{{ getStationUrl( unitFromStatus(s) ) }}">
+       {{ getStationName( unitFromStatus(s) ) }}
+       </a></td> -->
+<!--       <td><pre>{{ getStationUrl( unitFromStatus(s) ) }}</pre></td> -->
+      <td>{{ status.symptom_description | capFirst }}</td>
+      <td>{{ status.update_type }}</td>
+      <td>{{ statusTableUtils.getTimeSince(status) | duration }} ago</td>
+    </tr>
+  </table>
+
+</div>

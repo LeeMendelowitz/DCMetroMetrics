@@ -545,7 +545,7 @@ class Unit(WebJSONMixin, Document):
                                  num_inspections = len(sg.inspectionStatuses)
                                  )
 
-      # To avoid redundancy, only set break_days  and day_to_break_count
+      # To avoid redundancy, only set break_days and day_to_break_count
       # for the all_time performance summary:
       if(key == 'all_time'):
 
