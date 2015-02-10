@@ -1,0 +1,28 @@
+<div class="container">
+
+
+   <div id="sitemap-records">
+
+   <span class="sitemap-record">{{ $state.href("home", {}, {absolute: true})}}</span><br>
+   <span class="sitemap-record">{{ $state.href("stations.list", {}, {absolute: true})}}</span></br>    
+   <span class="sitemap-record">{{ $state.href("about", {}, {absolute: true})}}</span><br> 
+   <span class="sitemap-record">{{ $state.href("outages", {}, {absolute: true})}}</span><br>  
+   <span class="sitemap-record">{{ $state.href("rankings", {}, {absolute: true})}}</span><br>    
+
+   <span ng-repeat="short_name in station_short_names">
+     <span class="sitemap-record">{{$state.href("stations.detail", {station: short_name}, {absolute: true}) }}</span><br>
+   </span>
+   
+   <span ng-repeat="unit_id in unit_ids">
+      <span class="sitemap-record">{{$state.href("unit", { unitId: unit_id }, {absolute: true}) }}</span><br>
+   </span>
+
+
+    <span ng-repeat="car_number in hot_car_numbers">
+      <span class="sitemap-record">{{$state.href("hotcars.detail", { carNumber: car_number }, {absolute: true} ) }}</span><br>
+    </span>
+
+   </div>
+
+
+</div>

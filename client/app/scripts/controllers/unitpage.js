@@ -8,8 +8,13 @@
  * Controller of the dcmetrometricsApp
  */
 angular.module('dcmetrometricsApp')
-  .controller('UnitPageCtrl', ['$scope', '$stateParams', 'unitService', 'directory', 'statusTableUtils', 'UnitStatus',
-    function ($scope, $stateParams, unitService, directory, statusTableUtils, UnitStatus) {
+  .controller('UnitPageCtrl', ['$scope', 'Page', '$stateParams', '$filter', 'unitService', 'directory', 'statusTableUtils', 'UnitStatus',
+    function ($scope, Page, $stateParams, $filter, unitService, directory, statusTableUtils, UnitStatus) {
+
+
+      Page.title("DC Metro Metrics: " + $stateParams.unitId);
+      Page.description(" ");
+
 
       $scope.unitId = $stateParams.unitId;
       $scope.statusTableUtils = statusTableUtils;
@@ -20,15 +25,19 @@ angular.module('dcmetrometricsApp')
 
         console.log("have unit data: ", data);
         $scope.unitData = data;
-        $scope.unit = $scope.unitData.unit;
-        $scope.key_statuses = $scope.unitData.unit.key_statuses;
-        var stationCode = data.unit.station_code;
+        $scope.unit = $scope.unitData;
+        $scope.key_statuses = $scope.unitData.key_statuses;
+        var stationCode = data.station_code;
 
         // Get the station data for this unit.
         directory.get_directory().then(function(stationDirectory) {
           console.log("Have directory data: ", stationDirectory);
           $scope.stationData = stationDirectory.codeToData[stationCode];
+          Page.description("Performance history for " + $filter('unitIdToHuman')($scope.unitId) + " at " + $scope.stationData.long_name + " station in the WMATA Metrorail system in Washington, DC.");
+
         });
+
+
       });
 
 

@@ -9,9 +9,9 @@
       </a>
       </p>
 
-      <p>{{ unitData.unit.station_desc }}</p>
+      <p>{{ unit.station_desc }}</p>
 
-      <p>{{ unitData.unit.esc_desc }}</p>
+      <p>{{ unit.esc_desc }}</p>
 
   </div>
 
@@ -22,7 +22,7 @@
 
   <div class = "row">
     <div class = "col-xs-12">
-      <ol class="breadcrumb" ng-switch = "unitData.unit.unit_type">
+      <ol class="breadcrumb" ng-switch = "unit.unit_type">
         <li><a ui-sref="stations.detail({station: stationData.short_name})">{{stationData.long_name}} <lineColors lines="{{stationData.all_lines.join(',')}}"></lineColors></a></li>
         <li ng-switch-when="ESCALATOR">
           <a ui-sref='stations.detail.escalators({station: stationData.short_name})'>

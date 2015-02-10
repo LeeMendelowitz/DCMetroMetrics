@@ -116,7 +116,7 @@ angular.module('dcmetrometricsApp')
     };
 
     var convertKeyStatuses = function(data) {
-      var ks = data.unit.key_statuses;
+      var ks = data.key_statuses;
       var k, s;
       for(k in ks) {
         if (ks.hasOwnProperty(k)) {
@@ -126,8 +126,10 @@ angular.module('dcmetrometricsApp')
           }
         }
       }
+      return ks;
     }
 
+    // TOD: Consider using Unit factory?
     this.getUnitData = function(unitId) {
 
       

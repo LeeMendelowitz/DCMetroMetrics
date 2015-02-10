@@ -51,14 +51,8 @@ class JSONWriter(object):
     statuses = unit.get_statuses()
 
     # Get the key statuses
-    #key_statuses = unit.get_key_statuses()
-
-    performance_summary = unit.performance_summary
-
-    data = {'unit' : unit,
-            #'key_statuses' : key_statuses, #Redundant, already included in unit.
-            'statuses' : statuses,
-            'performance_summary' : performance_summary}
+    unit.statuses = unit.get_statuses() # Attach the statuses to the unit so they are written.
+    data = unit;
     
     jdata = dumps(data, cls = WebJSONEncoder)
 

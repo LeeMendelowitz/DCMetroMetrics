@@ -8,9 +8,15 @@
  * Controller of the dcmetrometricsApp
  */
 angular.module('dcmetrometricsApp')
-  .controller('HotCarDirectoryCtrl', ['$scope', '$location', '$anchorScroll', 'hotCarDirectory', 'ngTableParams', '$filter',
-    function ($scope, $location, $anchorScroll, hotCarDirectory, ngTableParams, $filter) {
+  .controller('HotCarDirectoryCtrl', ['$scope', 'Page', '$location', '$anchorScroll', 'hotCarDirectory', 'ngTableParams', '$filter',
+    function ($scope, Page, $location, $anchorScroll, hotCarDirectory, ngTableParams, $filter) {
   
+
+    Page.title("DC Metro Metrics: Hotcars");
+    Page.description("A listing of WMATA Hotcar reports crowdsourced from Twitter. Hotcars are " +
+      " uncomfortably hot rail cars in the WMATA Metrorail system in Washington, DC.");
+
+
     var deferred = hotCarDirectory.get_data();
 
     $scope.section = 'sec-leaderboard';

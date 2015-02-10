@@ -9,7 +9,7 @@
  */
 angular.module('dcmetrometricsApp')
 
-  .service('directory', ['$http', '$q', 'Unit', 'UnitStatus', function directory($http, $q, Unit, UnitStatus) {
+  .service('directory', ['$http', '$q', 'Unit', 'UnitStatus', 'StationData', function directory($http, $q, Unit, UnitStatus, StationData) {
     
     // AngularJS will instantiate a singleton by calling "new" on this function
     var self = this;
@@ -25,7 +25,20 @@ angular.module('dcmetrometricsApp')
         daily_break_count, // Number of new breaks per day. 
         daily_broken_count, // Number of broken units on a day.
         recentUpdates,
-        unitIdToUnit;
+        unitIdToUnit,
+        escalators,
+        elevators;
+
+    var convertStationDirectory = function(data) {
+      // Convert station directory from plain objects to
+      // StationData objects
+      for (var k in data) {
+        if (data.hasOwnProperty(k)) {
+          data[k] = new StationData(data[k]);
+        }
+      }
+      return data;
+    }
 
 
     this.get_directory = function() {
@@ -50,7 +63,7 @@ angular.module('dcmetrometricsApp')
 
           var i, unit;
 
-          stationDirectory = d;
+          stationDirectory = convertStationDirectory(d);
 
           // Populate shortNameToData;
           shortNameToData = {};
@@ -122,7 +135,6 @@ angular.module('dcmetrometricsApp')
       $http.get(recentUpdateUrl, { cache: true })
         .success( function(d) {
           d = d.map(function(v) { return new UnitStatus(v); });
-          console.log(d);
           recentUpdates = d;
           deferred.resolve(d);
         })
@@ -243,6 +255,23 @@ angular.module('dcmetrometricsApp')
 
     };
 
+    this.get_unit_dict = function() {
+
+      var deferred = $q.defer();
+
+      if (unitIdToUnit) {
+        deferred.resolve(unitIdToUnit);
+        return deferred.promise;
+      }
+
+      self.get_directory().then( function() {
+            deferred.resolve(unitIdToUnit);
+          }
+      );
+
+      return deferred.promise;
+
+    };
 
 
     // Get the station url for a unit.

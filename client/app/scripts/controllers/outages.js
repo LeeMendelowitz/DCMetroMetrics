@@ -8,9 +8,17 @@
  * Controller of the dcmetrometricsApp
  */
 angular.module('dcmetrometricsApp')
-  .controller('OutagesCtrl', ['$scope', '$uiViewScroll', '$location', '$state', 'directory', 'statusTableUtils', 
+  .controller('OutagesCtrl', ['$scope', 'Page', '$uiViewScroll', '$location', '$state', 'directory', 'statusTableUtils', 
 
-     function ($scope, $uiViewScroll, $location, $state, directory, statusTableUtils) {
+     function ($scope, Page, $uiViewScroll, $location, $state, directory, statusTableUtils) {
+      if($state.includes('outages')) { 
+        Page.title("DC Metro Metrics: Escalator and Elevator Outages");
+        Page.description("Current listing of escalator and elevator outages in the WMATA Metrorail system in Washington, DC.");
+      } else if ($state.includes('home')) {
+        Page.title("DC Metro Metrics");
+        Page.description("DC Metro Metrics is a project dedicated to collecting, analyzing, and sharing publicly available information about the Washington DC Metrorail system." +
+           "This site includes escalator and elevator performance history for every unit in the Metrorail system, the list of current outages, and crowdsourced hotcar reports from Twitter.");
+      }
 
       $scope.directory = directory;
       $scope.statusTableUtils = statusTableUtils;

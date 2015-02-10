@@ -418,7 +418,8 @@ class Unit(WebJSONMixin, Document):
 
   web_json_fields = ['unit_id', 'station_code', 'station_name',
                      'station_desc', 'esc_desc', 'unit_type',
-                     'key_statuses', 'performance_summary']
+                     'key_statuses', 'performance_summary',
+                     'statuses']
 
   def is_elevator(self):
     return self.unit_type == 'ELEVATOR'

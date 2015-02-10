@@ -56,9 +56,7 @@ angular.module('dcmetrometricsApp')
           var displayLegend = eval(scope.displayLegend);
           var considerMissingDataAsZero = eval(scope.considerMissingDataAsZero) || false;
 
-          //TODO: Get the display legend to work. Clean up all of these evals?
-
-          console.log(scope);
+          // console.log(scope);
 
 
           if(cal) { cal = cal.destroy(); }

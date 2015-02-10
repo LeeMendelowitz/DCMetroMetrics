@@ -8,8 +8,12 @@
  * Controller of the dcmetrometricsApp
  */
 angular.module('dcmetrometricsApp')
-  .controller('HotcarpageCtrl', ['$scope', '$stateParams', 'hotCarDirectory',
-    function ($scope, $stateParams, hotCarDirectory) {
+  .controller('HotcarpageCtrl', ['$scope', 'Page', '$stateParams', 'hotCarDirectory',
+    function ($scope, Page, $stateParams, hotCarDirectory) {
+
+    Page.title("DC Metro Metrics: Hotcar " + $stateParams.carNumber);
+    Page.description("A listing of WMATA Hotcar reports for car " +  $stateParams.carNumber + " crowdsourced from Twitter. Hotcars are " +
+      " uncomfortably hot rail cars in the WMATA Metrorail system in Washington, DC.");
 
     $scope.$stateParams = $stateParams;
     console.log("have state params: ", $stateParams);

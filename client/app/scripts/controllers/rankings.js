@@ -8,10 +8,14 @@
  * Controller of the dcmetrometricsApp
  */
 angular.module('dcmetrometricsApp')
-  .controller('RankingsCtrl', ['$scope', '$state', 'directory', 'queryParser', 'ngTableParams', '$filter',
+  .controller('RankingsCtrl', ['$scope', 'Page', '$state', 'directory', 'queryParser', 'ngTableParams', '$filter',
     '$timeout', '$stateParams', '$location',
 
-     function ($scope, $state, directory, queryParser, ngTableParams, $filter, $timeout, $stateParams, $location) {
+     function ($scope, Page, $state, directory, queryParser, ngTableParams, $filter, $timeout, $stateParams, $location) {
+
+
+      Page.title("DC Metro Metrics: Escalator & Elevator Rankings");
+      Page.description("Performance rankings for all escalators and elevators in the WMATA Metrorail system in Washington, DC.");
 
       $scope.filtersAreCollapsed = false;
       $scope.tableInitialized = false;

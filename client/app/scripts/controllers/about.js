@@ -8,10 +8,9 @@
  * Controller of the dcmetrometricsApp
  */
 angular.module('dcmetrometricsApp')
-  .controller('AboutCtrl', function ($scope) {
-    $scope.awesomeThings = [
-      'HTML5 Boilerplate',
-      'AngularJS',
-      'Karma'
-    ];
-  });
+  .controller('AboutCtrl', ['$scope', 'Page', function ($scope, Page) {
+
+    Page.title('DC Metro Metrics: About');
+    Page.description('About the DC Metro Metrics website. What is it? How did it get started? Who can I contact? Where is the source code?');
+
+  }]);

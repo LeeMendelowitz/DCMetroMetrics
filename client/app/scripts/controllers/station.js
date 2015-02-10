@@ -9,9 +9,9 @@
  */
 angular.module('dcmetrometricsApp')
 
-  .controller('StationCtrl', ['$scope', '$stateParams', 'directory', 'statusTableUtils', 
+  .controller('StationCtrl', ['$scope', 'Page', '$stateParams', 'directory', 'statusTableUtils', 
 
-     function ($scope, $stateParams, directory, statusTableUtils) {
+     function ($scope, Page, $stateParams, directory, statusTableUtils) {
 
         $scope.statusTableUtils = statusTableUtils;
         $scope.stationName = $stateParams.station;
@@ -19,6 +19,8 @@ angular.module('dcmetrometricsApp')
         $scope.escalators_have_station_descriptions = false;
         $scope.elevators_have_station_descriptions = false;
 
+        $scope.no_escalators = false;
+        $scope.no_elevators = false;
 
         // Request station directory data
         directory.get_directory().then( function(data) { 
@@ -26,6 +28,10 @@ angular.module('dcmetrometricsApp')
 
           $scope.stationDirectory = data.directory;
           $scope.stationData = data.shortNameToData[$scope.stationName];
+
+          Page.title("DC Metro Metrics: " + $scope.stationData.long_name);
+          Page.description("Escalator and elevator directory for " + $scope.stationData.long_name + " station " +
+                           "in the WMATA Metrorail system in Washington, DC.");
 
           var escalators = $scope.stationData.escalators;
           for(i = 0; i < escalators.length; i++) {
@@ -42,6 +48,9 @@ angular.module('dcmetrometricsApp')
               break;
             }
           }
+
+          $scope.no_escalators = escalators.length === 0;
+          $scope.no_elevators = elevators.length === 0;
 
 
         });

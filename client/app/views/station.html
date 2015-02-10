@@ -30,7 +30,9 @@
 
       <h2>Escalators</h2>
 
-      <table class = "table table-bordered table-condensed table-striped">
+      <p ng-show="no_escalators">This station has no escalators.<p>
+
+      <table ng-hide="no_escalators" class = "table table-bordered table-condensed table-striped">
         <tr>
           <th>Unit</th>
           <th ng-show = "escalators_have_station_descriptions">Entrance</th>
@@ -50,7 +52,9 @@
 
       <h2>Elevators</h2>
 
-      <table class = "table table-bordered table-condensed table-striped">
+      <p ng-show="no_elevators">This station has no elevators.</p>
+
+      <table ng-hide="no_elevators" class = "table table-bordered table-condensed table-striped">
         <tr>
           <th>Unit</th>
           <th ng-show = "elevators_have_station_descriptions">Entrance</th>

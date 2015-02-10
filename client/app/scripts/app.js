@@ -48,12 +48,18 @@ app.config(function($stateProvider, $urlRouterProvider) {
     })
     .state('about', {
       url: "/about",
-      templateUrl: "/views/about.html"
+      templateUrl: "/views/about.html",
+      controller: "AboutCtrl"
     })
     .state('dashboard', {
       url: "/dashboard",
       templateUrl: "/views/dashboard.html",
       controller: 'OutagesCtrl'
+    })
+    .state('sitemap', {
+      url: "/sitemap",
+      templateUrl: "views/sitemap.html",
+      controller: 'SitemapCtrl'
     })
     .state('outages', {
       url: "/outages",
