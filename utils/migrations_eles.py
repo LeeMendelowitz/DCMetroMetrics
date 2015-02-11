@@ -27,9 +27,9 @@ def denormalize_unit_statuses():
   Also compute end_time and metro_open_time.
   """
 
-  num_units = Unit.objects.count()
+  num_units = Unit.objects.no_cache().count()
   sys.stderr.write("Have %i units\n"%num_units)
-  for i, unit in enumerate(Unit.objects):
+  for i, unit in enumerate(Unit.objects.no_cache()):
     sys.stderr.write('Processing unit %s\n (%i of %i)'%(unit.unit_id, i, num_units))
     unit_statuses = UnitStatus.objects(unit = unit).order_by('-time')
     num_statuses = unit_statuses.count()
@@ -165,8 +165,8 @@ def write_json():
   # jwriter = JSONWriter(basedir = os.path.join('client', 'app'))
 
   from dcmetrometrics.eles.models import Unit
-  num_units = Unit.objects.count()
-  for i, unit in enumerate(Unit.objects):
+  num_units = Unit.objects.no_cache().count()
+  for i, unit in enumerate(Unit.objects.no_cache()):
     print 'Writing unit %i of %i: %s'%(i, num_units, unit.unit_id)
     jwriter.write_unit(unit)
 
@@ -215,10 +215,10 @@ def delete_last_n_statuses(n):
 def recompute_key_statuses():
   """Recompute key statuses for all units"""
   from dcmetrometrics.eles.models import Unit, KeyStatuses
-  units = Unit.objects
+  units = Unit.objects.no_cache()
   start = datetime.now()
-  n = len(units)
-  for i, unit in enumerate(Unit.objects):
+  n = units.count()
+  for i, unit in enumerate(units):
     print "Computing key statuses for unit %s: %i of %i (%.2f%%)"%(unit.unit_id, i, n, 100.0*i/n)
     unit.compute_key_statuses()
     
@@ -228,11 +228,11 @@ def recompute_key_statuses():
 def recompute_performance_summaries():
   """Recompute performance sumamries for all units"""
   from dcmetrometrics.eles.models import Unit
-  units = Unit.objects
+  units = Unit.objects.no_cache()
   start = datetime.now()
-  n = len(units)
+  n =  units.count()
 
-  for i, unit in enumerate(Unit.objects):
+  for i, unit in enumerate(units):
     print "Computing performance summary for unit %s: %i of %i (%.2f%%)"%(unit.unit_id, i, n, 100.0*i/n)
     unit.compute_performance_summary(save = True)
     
@@ -242,12 +242,12 @@ def recompute_performance_summaries():
 def delete_units_missing_statuses():
   """Delete units with no statuses"""
   from dcmetrometrics.eles.models import Unit
-  units = Unit.objects
+  units = Unit.objects.no_cache()
   start = datetime.now()
-  n = len(units)
+  n = units.count()
   report_interval = max(int(n/100 + 0.5), 1)
   report_counter = 0
-  for i, unit in enumerate(Unit.objects):
+  for i, unit in enumerate(units):
     report_counter += 1
     if report_counter == report_interval:
       sys.stdout.write(".")
@@ -284,9 +284,9 @@ def bad_key_statuses():
 def add_status_update_type():
   """Fill in the update field for all statuses"""
   from dcmetrometrics.eles.models import Unit, KeyStatuses
-  units = Unit.objects
+  units = Unit.objects.no_cache()
   start = datetime.now()
-  n = len(units)
+  n =  units.count()
   for i, unit in enumerate(units):
     print "Updating status types for unit %s: %i of %i (%.2f%%)"%(unit.unit_id, i, n, 100.0*i/n)
     statuses = unit.get_statuses()[::-1] # Sort in ascending order of time
@@ -377,7 +377,7 @@ def fix_end_times():
   from dcmetrometrics.eles.models import Unit
 
   to_fix = []
-  key_statuses = (unit.key_statuses for unit in Unit.objects)
+  key_statuses = (unit.key_statuses for unit in Unit.objects.no_cache())
   for ks in key_statuses:
     if ks.lastStatus.end_time is not None:
       to_fix.append(ks)

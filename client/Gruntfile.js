@@ -407,6 +407,14 @@ module.exports = function (grunt) {
           //you can choose a prefix for your snapshots
           //by default it's 'snapshot_'
           fileNamePrefix: '',
+          sanitize: function (requestUri) {
+            //returns 'index.html' if the url is '/'
+            if (/\/$/.test(requestUri)) {
+              return '/index.html';
+            } else {
+              return requestUri;
+            }
+          },
           //by default the task waits 500ms before fetching the html.
           //this is to give the page enough time to to assemble itself.
           //if your page needs more time, tweak here.
@@ -425,7 +433,7 @@ module.exports = function (grunt) {
             if (/\/$/.test(requestUri)) {
               return '/index.html';
             } else {
-              return requestUri
+              return requestUri;
             }
           },
           msWaitForPages: 3000,

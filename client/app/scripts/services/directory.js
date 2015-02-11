@@ -38,7 +38,7 @@ angular.module('dcmetrometricsApp')
         }
       }
       return data;
-    }
+    };
 
 
     this.get_directory = function() {

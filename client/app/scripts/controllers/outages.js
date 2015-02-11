@@ -107,7 +107,7 @@ angular.module('dcmetrometricsApp')
           $scope.dailyBreakCountHeatCal = {
             escalators: convertDailyCountsForHeatCal(data.escalators),
             elevators: convertDailyCountsForHeatCal(data.elevators)
-          }
+          };
         });
 
         directory.get_daily_broken_count().then( function(data) {
@@ -115,7 +115,7 @@ angular.module('dcmetrometricsApp')
           $scope.dailyBrokenCountHeatCal = {
             escalators: convertDailyCountsForHeatCal(data.escalators),
             elevators: convertDailyCountsForHeatCal(data.elevators)
-          }
+          };
         });
 
       });
@@ -146,10 +146,6 @@ angular.module('dcmetrometricsApp')
       $scope.showElevators = function() {
         return $scope.$state.is("outages.elevators");
       };
-
-      $scope.getMostRecentOutageTime = function() {
-
-      }
 
 
 

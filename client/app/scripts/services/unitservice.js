@@ -127,7 +127,7 @@ angular.module('dcmetrometricsApp')
         }
       }
       return ks;
-    }
+    };
 
     // TOD: Consider using Unit factory?
     this.getUnitData = function(unitId) {
