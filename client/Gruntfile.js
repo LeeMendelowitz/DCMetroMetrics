@@ -33,7 +33,6 @@ module.exports = function (grunt) {
     } catch(err) {
       grunt.log.write('Caught error: ', err, '\n');
     }
-    urls_for_snapshots = urls_for_snapshots.slice(0,10);
     grunt.log.write('Have ' + urls_for_snapshots.length + ' urls.\n');
     return urls_for_snapshots;
   }
@@ -407,6 +406,7 @@ module.exports = function (grunt) {
           //you can choose a prefix for your snapshots
           //by default it's 'snapshot_'
           fileNamePrefix: '',
+          removeScripts: true,
           sanitize: function (requestUri) {
             //returns 'index.html' if the url is '/'
             if (/\/$/.test(requestUri)) {
@@ -428,6 +428,7 @@ module.exports = function (grunt) {
           snapshotPath: "<%= wwwDir %>/snapshots",
           sitePath: 'http://dcmetrometrics.localhost:80/',
           fileNamePrefix: '',
+          removeScripts: true,
           sanitize: function (requestUri) {
             //returns 'index.html' if the url is '/'
             if (/\/$/.test(requestUri)) {
