@@ -6,11 +6,12 @@ drive MetroEscalators and MetroElevators
 """
 
 # python modules
-import os
-import sys
+import os, sys
 from time import sleep
 from datetime import datetime, date, time, timedelta
 from collections import defaultdict
+import gc
+# gc.set_debug(gc.DEBUG_STATS)
 
 ##########################################
 # Set up logging
@@ -146,6 +147,12 @@ class ELESApp(object):
     def tick(self):
 
         curTime = utcnow()
+        start_tick_time = curTime
+        INFO("Start tick.")
+
+        DEBUG("Running garbage collector at start of tick.")
+        count = gc.collect()
+        DEBUG("Garbage collect returned %i"%count)
 
         appState = EscalatorAppState.get()
 
@@ -198,12 +205,27 @@ class ELESApp(object):
             (curTime - appState.lastPerformanceSummaryTime) > PERFORMANCE_SUMMARY_INTERVAL:
 
             INFO("Recomputing all performance summaries.")
-            units = Unit.objects
+            units = Unit.objects.no_cache()
             n = units.count()
+            GARBAGE_COLLECT_DELTA = 20
             for i, unit in enumerate(units):
+
                 INFO("Computing performance summary for unit %s: %i of %i (%.2f%%)"%(unit.unit_id, i, n, 100.0*i/n))
-                unit.compute_performance_summary(save = True)
-                self.json_writer.write_unit(unit)
+
+                # TODO: Could get the unit statuses here and pass to unit.compute_performance_summary
+                # and to the json_writer. This way the statuses are pulled from the db only once.
+                start_time = datetime.now()
+                statuses = unit.get_statuses()
+                unit.compute_performance_summary(statuses = statuses, save = True)
+                end_time=datetime.now()
+
+                self.json_writer.write_unit(unit, statuses)
+
+                if i%GARBAGE_COLLECT_DELTA == 0:
+                    DEBUG("Running garbage collector in performance summary.")
+                    count = gc.collect()
+                    DEBUG("Garbage collect returned %i"%count)
+
 
             INFO("Writing station directory.")
             self.json_writer.write_station_directory()
@@ -232,7 +254,13 @@ class ELESApp(object):
         else:
             INFO("Not tweeting live.")
 
-        INFO("Done tick.")
+        DEBUG("Running garbage collector at end of tick.")
+        count = gc.collect()
+        DEBUG("Garbage collect returned %i"%count)
+
+        end_tick_time = utcnow()
+        total_tick_time = (end_tick_time - start_tick_time).total_seconds()
+        INFO("Done tick. Total tick time: %.2f"%(total_tick_time))
 
 
     #########################
@@ -266,7 +294,12 @@ class ELESApp(object):
         unit_to_new_symptom_desc = dict((i.UnitId, i.SymptomDescription) for i in incidents)
         outage_units = set(unit_to_new_symptom_desc.keys())
 
-        unit_id_to_old_symptom_desc = dict((unit.unit_id, unit.key_statuses.lastStatus.symptom_description) for unit in Unit.objects)
+        unit_id_to_old_symptom_desc = dict((unit.unit_id, unit.key_statuses.lastStatus.symptom_description) for unit in Unit.objects.no_cache())
+
+        DEBUG("Running garbage collector after iteration over units.")
+        count = gc.collect()
+        DEBUG("Garbage collect returned %i"%count)
+
 
         was_not_operationals = set(unit_id for unit_id, symptom_desc in unit_id_to_old_symptom_desc.iteritems() if \
                              symptom_desc != "OPERATIONAL")
@@ -309,7 +342,7 @@ class ELESApp(object):
         changed_units = []
 
         for unit_id in changed_unit_ids:
-            unit = Unit.objects.get(unit_id = unit_id)
+            unit = Unit.objects.no_cache().get(unit_id = unit_id)
             key_status = unit.key_statuses
             old_status = key_status.lastStatus
             old_status._add_timezones()
@@ -332,6 +365,12 @@ class ELESApp(object):
             new_status.save()
 
             changed_units.append((unit_id, unit, old_status, new_status, key_status))
+
+            DEBUG("Running garbage collector after saving new status.")
+            count = gc.collect()
+            DEBUG("Garbage collect returned %i"%count)
+
+            
 
         return changed_units
 

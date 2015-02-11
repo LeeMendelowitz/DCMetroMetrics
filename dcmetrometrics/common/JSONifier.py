@@ -45,13 +45,11 @@ class JSONWriter(object):
   def __init__(self, basedir = None):
     self.basedir = os.path.abspath(basedir) if basedir else os.getcwd()
 
-  def write_unit(self, unit):
-
-    # Get the statuses for the unit
-    statuses = unit.get_statuses()
+  def write_unit(self, unit, statuses = None):
 
     # Get the key statuses
-    unit.statuses = unit.get_statuses() # Attach the statuses to the unit so they are written.
+    unit.statuses = statuses if statuses else unit.get_statuses() # Attach the statuses to the unit so they are written.
+
     data = unit;
     
     jdata = dumps(data, cls = WebJSONEncoder)

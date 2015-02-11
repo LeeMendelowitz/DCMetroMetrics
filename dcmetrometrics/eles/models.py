@@ -10,8 +10,9 @@ from .defs import symptomToCategory, SYMPTOM_CHOICES
 from ..common import dbGlobals
 from .misc_utils import *
 from .StatusGroup import StatusGroup
-from datetime import timedelta
+from datetime import timedelta, datetime
 import sys
+
 
 import logging
 logger = logging.getLogger('ELESApp')
@@ -508,7 +509,7 @@ class Unit(WebJSONMixin, Document):
     """
     return self._get_unit_statuses(object_id = self.pk, *args, **kwargs)
 
-  def compute_performance_summary(self, save = False, end_time = None):
+  def compute_performance_summary(self, statuses = None, save = False, end_time = None):
     """
     Compute or recompute the historical performance summary for a unit.
     """
@@ -516,11 +517,14 @@ class Unit(WebJSONMixin, Document):
     # If a record already exists, delete it.
     self.performance_summary = None
 
+    debug_start_time = datetime.now()
 
-    statuses = self.get_statuses() # This resturn statuses in descending order, most recent first
-    statuses = statuses[::-1] # Sort statuses in ascending order of time.
+    if not statuses:
+      statuses = self.get_statuses() # This resturn statuses in descending order, most recent first
+    statuses = sorted(statuses, key = attrgetter('time'))
 
     logger.info("Computing performance summary for unit: %s"%self.unit_id)
+    logger.debug("Unit {0} has {1} statuses".format(self.unit_id, len(statuses)))
     if not statuses:
       logger.warning("No statuses for unit %s! Not computing performance summary."%self.unit_id)
       return None
@@ -568,6 +572,10 @@ class Unit(WebJSONMixin, Document):
 
     if save:
       self.save()
+
+    debug_end_time = datetime.now()
+    delta = (debug_end_time - debug_start_time).total_seconds()
+    logger.debug("Unit {0}: {1:.3f} sec {2:.3f} factor.".format(self.unit_id, delta, delta/len(statuses)))
 
     return ups
 

@@ -7,6 +7,7 @@ Utility functions for the HotCars app
 import pymongo
 import sys
 import re
+import gc
 from datetime import datetime, timedelta, date
 from dateutil import tz
 from dateutil.tz import tzlocal
@@ -31,6 +32,7 @@ from ..common.metroTimes import utcnow, toLocalTime, UTCToLocalTime, tzutc
 import logging
 logger = logging.getLogger('HotCarApp')
 logger.setLevel(logging.DEBUG)
+DEBUG = logger.debug
     
 ME = 'MetroHotCars'.upper()
 
@@ -66,6 +68,11 @@ def tick(tweetLive = False):
     curTimeLocal = toLocalTime(curTime)
     logger.info('Running HotCar Tick. %s'%(str(curTimeLocal)))
     logger.info('Tweeting Live: %s'%str(tweetLive))
+
+    DEBUG("Running garbage collector at start of tick.")
+    count = gc.collect()
+    DEBUG("Garbage collect returned %i"%count)
+
             
     appState = HotCarAppState.get()
     lastTweetId = appState.lastTweetId if appState.lastTweetId else 0

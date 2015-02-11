@@ -11,6 +11,9 @@ utils.fixSysPath()
 
 import sys
 from datetime import datetime
+import gc
+# gc.set_debug(gc.DEBUG_STATS)
+
 
 from dcmetrometrics.common.dbGlobals import G
 from dcmetrometrics.eles import dbUtils
@@ -18,6 +21,14 @@ from dcmetrometrics.eles.models import Unit, SymptomCode, UnitStatus
 from datetime import timedelta
 from dcmetrometrics.common.globals import WWW_DIR
 
+##########################################
+# Set up logging
+from dcmetrometrics.common import logging_utils
+logger = logging_utils.create_logger(__name__)
+DEBUG = logger.debug
+WARNING = logger.warning
+INFO = logger.info
+##########################################
 
 def denormalize_unit_statuses():
   """
@@ -231,10 +242,16 @@ def recompute_performance_summaries():
   units = Unit.objects.no_cache()
   start = datetime.now()
   n =  units.count()
-
+  GARBAGE_COLLECT_INTERVAL = 10
   for i, unit in enumerate(units):
-    print "Computing performance summary for unit %s: %i of %i (%.2f%%)"%(unit.unit_id, i, n, 100.0*i/n)
+
+    INFO("Computing performance summary for unit %s: %i of %i (%.2f%%)"%(unit.unit_id, i, n, 100.0*i/n))
     unit.compute_performance_summary(save = True)
+
+    if i%GARBAGE_COLLECT_INTERVAL == 0:
+      DEBUG("Running garbage collector after iteration over units.")
+      count = gc.collect()
+      DEBUG("Garbage collect returned %i"%count)
     
   elapsed = (datetime.now() - start).total_seconds()
   print "%.2f seconds elapsed"%elapsed
