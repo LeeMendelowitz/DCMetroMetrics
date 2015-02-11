@@ -46,7 +46,7 @@ SILENCE_GAP = 60*20
 # the tick is silenced
 MAX_TICK_TWEETS = 10
 
-PERFORMANCE_SUMMARY_INTERVAL = timedelta(hours = 2)
+PERFORMANCE_SUMMARY_INTERVAL = timedelta(hours = 4)
 
 def url_maker(unit_id):
     url = "http://www.dcmetrometrics.com/unit/{unit_id}"
@@ -199,10 +199,10 @@ class ELESApp(object):
 
             INFO("Recomputing all performance summaries.")
             units = Unit.objects
-            n = len(units)
+            n = units.count()
             for i, unit in enumerate(units):
                 INFO("Computing performance summary for unit %s: %i of %i (%.2f%%)"%(unit.unit_id, i, n, 100.0*i/n))
-                unit.compute_performance_summary()
+                unit.compute_performance_summary(save = True)
                 self.json_writer.write_unit(unit)
 
             INFO("Writing station directory.")
@@ -257,8 +257,8 @@ class ELESApp(object):
         symptoms = list(SymptomCode.objects)
         symptom_description_to_symptom = dict((s.description, s) for s in symptoms)
 
-        units = list(Unit.objects.select_related(max_depth = 3))
-        unit_id_to_unit = dict((u.unit_id, u) for u in units)
+        # units = list(Unit.objects)
+        # unit_id_to_unit = dict((u.unit_id, u) for u in units)
 
         unit_id_to_incident = dict((i.UnitId, i) for i in incidents)
 
@@ -266,7 +266,7 @@ class ELESApp(object):
         unit_to_new_symptom_desc = dict((i.UnitId, i.SymptomDescription) for i in incidents)
         outage_units = set(unit_to_new_symptom_desc.keys())
 
-        unit_id_to_old_symptom_desc = dict((unit.unit_id, unit.key_statuses.lastStatus.symptom_description) for unit in units)
+        unit_id_to_old_symptom_desc = dict((unit.unit_id, unit.key_statuses.lastStatus.symptom_description) for unit in Unit.objects)
 
         was_not_operationals = set(unit_id for unit_id, symptom_desc in unit_id_to_old_symptom_desc.iteritems() if \
                              symptom_desc != "OPERATIONAL")
@@ -309,7 +309,7 @@ class ELESApp(object):
         changed_units = []
 
         for unit_id in changed_unit_ids:
-            unit = unit_id_to_unit[unit_id]
+            unit = Unit.objects.get(unit_id = unit_id)
             key_status = unit.key_statuses
             old_status = key_status.lastStatus
             old_status._add_timezones()
