@@ -25,11 +25,28 @@ module.exports = function (grunt) {
     dist: 'dist'
   };
 
+  // Read the url paths from a file.
+  var getSnapshotUrls = function() {
+    var urls_for_snapshots = [];
+    try {
+      urls_for_snapshots = grunt.file.readJSON('site_urls.json') || [];
+    } catch(err) {
+      grunt.log.write('Caught error: ', err, '\n');
+    }
+    urls_for_snapshots = urls_for_snapshots.slice(0,10);
+    grunt.log.write('Have ' + urls_for_snapshots.length + ' urls.\n');
+    return urls_for_snapshots;
+  }
+
+  grunt.log.write("WWWDIR: ", process.env.WWW_DIR, '\n');
+
+
   // Define the configuration for all the tasks
   grunt.initConfig({
 
     // Project settings
     yeoman: appConfig,
+    wwwDir: process.env.WWW_DIR,
 
     // Watches files for changes and runs tasks based on the changed files
     watch: {
@@ -381,33 +398,41 @@ module.exports = function (grunt) {
           //that's the path where the snapshots should be placed
           //it's empty by default which means they will go into the directory
           //where your Gruntfile.js is placed
-          snapshotPath: 'snapshots/',
+          snapshotPath: "<%= wwwDir %>/snapshots/",
           //This should be either the base path to your index.html file
           //or your base URL. Currently the task does not use it's own
           //webserver. So if your site needs a webserver to be fully
           //functional configure it here.
-          sitePath: 'http://dcmetrometrics.com',
+          sitePath: 'http://localhost:80',
           //you can choose a prefix for your snapshots
           //by default it's 'snapshot_'
-          fileNamePrefix: 'snapshot_',
+          fileNamePrefix: '',
           //by default the task waits 500ms before fetching the html.
           //this is to give the page enough time to to assemble itself.
           //if your page needs more time, tweak here.
-          msWaitForPages: 5000,
+          msWaitForPages: 3000,
           //here goes the list of all urls that should be fetched
-          urls: [
-            '/home',
-            '/outages/escalators',
-            '/outages/elevators',
-            '/stations/list',
-            '/rankings',
-            '/hotcars/main',
-            '/about'
-          ]
+          urls: getSnapshotUrls()
+        }
+      },
+      dev: {
+        options: {
+          snapshotPath: "<%= wwwDir %>/snapshots",
+          sitePath: 'http://dcmetrometrics.localhost:80/',
+          fileNamePrefix: '',
+          sanitize: function (requestUri) {
+            //returns 'index.html' if the url is '/'
+            if (/\/$/.test(requestUri)) {
+              return '/index.html';
+            } else {
+              return requestUri
+            }
+          },
+          msWaitForPages: 3000,
+          urls: getSnapshotUrls()
         }
       }
-    }
-    
+    }    
 
   });
 

@@ -41,7 +41,7 @@ def station_urls():
 
 def main_urls():
   logger.info("Generating Main URLS...")
-  pages = ['home', 'stations/list', 'about', 'outages', 'rankings']
+  pages = ['home', 'stations/list', 'about', 'outages', 'rankings', '']
   return ['{URL_ROOT}/%s'%(p) for p in pages]
 
 URLS = unit_urls() + hotcar_urls() + station_urls() + main_urls()
@@ -71,8 +71,8 @@ def write_url_json(output_file_name, URL_ROOT = URL_ROOT):
     json.dump(urls, fout)
 
 if __name__ == "__main__":
-  make_site_map('sitemap.xml', URL_ROOT='http://www.dcmetrometrics.com')
-  write_url_json('site_urls.json', URL_ROOT='http://localhost:80')
+  #make_site_map('sitemap.xml', URL_ROOT='http://www.dcmetrometrics.com')
+  write_url_json('site_urls.json', URL_ROOT='')
 
 
 

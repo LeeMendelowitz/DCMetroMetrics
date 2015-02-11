@@ -12,7 +12,7 @@ angular.module('dcmetrometricsApp')
     function ($scope, Page, $stateParams, $filter, unitService, directory, statusTableUtils, UnitStatus) {
 
 
-      Page.title("DC Metro Metrics: " + $stateParams.unitId);
+      Page.title("DC Metro Metrics: " +  $filter('unitIdToHuman')($stateParams.unitId));
       Page.description(" ");
 
 
@@ -23,7 +23,7 @@ angular.module('dcmetrometricsApp')
 
       unitService.getUnitData($scope.unitId).then( function(data) {
 
-        console.log("have unit data: ", data);
+        // console.log("have unit data: ", data);
         $scope.unitData = data;
         $scope.unit = $scope.unitData;
         $scope.key_statuses = $scope.unitData.key_statuses;
@@ -31,7 +31,7 @@ angular.module('dcmetrometricsApp')
 
         // Get the station data for this unit.
         directory.get_directory().then(function(stationDirectory) {
-          console.log("Have directory data: ", stationDirectory);
+          // console.log("Have directory data: ", stationDirectory);
           $scope.stationData = stationDirectory.codeToData[stationCode];
           Page.description("Performance history for " + $filter('unitIdToHuman')($scope.unitId) + " at " + $scope.stationData.long_name + " station in the WMATA Metrorail system in Washington, DC.");
 

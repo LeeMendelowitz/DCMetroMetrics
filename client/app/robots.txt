@@ -1,3 +1,4 @@
-# robotstxt.org
-
 User-agent: *
+Disallow:
+
+Sitemap: http://www.dcmetrometrics.com/sitemap.xml
