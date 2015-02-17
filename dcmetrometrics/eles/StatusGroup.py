@@ -18,7 +18,7 @@ import sys
 from ..common.descriptors import setOnce, computeOnce
 from ..common.utils import gen_dates, gen_days
 from ..common import metroTimes
-from ..common.metroTimes import TimeRange, isNaive
+from ..common.metroTimes import TimeRange, isNaive, getLastOpenTime
 from .misc_utils import *
 
 
@@ -133,7 +133,7 @@ class StatusGroupBase(object):
             # Take care only to change a copy of the status,
             # and not the status itself.
             lastStatus = deepcopy(lastStatus)
-            lastStatus['end_time'] = end_time
+            lastStatus.end_time = end_time
             duringTimePeriod = duringTimePeriod[:-1] + [lastStatus]
 
         _checkStatusListSane(duringTimePeriod)
@@ -393,10 +393,12 @@ class StatusGroup(StatusGroupBase):
     def day_to_break_count(self):
         """
         Return the day to number of new breaks that day.
+        Round breaks to the day of the last system opening time.
         """
         ret = defaultdict(int)
         for o in self.breakOutages:
-            ret[o.start_time.date()] += 1
+            last_open = getLastOpenTime(o.start_time)
+            ret[last_open.date()] += 1
         return ret
 
     @computeOnce
@@ -421,7 +423,7 @@ class Outage(StatusGroupBase):
     Helper class to summarize an outage escalator outage
     """
 
-    def __init__(self, statuses):
+    def __init__(self, statuses, start_time=None, end_time=None):
         """
         statuses:  A list of consecutive non-operational statuses.
                    Statuses should be sorted in ascending order. 
@@ -501,9 +503,10 @@ class Outage(StatusGroupBase):
 
     @computeOnce
     def days(self):
-        """Return a list of calendar days this outage covers"""
-        start_date = self.start_time.date()
-        end_date = self.end_time.date() + timedelta(1)
+        """Return a list of calendar days this outage covers.
+        We use metro system open as the day boundaries."""
+        start_date = getLastOpenTime(self.start_time).date()
+        end_date = getLastOpenTime(self.end_time).date() + timedelta(1)
         return list(gen_dates(start_date, end_date))
 
 

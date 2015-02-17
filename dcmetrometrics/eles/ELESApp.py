@@ -175,8 +175,6 @@ class ELESApp(object):
         INFO("Generating Tweets")
         tweets = self.generate_tweets(changed_units, url_maker = url_maker)
 
-
-
         # Update the unit's key statuses document.
         INFO("Updating key statuses.")
         for (unit_id, unit, old_status, new_status, key_status) in changed_units:
@@ -216,7 +214,7 @@ class ELESApp(object):
                 # and to the json_writer. This way the statuses are pulled from the db only once.
                 start_time = datetime.now()
                 statuses = unit.get_statuses()
-                unit.compute_performance_summary(statuses = statuses, save = True)
+                unit.compute_performance_summary(statuses = statuses, save = True, end_time = start_tick_time )
                 end_time=datetime.now()
 
                 self.json_writer.write_unit(unit, statuses)

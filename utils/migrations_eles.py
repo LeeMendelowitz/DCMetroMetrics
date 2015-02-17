@@ -42,7 +42,7 @@ def denormalize_unit_statuses():
   sys.stderr.write("Have %i units\n"%num_units)
   for i, unit in enumerate(Unit.objects.no_cache()):
     sys.stderr.write('Processing unit %s\n (%i of %i)'%(unit.unit_id, i, num_units))
-    unit_statuses = UnitStatus.objects(unit = unit).order_by('-time')
+    unit_statuses = UnitStatus.objects(unit = unit).no_cache().order_by('-time')
     num_statuses = unit_statuses.count()
     unit_statuses.select_related()
     sys.stderr.write('\tHave %i statuses\n'%num_statuses)
@@ -415,4 +415,23 @@ def update_2015_02_08():
   recompute_performance_summaries()
   write_json()
 
+def update_2015_12_12():
+
+  # First, update the status classifications using the latest defs.
+  # print "Updating symptom code categories."
+  # update_symptom_code_category()
+
+  # Now denormalize all the unit statuses to bring them up to date.
+  print "Denormalizing unit statuses."
+  denormalize_unit_statuses()
+
+  print "Adding status update types."
+  add_status_update_type()
+
+  print "Generating all JSON"
+  write_json()
+
+def update_2015_02_16():
+  recompute_performance_summaries()
+  write_json()
   

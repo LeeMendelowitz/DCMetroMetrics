@@ -183,7 +183,7 @@ class UnitPerformancePeriod(WebJSONMixin, EmbeddedDocument):
   num_breaks = IntField(required = True)
   num_inspections = IntField(required = True)
   day_to_break_count = DictField(required = False)
-  break_days = ListField(DateTimeField(), required = False) # Days where the escalator was broken
+  break_days = ListField(StringField(), required = False) # Days where the escalator was broken
 
   web_json_fields = ['unit_id', 'start_time', 'end_time', 'availability',
     'broken_time_percentage', 'num_breaks', 'num_inspections',
@@ -529,7 +529,9 @@ class Unit(WebJSONMixin, Document):
       logger.warning("No statuses for unit %s! Not computing performance summary."%self.unit_id)
       return None
 
-    end_time = utcnow()
+    if end_time is None:
+      end_time = utcnow()
+
     start_times = [('one_day', end_time - timedelta(days = 1)),
                    ('three_day', end_time - timedelta(days = 3)),
                    ('seven_day', end_time - timedelta(days = 7)),
@@ -563,8 +565,8 @@ class Unit(WebJSONMixin, Document):
              d,c in day_to_break_count.iteritems())
 
           upp.day_to_break_count = day_to_break_count_str_keys
-          
-          upp.break_days = sg.break_days
+  
+          upp.break_days = [ d.strftime('%Y-%m-%d')  for d in sg.break_days ]
 
       setattr(ups, key, upp)
 
