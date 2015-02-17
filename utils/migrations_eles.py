@@ -12,6 +12,7 @@ utils.fixSysPath()
 import sys
 from datetime import datetime
 import gc
+from operator import attrgetter
 # gc.set_debug(gc.DEBUG_STATS)
 
 
@@ -30,6 +31,38 @@ WARNING = logger.warning
 INFO = logger.info
 ##########################################
 
+class ReturnObject(object):
+  pass
+
+def filter_consecutive_statuses(statuses):
+  """
+  Filter out consecutive statuses with the same symptom description
+  """
+  statuses = sorted(statuses, key = attrgetter('time'))
+  last_status = None
+  keep = []
+  delete = []
+
+  for s in statuses:
+
+    if last_status is None:
+
+      keep.append(s)
+
+    else:
+
+      if s.symptom_description != last_status.symptom_description:
+        keep.append(s)
+      else:
+        delete.append(s)
+
+    last_status = s
+
+  ret = ReturnObject()
+  ret.keep = keep
+  ret.delete = delete
+  return ret
+
 def denormalize_unit_statuses():
   """
   Denormalized UnitStatus records by adding status and
@@ -47,6 +80,7 @@ def denormalize_unit_statuses():
     unit_statuses.select_related()
     sys.stderr.write('\tHave %i statuses\n'%num_statuses)
     status_after = None
+
     for status in unit_statuses:
       status.denormalize()
       if status_after:
@@ -55,6 +89,51 @@ def denormalize_unit_statuses():
       status.save()
       status_after = status
 
+def fix_all_end_times_and_merge_consecutive():
+  """
+  Fix all end_time and metro_open_time.
+  """
+
+  num_units = Unit.objects.no_cache().count()
+  sys.stderr.write("Have %i units\n"%num_units)
+
+  GARBAGE_COLLECT_INTERVAL = 20
+
+  for i, unit in enumerate(Unit.objects.no_cache()):
+
+    INFO('Processing unit %s\n (%i of %i)'%(unit.unit_id, i, num_units))
+
+    if i%GARBAGE_COLLECT_INTERVAL == 0:
+      DEBUG("Running garbage collector after iteration over units.")
+      count = gc.collect()
+      DEBUG("Garbage collect returned %i"%count)
+
+    unit_statuses = [s for s in UnitStatus.objects(unit = unit)]
+
+    ret = filter_consecutive_statuses(unit_statuses)
+    DEBUG("Have %i statuses for unit %s to delete"%(len(ret.delete), unit.unit_id))
+    DEBUG("Have %i statuses for unit %s to keep"%(len(ret.keep), unit.unit_id))
+
+    for s in ret.delete:
+      DEBUG("Deleting unit status %s"%(s.pk))
+      s.delete()
+
+    del ret.delete
+
+    unit_statuses = ret.keep
+    unit_statuses = sorted(unit_statuses, key = attrgetter('time'), reverse = True)
+
+    status_after = None
+
+    for status in unit_statuses:
+
+      if status_after:
+        assert(status_after.symptom_description != status.symptom_description)
+        status.end_time = status_after.time
+        status.compute_metro_open_time()
+
+      status.save()
+      status_after = status
 
 def migration_03_2014():
   #denormalize_unit_statuses()
@@ -204,7 +283,7 @@ def delete_recent_statuses(time_delta = timedelta(hours = 2)):
 
   for u in units:
     print "computing key statuses for unit: %s"%u.unit_id
-    u.compute_key_statuses()
+    u.compute_key_statuses(save=True)
 
 def delete_last_n_statuses(n):
   """Delete the last n statuses"""
@@ -220,7 +299,7 @@ def delete_last_n_statuses(n):
 
   for u in units:
     print "computing key statuses for unit: %s"%u.unit_id
-    u.compute_key_statuses()
+    u.compute_key_statuses(save=True)
 
 
 def recompute_key_statuses():
@@ -231,7 +310,7 @@ def recompute_key_statuses():
   n = units.count()
   for i, unit in enumerate(units):
     print "Computing key statuses for unit %s: %i of %i (%.2f%%)"%(unit.unit_id, i, n, 100.0*i/n)
-    unit.compute_key_statuses()
+    unit.compute_key_statuses(save=True)
     
   elapsed = (datetime.now() - start).total_seconds()
   print "%.2f seconds elapsed"%elapsed
@@ -434,4 +513,12 @@ def update_2015_12_12():
 def update_2015_02_16():
   recompute_performance_summaries()
   write_json()
+
+def update_2015_02_17():
+  fix_all_end_times_and_merge_consecutive()
+  recompute_key_statuses()
+  recompute_performance_summaries()
+  write_json()
+
+
   
