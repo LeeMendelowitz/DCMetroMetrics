@@ -10,7 +10,7 @@ from . import utils
 utils.fixSysPath()
 
 import sys
-from datetime import datetime
+from datetime import datetime, date, timedelta
 import gc
 from operator import attrgetter
 # gc.set_debug(gc.DEBUG_STATS)
@@ -18,9 +18,10 @@ from operator import attrgetter
 
 from dcmetrometrics.common.dbGlobals import G
 from dcmetrometrics.eles import dbUtils
-from dcmetrometrics.eles.models import Unit, SymptomCode, UnitStatus
+from dcmetrometrics.eles.models import Unit, SymptomCode, UnitStatus, SystemServiceReport
 from datetime import timedelta
 from dcmetrometrics.common.globals import WWW_DIR
+from dcmetrometrics.common.utils import gen_days
 
 ##########################################
 # Set up logging
@@ -134,6 +135,41 @@ def fix_all_end_times_and_merge_consecutive():
 
       status.save()
       status_after = status
+
+def compute_daily_service_reports(start_day = None, end_day = None):
+  """
+  Compute daily service reports for all units
+  """
+
+  if not start_day:
+    start_day = date(2013, 6, 1)
+
+  if not end_day:
+    end_day = date.today()
+
+  assert(end_day > start_day)
+
+  num_units = Unit.objects.no_cache().count()
+  sys.stderr.write("Have %i units\n"%num_units)
+
+  GARBAGE_COLLECT_INTERVAL = 20
+
+  for i, unit in enumerate(Unit.objects.no_cache()):
+
+    INFO('Computing daily service report unit %s\n (%i of %i)'%(unit.unit_id, i, num_units))
+
+    if i%GARBAGE_COLLECT_INTERVAL == 0:
+      DEBUG("Running garbage collector after iteration over units.")
+      count = gc.collect()
+      DEBUG("Garbage collect returned %i"%count)
+
+    unit_statuses = unit.get_statuses()
+    unit.compute_daily_service_reports(start_day = start_day, last_day = end_day,
+      statuses = unit_statuses, save = True)
+
+
+  for day in gen_days(start_day, end_day):
+    SystemServiceReport.compute_for_day(day, save = True)
 
 def migration_03_2014():
   #denormalize_unit_statuses()
@@ -257,7 +293,7 @@ def write_json():
   from dcmetrometrics.eles.models import Unit
   num_units = Unit.objects.no_cache().count()
   for i, unit in enumerate(Unit.objects.no_cache()):
-    print 'Writing unit %i of %i: %s'%(i, num_units, unit.unit_id)
+    logger.info('Writing unit %i of %i: %s'%(i, num_units, unit.unit_id))
     jwriter.write_unit(unit)
 
   # Write the station directory
@@ -265,6 +301,11 @@ def write_json():
 
   # Write the recent updates
   jwriter.write_recent_updates()  
+
+  for report in SystemServiceReport.objects.no_cache():
+    logger.info("Writing system service report for day %s"%report.day)
+    jwriter.write_daily_system_service_report(report = report)
+
 
 
 
@@ -516,9 +557,20 @@ def update_2015_02_16():
 
 def update_2015_02_17():
   fix_all_end_times_and_merge_consecutive()
+  add_status_update_type()
   recompute_key_statuses()
   recompute_performance_summaries()
   write_json()
 
+def update_2015_02_17_2():
 
+  fix_all_end_times_and_merge_consecutive()
+  add_status_update_type()
+  recompute_key_statuses()
+  recompute_performance_summaries()
+
+  start_day = date(2013, 6, 1)
+  end_day = date(2015, 2, 17)
+  compute_daily_service_reports(start_day = start_day, end_day = end_day)
   
+  write_json()

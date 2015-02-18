@@ -4,18 +4,24 @@ Models for eles data.
 
 from mongoengine import *
 from operator import attrgetter
-from ..common.metroTimes import TimeRange, UTCToLocalTime, toUtc, utcnow
+from ..common.metroTimes import TimeRange, UTCToLocalTime, toUtc, tzny, utcnow, dateToOpen
 from ..common.WebJSONMixin import WebJSONMixin
+from ..common.utils import gen_days
 from .defs import symptomToCategory, SYMPTOM_CHOICES
 from ..common import dbGlobals
 from .misc_utils import *
 from .StatusGroup import StatusGroup
-from datetime import timedelta, datetime
+
+from datetime import timedelta, datetime, date
 import sys
 
 
 import logging
 logger = logging.getLogger('ELESApp')
+
+
+
+
 
 
 class KeyStatuses(WebJSONMixin, EmbeddedDocument):
@@ -663,7 +669,7 @@ class Unit(WebJSONMixin, Document):
   @staticmethod
   def _get_unit_statuses(object_id=None, start_time = None, end_time = None):
     """
-    Get statuses for a single escalator or elevator unit.
+    Get statuses for a single escalator or elevator unit, in descending order of time.
     start_time and end_time can be used to return statuses for a given time period.
 
     If start_time or end_time are provided, the status list is padded
@@ -746,6 +752,39 @@ class Unit(WebJSONMixin, Document):
       if save:
         self.save()
       return self.key_statuses
+
+  def compute_daily_service_reports(self, save = False, statuses = [],
+     start_day = date(2013, 6, 1),
+     last_day = None):
+
+    if last_day is None:
+      last_day = date.today() + timedelta(days=1)
+
+    if not statuses:
+      statuses = self.get_statuses()
+
+    docs = []
+    for day in gen_days(start_day, last_day):
+
+      logger.info("Computing daily service report for unit %s on %s"%(self.unit_id,
+         day.strftime("%Y-%m-%d")))
+
+      dsr = DailyServiceReport.compute_for_unit(self, day, statuses = statuses)
+
+      docs.append(dsr)
+
+    if save:
+
+      # By default we will erase any existing daily service reports on these days
+      existing = DailyServiceReport.objects(day__gte = start_day.strftime("%Y-%m-%d"),
+                                            day__lt = last_day.strftime("%Y-%m-%d"),
+                                            unit_id = self.unit_id).no_cache()
+      logger.info("Removing %i existing daily service reports for unit %s"%(existing.count(), self.unit_id))
+      existing.delete()
+
+      DailyServiceReport.objects.insert(docs)
+
+    return docs
 
 
 #############################################
@@ -968,6 +1007,159 @@ class UnitStatus(WebJSONMixin, Document):
     end_time = getattr(self, 'end_time', None)
     if end_time:
       self.end_time = toUtc(self.end_time, allow_naive = True)
+
+
+  @property
+  def is_active(self):
+      return self.end_time is None
+
+  @property
+  def start_time(self):
+      return self.time
+
+
+class DailyServiceReport(WebJSONMixin, Document):
+  """A daily service report for a unit.
+  Compute availability, outage statuses, inspection statuses,
+  etc for a Metro Day
+
+  We represent as an EmbeddedDocument, but never actually save it anywhere.
+  We could.
+  """
+  unit_id = StringField(required = True)
+  day = StringField(required = True, unique_with = 'unit_id') # "yyyy-mm-dd"
+  created = DateTimeField(default = utcnow) # Creation time of the document.
+  availability = FloatField(required = True)
+  broken_time_percentage = FloatField(required = True)
+  num_breaks = IntField(required = True)
+  num_inspections = IntField(required = True)
+  num_fixes = IntField(required = True)
+  statuses = ListField(ReferenceField(UnitStatus))
+
+  meta = { 'indexes' : ['unit_id',
+                        'day',
+                        ('unit_id', 'day')
+            ]
+  }
+
+  web_json_fields = ['unit_id', 'day', 'availability', 'broken_time_percentage',
+  'num_breaks', 'num_inspections', 'num_fixes', 'statuses']
+
+
+  @classmethod
+  def compute_for_unit(cls, unit, day, statuses = None):
+
+    start_time = dateToOpen(day)
+    end_time = dateToOpen(day + timedelta(days=1))
+
+    if not statuses:
+      statuses = unit.get_statuses()
+
+    sg = StatusGroup(statuses, start_time, end_time)
+
+    ret = cls()
+    ret.unit_id = unit.unit_id
+    ret.day = day.strftime("%Y-%m-%d")
+    ret.availability = sg.availability
+    ret.broken_time_percentage = sg.brokenTimePercentage
+    ret.num_breaks = sg.num_breaks
+    ret.num_inspections = sg.num_inspections
+    ret.num_fixes = sg.num_fixes
+    ret.statuses = sg.statuses
+
+    return ret
+
+class UnitTypeServiceReport(WebJSONMixin, EmbeddedDocument):
+
+  availability = FloatField(required = True)
+  broken_time_percentage = FloatField(required = True)
+  num_breaks = IntField(required = True)
+  num_inspections = IntField(required = True)
+  num_fixes = IntField(required = True)
+  statuses = ListField(ReferenceField(UnitStatus))
+  num_units = IntField(required = True) # Number of units contributing to the report
+
+
+  web_json_fields = ['availability', 'broken_time_percentage',
+    'num_breaks', 'num_inspections', 'num_fixes', 'statuses', 'num_units']
+
+
+  @classmethod
+  def from_daily_service_reports(cls, reports):
+
+    doc = cls()
+
+    reports = [r for r in reports if r.statuses] # Only include units that had reports on this day
+    doc.num_units = len(reports)
+    doc.num_breaks = sum(r.num_breaks for r in reports)
+    doc.num_inspections = sum(r.num_inspections for r in reports)
+    doc.num_fixes = sum(r.num_fixes for r in reports)
+    doc.statuses = [s for r in reports for s in r.statuses if s.symptom_category != "ON"]
+
+    a = sum(r.availability for r in reports)
+    b = sum(r.broken_time_percentage for r in reports)
+    doc.availability = a/float(doc.num_units) if doc.num_units > 0 else 1.0
+    doc.broken_time_percentage = b/float(doc.num_units) if doc.num_units > 0 else 0.0
+
+    return doc
+
+
+class SystemServiceReport(WebJSONMixin, Document):
+  """A daily service report for the system
+  Compute availability, outage statuses, inspection statuses,
+  etc for a Metro Day
+
+  We represent as an EmbeddedDocument, but never actually save it anywhere.
+  We could.
+  """
+
+  day = StringField(required = True, unique = True) # "yyyy-mm-dd"
+  created = DateTimeField(default = utcnow) # Creation time of the document.
+
+  escalators = EmbeddedDocumentField(UnitTypeServiceReport)
+  elevators = EmbeddedDocumentField(UnitTypeServiceReport)
+
+  meta = { 'indexes' : ['day']  }
+
+  web_json_fields = ['day', 'escalators', 'elevators']
+
+  @classmethod
+  def compute_for_day(cls, day, reports = None, save = True):
+    """
+    Compute the system service report by pulling DailyServiceReports
+    from the db
+    """
+    day_string = day.strftime("%Y-%m-%d")
+
+    logger.info("Computing system service report for day %s"%day_string)
+    doc = cls()
+    doc.day = day_string
+
+    escalator_reports = []
+    elevator_reports = []
+
+    if not reports:
+      reports = list(DailyServiceReport.objects(day = doc.day))
+
+    if not reports:
+      raise RuntimeError('Do not have any daily service reports for day: %s'%doc.day)
+
+    escalator_reports = []
+    elevator_reports = []
+
+    for r in reports:
+      if 'ESCALATOR' in r.unit_id:
+        escalator_reports.append(r)
+      else:
+        elevator_reports.append(r)
+
+    doc.escalators = UnitTypeServiceReport.from_daily_service_reports(escalator_reports)
+    doc.elevators = UnitTypeServiceReport.from_daily_service_reports(elevator_reports)
+
+    if save:
+      cls.objects(day = doc.day).delete()
+      doc.save()
+    return doc
 
 
 

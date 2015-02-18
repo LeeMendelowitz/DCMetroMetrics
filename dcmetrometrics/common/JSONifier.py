@@ -9,7 +9,7 @@ from datetime import timedelta
 from collections import defaultdict
 
 
-from ..eles.models import (Unit, UnitStatus, KeyStatuses, Station)
+from ..eles.models import (Unit, UnitStatus, KeyStatuses, Station, DailyServiceReport, SystemServiceReport)
 from ..hotcars.models import (HotCarReport, Temperature)
 from ..common.WebJSONMixin import WebJSONMixin
 from ..common.metroTimes import tzutc, isNaive, toUtc
@@ -157,6 +157,34 @@ class JSONWriter(object):
 
     with open(outpath, 'w') as fout:
       fout.write(jdata)
+
+  def write_daily_system_service_report(self, day = None, report = None):
+
+    if report is None and day is None:
+      raise RuntimeError("report or day must be provided.")
+
+    if day is None:
+      day_string = report.day
+    else:
+      day_string = day.strftime('%Y-%m-%d')
+
+    if report is None:
+      report = SystemServiceReport.objects(day = day_string).get()
+
+    ret = {'daily_sytem_service_report' : report }
+
+    jdata = dumps(ret, cls = WebJSONEncoder)
+
+    # Create the directory if necessary
+    outdir = os.path.join(self.basedir, 'json', 'daily_system_service_reports')
+    mkdir_p(outdir)
+
+    fname = '%s.json'%(day_string.replace('-', '_'))
+    outpath = os.path.join(outdir, fname)
+
+    with open(outpath, 'w') as fout:
+      fout.write(jdata)
+
 
 
 
