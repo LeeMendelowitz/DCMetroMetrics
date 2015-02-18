@@ -251,8 +251,48 @@ def write_json():
   elapsed = (datetime.now() - start).total_seconds()
   print "%.2f seconds elapsed"%elapsed
 
-def run():
+def fix_end_times():
+  """
+  Find units where the lastStatus has an end_time defined.
 
+  This is a mysterious scenario and requires further investigation. Where do
+  we set the end time on a status?
+
+  If the last status has an end time defined, it will screw up the StatusGroup
+  """
+  from dcmetrometrics.eles.models import Unit
+
+  to_fix = []
+  key_statuses = (unit.key_statuses for unit in Unit.objects.no_cache())
+  for ks in key_statuses:
+    if ks.lastStatus.end_time is not None:
+      to_fix.append(ks)
+
+  print "have %i units with lastStatus with defined end_time"%len(to_fix)
+  print [ks.unit_id for ks in to_fix]
+
+  for ks in to_fix:
+    lastStatus = ks.lastStatus
+    lastStatus.end_time = None
+    lastStatus.clean()
+    lastStatus.save()
+
+def recompute_key_statuses():
+  """Recompute key statuses for all units"""
+  from dcmetrometrics.eles.models import Unit, KeyStatuses
+  units = Unit.objects.no_cache()
+  start = datetime.now()
+  n = units.count()
+  for i, unit in enumerate(units):
+    print "Computing key statuses for unit %s: %i of %i (%.2f%%)"%(unit.unit_id, i, n, 100.0*i/n)
+    unit.compute_key_statuses(save=True)
+    
+  elapsed = (datetime.now() - start).total_seconds()
+  print "%.2f seconds elapsed"%elapsed
+
+def run():
+  recompute_key_statuses()
+  fix_end_times()
   recompute_performance_summaries()
 
 if __name__ == '__main__':
