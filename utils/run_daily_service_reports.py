@@ -34,7 +34,10 @@ logger = logging_utils.create_logger(__name__)
 DEBUG = logger.debug
 WARNING = logger.warning
 INFO = logger.info
-##########################################
+
+# Set up the ELES logger as well. This is used by other modules
+logger_eles = logging_utils.create_logger("ELESApp")
+#########################################
 
 class ReturnObject(object):
   pass
@@ -160,7 +163,12 @@ def compute_daily_service_reports(start_day = None, end_day = None, force_min_st
 
   min_start_day = start_day
 
-  for i, unit in enumerate(Unit.objects.no_cache()):
+  # This long loop was raising Exceptions like:
+  # pymongo.errors.OperationFailure: cursor id 'XXXX' not valid at server
+  # Solution is to not timeout the cursor and explicitly close it ourselves
+  units = Unit.objects.timeout(False).no_cache()
+
+  for i, unit in enumerate(units):
 
     INFO('Computing daily service report unit %s\n (%i of %i)'%(unit.unit_id, i, num_units))
 
@@ -189,6 +197,10 @@ def compute_daily_service_reports(start_day = None, end_day = None, force_min_st
       statuses = unit_statuses, save = True)
 
     min_start_day = min(min_start_day, unit_start_day)
+
+  # We are done with the units query set, so close the cursor.
+  units._cursor.close()
+
 
   jwriter = JSONWriter(WWW_DIR)
   for day in gen_days(min_start_day, end_day):

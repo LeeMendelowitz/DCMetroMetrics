@@ -22,8 +22,6 @@ logger = logging.getLogger('ELESApp')
 
 
 
-
-
 class KeyStatuses(WebJSONMixin, EmbeddedDocument):
 
   """

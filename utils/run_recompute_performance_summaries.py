@@ -3,6 +3,19 @@ Script to compute the daily service reports for escalators and elevators.
 This script will update the database and write json files for each updated day.
 """
 
+##########################################
+# Set up logging
+from dcmetrometrics.common import logging_utils
+logger = logging_utils.create_logger(__name__)
+DEBUG = logger.debug
+WARNING = logger.warning
+INFO = logger.info
+
+# Set up the ELES logger as well. This is used by other modules
+logger_eles = logging_utils.create_logger("ELESApp")
+
+##########################################
+
 # Connect to the database
 from dcmetrometrics.common import dbGlobals
 dbGlobals.connect()
@@ -23,14 +36,7 @@ from dcmetrometrics.common.utils import gen_days
 from dcmetrometrics.common.JSONifier import JSONWriter
 
 
-##########################################
-# Set up logging
-from dcmetrometrics.common import logging_utils
-logger = logging_utils.create_logger(__name__)
-DEBUG = logger.debug
-WARNING = logger.warning
-INFO = logger.info
-##########################################
+
 
 class ReturnObject(object):
   pass
