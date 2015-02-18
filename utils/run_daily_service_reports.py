@@ -258,9 +258,13 @@ def run_update():
 
 if __name__ == '__main__':
   args = parser.parse_args()
+  start_time = datetime.now()
   if args.all:
     logger.info("Running all.")
     run_all()
   else:
     logger.info("Running one day update.")
     run_update()
+  end_time = datetime.now()
+  run_time = (end_time - start_time).total_seconds()
+  logger.info("%.2f seconds elapsed"%run_time)
