@@ -17,10 +17,14 @@ from dcmetrometrics.common.dbGlobals import G
 from dcmetrometrics.eles import dbUtils
 from dcmetrometrics.common.metroTimes import getLastOpenTime
 from dcmetrometrics.eles.models import Unit, SymptomCode, UnitStatus, SystemServiceReport
-from datetime import timedelta
 from dcmetrometrics.common.globals import WWW_DIR
 from dcmetrometrics.common.utils import gen_days
 from dcmetrometrics.common.JSONifier import JSONWriter
+
+import argparse
+parser = argparse.ArgumentParser(description='Run daily service reports.')
+parser.add_argument('--all', action = 'store_true',
+                   help='Compute all, instead of a one day update.')
 
 
 ##########################################
@@ -223,15 +227,28 @@ def write_json():
   elapsed = (datetime.now() - start).total_seconds()
   print "%.2f seconds elapsed"%elapsed
 
-def run():
-
+def run_all():
   start_day = date(2013, 6, 1)
-  end_day = date(2015, 2, 17)
+  end_day = date.today() - timedelta(days = 1)
 
   compute_daily_service_reports(
     start_day = start_day,
     end_day = end_day,
-    force_min_start_day = date(2015, 2, 15))
+    force_min_start_day = start_day)
+
+def run_update():
+  start_day = date.today() - timedelta(days = 1)
+  end_day = date.today()
+
+  compute_daily_service_reports(
+    start_day = start_day,
+    end_day = end_day)
 
 if __name__ == '__main__':
-  run()
+  args = parser.parse_args()
+  if args.all:
+    logger.info("Running all.")
+    run_all()
+  else:
+    logger.info("Running one day update.")
+    run_update()
