@@ -146,6 +146,11 @@ def fix_all_end_times_and_merge_consecutive():
 def compute_daily_service_reports(start_day = None, end_day = None, force_min_start_day = None):
   """
   Compute daily service reports for all units, and write json.
+   - start_day: The starting day for which to compute. This can be overridden by long running outages. 
+      Computation will be unit dependent, depending on when its current outage goes back to.
+   - end_day: The last day to compute, exclusive. By default this is today.
+   - force_min_start_day: Force a minimum starting day for all computation. This overrides start_day or
+     whatever the current outage suggest to do.
   """
 
   if not start_day:
@@ -161,7 +166,7 @@ def compute_daily_service_reports(start_day = None, end_day = None, force_min_st
 
   GARBAGE_COLLECT_INTERVAL = 20
 
-  min_start_day = start_day
+  min_start_day = force_min_start_day if force_min_start_day else start_day
 
   # This long loop was raising Exceptions like:
   # pymongo.errors.OperationFailure: cursor id 'XXXX' not valid at server
@@ -184,10 +189,14 @@ def compute_daily_service_reports(start_day = None, end_day = None, force_min_st
 
     last_status = unit_statuses[0]
 
-    if start_day is not None:
-      unit_start_day = min(start_day, getLastOpenTime(last_status.time).date())
-    else:
-      unit_start_day = getLastOpenTime(last_status.time).date()
+    # If the last status is non-operational, consider making updates back to
+    # the start of the outage.
+    unit_start_day = start_day
+    if last_status.symptom_category != "ON":
+      if start_day is not None:
+        unit_start_day = min(start_day, getLastOpenTime(last_status.time).date())
+      else:
+        unit_start_day = getLastOpenTime(last_status.time).date()
 
     # Override the unit_start_day with force_min_start_day
     if force_min_start_day:
@@ -197,6 +206,9 @@ def compute_daily_service_reports(start_day = None, end_day = None, force_min_st
       statuses = unit_statuses, save = True)
 
     min_start_day = min(min_start_day, unit_start_day)
+
+  if force_min_start_day:
+    min_start_day = force_min_start_day
 
   # We are done with the units query set, so close the cursor.
   units._cursor.close()
