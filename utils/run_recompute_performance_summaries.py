@@ -194,6 +194,34 @@ def compute_daily_service_reports(start_day = None, end_day = None, force_min_st
 
 
 
+def recompute_performance_summaries():
+  """Recompute performance summaries for all units"""
+  from dcmetrometrics.eles.models import Unit
+  units = Unit.objects.no_cache()
+  start = datetime.now()
+  n =  units.count()
+  GARBAGE_COLLECT_INTERVAL = 10
+  jwriter = JSONWriter(WWW_DIR)
+  for i, unit in enumerate(units):
+
+    INFO("Computing performance summary for unit %s: %i of %i (%.2f%%)"%(unit.unit_id, i, n, 100.0*i/n))
+    unit.compute_performance_summary(save = True)
+
+    if i%GARBAGE_COLLECT_INTERVAL == 0:
+      DEBUG("Running garbage collector after iteration over units.")
+      count = gc.collect()
+      DEBUG("Garbage collect returned %i"%count)
+
+    jwriter.write_unit(unit)
+    
+  # Write the station directory
+  jwriter.write_station_directory()
+
+  elapsed = (datetime.now() - start).total_seconds()
+  print "%.2f seconds elapsed"%elapsed
+
+
+
 def write_json():
   """Generate all json files.
   """
@@ -225,13 +253,7 @@ def write_json():
 
 def run():
 
-  start_day = date(2013, 6, 1)
-  end_day = date(2015, 2, 17)
-
-  compute_daily_service_reports(
-    start_day = start_day,
-    end_day = end_day,
-    force_min_start_day = date(2015, 2, 15))
+  recompute_performance_summaries()
 
 if __name__ == '__main__':
   run()
