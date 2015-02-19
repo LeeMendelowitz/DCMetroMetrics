@@ -12,7 +12,8 @@
     line-height:2rem;
     box-sizing: content-box;
     position:relative;
-    transition:.5s
+    transition:.5s;
+    display: none;
 }
 
 #forkongithub a:hover {
@@ -58,6 +59,7 @@
         -ms-transform:rotate(45deg);
         -moz-transform:rotate(45deg);
         -o-transform:rotate(45deg);
-        box-shadow:4px 4px 10px rgba(0,0,0,0.8)
+        box-shadow:4px 4px 10px rgba(0,0,0,0.8);
+        display: block;
     }
 }
