@@ -1,0 +1,378 @@
+
+<div class="container">
+
+
+<h1>
+   Daily Escalator/Elevator Service Report
+</h1>
+<h2>
+{{ day.format("dddd, MMMM D, YYYY") }}
+</h2>
+
+  <div class="row">
+    <div class="col-md-6">
+
+      <form class="form-inline" ng-submit="submitDate()">
+        <div class="form-group" ng-class="{'has-error' : badDate}">
+          <div class="input-group">
+            <input type="text" class="form-control" datepicker-popup="{{format}}" ng-model="dt"
+                   is-open="opened" min-date="minDate" max-date="maxDate"
+                   init-date="initDate" datepicker-options="dateOptions" ng-required="true" close-text="Close" />
+            <span class="input-group-btn">
+              <button type="button" class="btn btn-default" ng-click="open($event)" type="button">
+                 <i class="glyphicon glyphicon-calendar"></i>
+              </button>
+            </span>
+          </div>
+          <p ng-show="badDate" class="help-block">{{ helpMsg }}</p>
+        </div>
+      </form>
+
+    </div>
+  </div>
+
+  <p ng-show="loadingError">No Data Available</p>
+
+  <div ng-hide="loadingError">
+
+
+    <h3>Escalators</h3>
+
+      <table class="table table-condensed table-striped table-bordered">
+        <thead>
+          <tr>
+            <th></th>
+            <th>Escalators</th>
+            <th>Elevators</th>
+          </tr>
+        </thead>
+          <tbody>
+          <tr>
+            <th>Num. Units</th>
+            <td>{{report.escalators.num_units}}</td>
+            <td>{{report.elevators.num_units}}</td>
+          </tr>
+          <tr>
+            <th>Availability</th>
+            <td>{{report.escalators.availability | percentage }}</td>
+            <td>{{report.elevators.availability | percentage }}</td>
+          </tr>
+          <tr>
+            <th>Broken Time Precentage</th>
+            <td>{{report.escalators.broken_time_percentage | percentage }}</td>
+            <td>{{report.elevators.broken_time_percentage | percentage }}</td>
+          </tr>
+          <tr>
+            <th>Num. Breaks</th>
+            <td>{{report.escalators.num_breaks}}</td>
+            <td>{{report.elevators.num_breaks}}</td>
+          </tr>
+          <tr>
+            <th>Num. Units with Break</th>
+            <td>{{ escalators.num_units_broken }} ({{ escalators.num_units_broken/report.escalators.num_units | percentage}})</td>
+            <td>{{ elevators.num_units_broken }} ({{ elevators.num_units_broken/report.elevators.num_units | percentage}})</td>
+          </tr>
+          <tr>
+            <th>Num. Fixes</th>
+            <td>{{report.escalators.num_fixes}}</td>
+            <td>{{report.elevators.num_fixes}}</td>
+          </tr>
+          <tr>
+            <th>Num. Inspections</th>
+            <td>{{report.escalators.num_inspections}}</td>
+            <td>{{report.elevators.num_inspections}}</td>
+          </tr>
+          <tr>
+            <th>Num. Units Inspected</th>
+            <td>{{ escalators.num_units_inspected }}  ({{ escalators.num_units_inspected/report.escalators.num_units | percentage}})</td>
+            <td>{{ elevators.num_units_inspected }}  ({{ elevators.num_units_inspected/report.elevators.num_units | percentage}})</td>
+          </tr>
+        </tbody>
+      </table>
+
+    
+
+
+  <h2> Statuses
+
+    <h3>Escalators</h3>
+
+      <h4>Broken</h4>
+
+        <p ng-show="no_escalator_broken">None</p>
+
+          <table class="table table-bordered table-condensed table-striped" ng-hide="no_escalator_broken">
+          <thead>
+            <tr>
+              <th>Item</th>
+              <th class="col-sm-2">Unit</th>
+              <th class="col-sm-4">Description</th>
+              <th class="col-sm-2">Status</th>
+              <th class="col-sm-1">Type</th>
+              <th class="col-sm-1">Start</th>
+              <th class="col-sm-1">End</th>
+              <th class="col-sm-1">Duration</th>
+            </tr>
+          </thead>
+
+          <tr ng-repeat="status in escalators.broken | orderBy:'time'" ng-controller="StatusentryCtrl">
+
+            <td>{{ $index }}</td>
+            <td>
+              <a ui-sref="unit({unitId: unit.unit_id})">{{ status.unit_id | unitIdToHuman }}</a> 
+            </td>
+
+            <td>
+
+              <a ui-sref="stations.detail({station: directory.getStationShortName(unit)})">
+              {{ directory.getStationName(directory.unitFromStatus(status)) }}
+              <lineColors lines="{{directory.getStationLinesForStatus(status).join()}}"></lineColors>
+              </a>
+              <br>
+              {{ directory.unitDescription(unit) }}
+
+            </td>
+            <td>{{ status.symptom_description | capFirst }}</td>
+            <td>{{ status.update_type }}</td>
+            <td>{{ status.time.format("MM/DD/YY h:mm A") }}</td>
+            <td>{{ status.actual_end_time.format("MM/DD/YY h:m A") }}</td>
+            <td>{{ status.duration | duration }}</td>
+          </tr>
+        </table>
+
+
+
+      <h4>Inspections</h4>
+
+        <p ng-show="no_escalator_inspection">None</p>
+
+          <table class="table table-bordered table-condensed table-striped" ng-hide="no_escalator_inspection">
+
+          <thead>
+            <tr>
+              <th>Item</th>
+              <th class="col-sm-2">Unit</th>
+              <th class="col-sm-4">Description</th>
+              <th class="col-sm-2">Status</th>
+              <th class="col-sm-1">Type</th>
+              <th class="col-sm-1">Start</th>
+              <th class="col-sm-1">End</th>
+              <th class="col-sm-1">Duration</th>
+            </tr>
+          </thead>
+
+          <tr ng-repeat="status in escalators.inspections | orderBy:'time'" ng-controller="StatusentryCtrl">
+
+            <td>{{ $index }}</td>
+            <td>
+              <a ui-sref="unit({unitId: unit.unit_id})">{{ status.unit_id | unitIdToHuman }}</a> 
+            </td>
+
+            <td>
+
+              <a ui-sref="stations.detail({station: directory.getStationShortName(unit)})">
+              {{ directory.getStationName(directory.unitFromStatus(status)) }}
+              <lineColors lines="{{directory.getStationLinesForStatus(status).join()}}"></lineColors>
+              </a>
+              <br>
+              {{ directory.unitDescription(unit) }}
+
+            </td>
+            <td>{{ status.symptom_description | capFirst }}</td>
+            <td>{{ status.update_type }}</td>
+            <td>{{ status.time.format("MM/DD/YY h:mm A") }}</td>
+            <td>{{ status.actual_end_time.format("MM/DD/YY h:m A") }}</td>
+            <td>{{ status.duration | duration }}</td>
+          </tr>
+        </table>
+
+
+      <h4>Off</h4>
+
+        <p ng-show="no_escalator_off">None</p>
+
+
+          <table class="table table-bordered table-condensed table-striped" ng-hide="no_escalator_off" >
+          <thead>
+            <tr>
+              <th>Item</th>
+              <th class="col-sm-2">Unit</th>
+              <th class="col-sm-4">Description</th>
+              <th class="col-sm-2">Status</th>
+              <th class="col-sm-1">Type</th>
+              <th class="col-sm-1">Start</th>
+              <th class="col-sm-1">End</th>
+              <th class="col-sm-1">Duration</th>
+            </tr>
+          </thead>
+
+          <tr ng-repeat="status in escalators.off | orderBy:'time'" ng-controller="StatusentryCtrl">
+
+            <td>{{ $index }}</td>
+            <td>
+              <a ui-sref="unit({unitId: unit.unit_id})">{{ status.unit_id | unitIdToHuman }}</a> 
+            </td>
+
+            <td>
+
+              <a ui-sref="stations.detail({station: directory.getStationShortName(unit)})">
+              {{ directory.getStationName(directory.unitFromStatus(status)) }}
+              <lineColors lines="{{directory.getStationLinesForStatus(status).join()}}"></lineColors>
+              </a>
+              <br>
+              {{ directory.unitDescription(unit) }}
+
+            </td>
+      <!--        <td><a ng-href="{{ getStationUrl( unitFromStatus(s) ) }}">
+             {{ getStationName( unitFromStatus(s) ) }}
+             </a></td> -->
+      <!--       <td><pre>{{ getStationUrl( unitFromStatus(s) ) }}</pre></td> -->
+            <td>{{ status.symptom_description | capFirst }}</td>
+            <td>{{ status.update_type }}</td>
+            <td>{{ status.time.format("MM/DD/YY h:mm A") }}</td>
+            <td>{{ status.actual_end_time.format("MM/DD/YY h:m A") }}</td>
+            <td>{{ status.duration | duration }}</td>
+          </tr>
+        </table>
+
+    <h3>Elevators</h3>
+
+
+       <h4>Broken</h4>
+
+        <p ng-show="no_elevator_broken">None</p>
+
+            <table class="table table-bordered table-condensed table-striped" ng-hide="no_elevator_broken">
+            <thead>
+              <tr>
+                <th>Item</th>
+                <th class="col-sm-2">Unit</th>
+                <th class="col-sm-4">Description</th>
+                <th class="col-sm-2">Status</th>
+                <th class="col-sm-1">Type</th>
+                <th class="col-sm-1">Start</th>
+                <th class="col-sm-1">End</th>
+                <th class="col-sm-1">Duration</th>
+              </tr>
+            </thead>
+
+            <tr ng-repeat="status in elevators.broken | orderBy:'time'" ng-controller="StatusentryCtrl">
+
+              <td>{{ $index }}</td>
+              <td>
+                <a ui-sref="unit({unitId: unit.unit_id})">{{ status.unit_id | unitIdToHuman }}</a> 
+              </td>
+
+              <td>
+
+                <a ui-sref="stations.detail({station: directory.getStationShortName(unit)})">
+                {{ directory.getStationName(directory.unitFromStatus(status)) }}
+                <lineColors lines="{{directory.getStationLinesForStatus(status).join()}}"></lineColors>
+                </a>
+                <br>
+                {{ directory.unitDescription(unit) }}
+
+              </td>
+              <td>{{ status.symptom_description | capFirst }}</td>
+              <td>{{ status.update_type }}</td>
+              <td>{{ status.time.format("MM/DD/YY h:mm A") }}</td>
+              <td>{{ status.actual_end_time.format("MM/DD/YY h:m A") }}</td>
+              <td>{{ status.duration | duration }}</td>
+            </tr>
+          </table>
+
+
+
+        <h4>Inspections</h4>
+
+          <p ng-show="no_elevator_inspection">None</p>
+
+            <table class="table table-bordered table-condensed table-striped" ng-hide="no_elevator_inspection">
+            <thead>
+              <tr>
+                <th>Item</th>
+                <th class="col-sm-2">Unit</th>
+                <th class="col-sm-4">Description</th>
+                <th class="col-sm-2">Status</th>
+                <th class="col-sm-1">Type</th>
+                <th class="col-sm-1">Start</th>
+                <th class="col-sm-1">End</th>
+                <th class="col-sm-1">Duration</th>
+              </tr>
+            </thead>
+
+            <tr ng-repeat="status in elevators.inspections | orderBy:'time'" ng-controller="StatusentryCtrl">
+
+              <td>{{ $index }}</td>
+              <td>
+                <a ui-sref="unit({unitId: unit.unit_id})">{{ status.unit_id | unitIdToHuman }}</a> 
+              </td>
+
+              <td>
+
+                <a ui-sref="stations.detail({station: directory.getStationShortName(unit)})">
+                {{ directory.getStationName(directory.unitFromStatus(status)) }}
+                <lineColors lines="{{directory.getStationLinesForStatus(status).join()}}"></lineColors>
+                </a>
+                <br>
+                {{ directory.unitDescription(unit) }}
+
+              </td>
+              <td>{{ status.symptom_description | capFirst }}</td>
+              <td>{{ status.update_type }}</td>
+              <td>{{ status.time.format("MM/DD/YY h:mm A") }}</td>
+              <td>{{ status.actual_end_time.format("MM/DD/YY h:m A") }}</td>
+              <td>{{ status.duration | duration }}</td>
+            </tr>
+          </table>
+
+
+        <h4>Off</h4>
+
+          <p ng-show="no_elevator_off">None</p>
+
+            <table class="table table-bordered table-condensed table-striped" ng-hide="no_elevator_off">
+            <thead>
+              <tr>
+                <th>Item</th>
+                <th class="col-sm-2">Unit</th>
+                <th class="col-sm-4">Description</th>
+                <th class="col-sm-2">Status</th>
+                <th class="col-sm-1">Type</th>
+                <th class="col-sm-1">Start</th>
+                <th class="col-sm-1">End</th>
+                <th class="col-sm-1">Duration</th>
+              </tr>
+            </thead>
+
+            <tr ng-repeat="status in elevators.off | orderBy:'time'" ng-controller="StatusentryCtrl">
+
+              <td>{{ $index }}</td>
+              <td>
+                <a ui-sref="unit({unitId: unit.unit_id})">{{ status.unit_id | unitIdToHuman }}</a> 
+              </td>
+
+              <td>
+
+                <a ui-sref="stations.detail({station: directory.getStationShortName(unit)})">
+                {{ directory.getStationName(directory.unitFromStatus(status)) }}
+                <lineColors lines="{{directory.getStationLinesForStatus(status).join()}}"></lineColors>
+                </a>
+                <br>
+                {{ directory.unitDescription(unit) }}
+
+              </td>
+              <td>{{ status.symptom_description | capFirst }}</td>
+              <td>{{ status.update_type }}</td>
+              <td>{{ status.time.format("MM/DD/YY h:mm A") }}</td>
+              <td>{{ status.actual_end_time.format("MM/DD/YY h:m A") }}</td>
+              <td>{{ status.duration | duration }}</td>
+            </tr>
+          </table>
+
+  <!--   <pre>
+    {{ report | json }}
+    </pre> -->
+
+  </div>
+</div>

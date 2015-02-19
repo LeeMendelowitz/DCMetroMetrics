@@ -1,0 +1,49 @@
+<div class="jumbotron dcmm-page-header">
+  <div class="container">
+  <h1>Press</h1>
+    <p>
+      featuring DC Metro Metrics,
+      <a href="http://www.twitter.com/MetroEscalators" target="_blank">@MetroEscalators</a>,
+      <a href="http://www.twitter.com/MetroElevators" target="_blank">@MetroElevators</a>,
+       and
+      <a href="http://www.twitter.com/MetroHotCars" target="_blank">@MetroHotCars</a>.
+    </p>
+  </div>
+</div>
+
+
+
+
+<div class="container">
+
+  <div class="row">
+
+    <div class="col-md-6 col-md-offset-3" style="margin-bottom: 3em;">
+    <blockquote class="twitter-tweet" lang="en"><p>Follow <a href="https://twitter.com/MetroEscalators">@metroescalators</a> for a real-time feed of the incompetence of <a href="https://twitter.com/wmata">@WMATA</a>, America&#39;s worst-run public agency.</p>&mdash; Josh Barro (@jbarro) <a href="https://twitter.com/jbarro/status/324357497521573889">April 17, 2013</a></blockquote> <script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
+    </div>
+
+  </div>
+
+  <div class="row">
+
+    <div class="col-md-10 col-md-offset-1">
+
+      <p style="font-size: 16px;">Here is a list of articles, blog posts, radio stories, and TV stories that have
+      featured data from DC Metro Metrics:</p>
+
+      <div class="list-group">
+
+        <a ng-repeat="item in items" href="{{item.url}}" class="list-group-item dcmm-press-item" target="_blank">
+          <h4 class="list-group-item-heading">{{item.title}}</h4>
+          <p class="list-group-item-text">
+          <span class="dcmm-date">{{item.date_string}}</span>, <span class="dcmm-publisher">{{item.publisher}}</span></p>
+        </a>
+
+      </div>
+
+
+    </div>
+  </div>
+
+
+</div> <!-- end container -->

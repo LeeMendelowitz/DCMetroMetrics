@@ -174,20 +174,52 @@ body {
   }
 }
 
-.dcmm-page-header {
+
+
+div.dcmm-page-header {
   color: white;
-  text-shadow: 0 1px 0 rgba(0, 0, 0, .1);
+  background-color: rgba(0, 0, 0, 0.45);
+  text-shadow: 1px 1px 5px black;
   text-align: left;
-  background-color: #004050;
-  background-image: -webkit-linear-gradient(top, #004050, #195361); /* For Chrome 25 and Safari 6, iOS 6.1, Android 4.3 */
-  background-image:    -moz-linear-gradient(top, #004050, #195361); /* For Firefox (3.6 to 15) */
-  background-image:      -o-linear-gradient(top, #004050, ##195361); /* For old Opera (11.1 to 12.0) */ 
-  background-image: linear-gradient(to bottom, #004050 0, #195361 100%); /* Standard syntax; must be last */
-  background-repeat: repeat-x;
+  min-height: 300px;
+  display: block;
+  position: relative;
 }
 
+div.dcmm-page-header:after {
+  content: " ";
+  background-color: black;
+  background-image: url("/images/capitol_building.jpg");
+  background-clip: padding-box;
+  background-repeat: no-repeat;
+  background-position: 0 10%;
+  background-size: 120%;
+  opacity: 1.0;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
+  position: absolute;
+  z-index: -1;
+  width: 100%
+  height: 100%;
+}
+
+@media (max-width: 768px) {
+  div.dcmm-page-header:after {
+    content: " ";
+    background-color: black;
+    background-image: url("/images/capitol_building.jpg");
+    background-clip: padding-box;
+    background-repeat: no-repeat;
+    background-position: 0 10%;
+    background-size: 200%;
+  }
+}
+
+
 .dcmm-page-header a {
-  color: #72b7c7;
+  color: #FFF697;
   text-decoration: none;
 }
 
@@ -197,7 +229,7 @@ body {
 }
 
 .dcmm-page-header a:hover {
-  color: black;
+  color: #cccccc;
   text-decoration: none;
 }
 
@@ -367,6 +399,23 @@ path.voronoi {
   stroke: none;
   pointer-events: all;
 }
+
+.dcmm-press-item{
+  font-weight: 500;
+}
+
+.dcmm-press-item .dcmm-date {
+  color: #9E4B00;
+  font-weight: 500;
+  font-size: 14px;
+}
+.dcmm-press-item .dcmm-publisher {
+  color: #00539E;
+  font-weight: 500;
+  font-size: 14px;
+}
+
+
 
 /*path.voronoi--hover {
   fill: orange;

@@ -16,6 +16,7 @@ angular.module('dcmetrometricsApp')
 
     var directoryUrl = "/json/station_directory.json";
     var recentUpdateUrl = "/json/recent_updates.json";
+    var dailyServiceReportPfx = "/json/daily_system_service_reports";
 
     var stationDirectory,
         shortNameToData,
@@ -273,6 +274,32 @@ angular.module('dcmetrometricsApp')
 
     };
 
+    this.get_daily_service_report = function(day_string) {
+      // day_string example: 2015_02_2016
+
+      var deferred = $q.defer();
+
+      self.get_directory().then( function() {
+
+        var url = dailyServiceReportPfx + "/" + day_string + ".json";
+        $http.get(url, { cache: true })
+          .success( function(d) {
+
+            var data = d.daily_sytem_service_report;
+            data.escalators.statuses = data.escalators.statuses.map(function(s) { return new UnitStatus(s) }); 
+            data.elevators.statuses = data.elevators.statuses.map(function(s) { return new UnitStatus(s) }); 
+            deferred.resolve(data);
+          })
+          .error (function() {
+            deferred.reject();
+          });
+
+      });
+
+      return deferred.promise;
+
+    };
+
 
     // Get the station url for a unit.
     this.getStationUrl = function(unit) {
@@ -332,6 +359,8 @@ angular.module('dcmetrometricsApp')
       }
       return ret;
     };
+
+
 
 
   }]);

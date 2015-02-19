@@ -18,9 +18,9 @@
     <link rel="stylesheet" href="/bower_components/bootstrap/dist/css/bootstrap.css" />
     <link rel="stylesheet" href="/bower_components/angular-motion/dist/angular-motion.css" />
     <link rel="stylesheet" href="/bower_components/ng-table/ng-table.css" />
-    <link rel="stylesheet" href="/bower_components/angular-loading-bar/build/loading-bar.css" />
     <link rel="stylesheet" href="/bower_components/bootswatch-dist/css/bootstrap.css" />
     <link rel="stylesheet" href="/bower_components/cal-heatmap/cal-heatmap.css" />
+    <link rel="stylesheet" href="/bower_components/angular-loading-bar/build/loading-bar.css" />
     <!-- endbower -->
     <!-- endbuild -->
     <!-- build:css(.tmp) /styles/main.css -->
@@ -39,7 +39,7 @@
       <p class="browsehappy">You are using an <strong>outdated</strong> browser. Please <a href="http://browsehappy.com/">upgrade your browser</a> to improve your experience.</p>
     <![endif]-->
 
-    <nav class="navbar navbar-default navbar-fixed-top dcmm-navbar" role="navigation" bs-navbar data-active-class = "active" ng-controller = "NavCtrl">
+    <nav class="navbar navbar-default navbar-fixed-top dcmm-navbar" role="navigation" ng-controller = "NavCtrl">
         <div class="container">
 
             <!-- Brand and toggle get grouped for better mobile display -->
@@ -56,11 +56,14 @@
             <!-- Collect the nav links, forms, and other content for toggling -->
             <div class="collapse navbar-collapse" id = "navbar-collapse" collapse="navbarCollapsed">
               <ul class="nav navbar-nav">
-                <li data-match-route="/outages"><a ui-sref="outages" ng-click="collapseNav()">Outages</a></li>
-                <li data-match-route="/stations"><a ui-sref="stations.list" ng-click="collapseNav()">Stations</a></li>
-                <li data-match-route="/rankings*"><a ui-sref="rankings" ng-click="collapseNav()">Rankings</a></li>
-                <li data-match-route="/hotcars*"><a ui-sref="hotcars.main" ng-click="collapseNav()">HotCars</a></li>
-                <li data-match-route="/about*"><a ui-sref="about" ng-click="collapseNav()">About</a></li>
+                <li ui-sref-active="active"><a ui-sref="outages" ng-click="collapseNav()">Outages</a></li>
+                <li ui-sref-active="active"><a ui-sref="dailyservicereport" ng-click="collapseNav()">Daily Reports</a></li>
+                <li ui-sref-active="active"><a ui-sref="rankings" ng-click="collapseNav()">Rankings</a></li>
+                <li ui-sref-active="active"><a ui-sref="stations.list" ng-click="collapseNav()">Stations</a></li>
+                <li ui-sref-active="active"><a ui-sref="hotcars.main" ng-click="collapseNav()">HotCars</a></li>
+                <li ui-sref-active="active"><a ui-sref="press" ng-click="collapseNav()">Press</a></li>
+                <li ui-sref-active="active"><a ui-sref="data" ng-click="collapseNav()">Data</a></li>
+                <li ui-sref-active="active"><a ui-sref="about" ng-click="collapseNav()">About</a></li>
               </ul>
             </div><!-- /.navbar-collapse -->
           </div><!-- /.container-fluid -->
@@ -144,7 +147,6 @@
     <script src="/bower_components/angular-bootstrap/ui-bootstrap-tpls.js"></script>
     <script src="/bower_components/angular-ui-router/release/angular-ui-router.js"></script>
     <script src="/bower_components/ng-table/ng-table.js"></script>
-    <script src="/bower_components/angular-loading-bar/build/loading-bar.js"></script>
     <script src="/bower_components/spin.js/spin.js"></script>
     <script src="/bower_components/angular-spinner/angular-spinner.js"></script>
     <script src="/bower_components/angular-ui-utils/ui-utils.js"></script>
@@ -153,6 +155,7 @@
     <script src="/bower_components/cal-heatmap/cal-heatmap.js"></script>
     <script src="/bower_components/moment/moment.js"></script>
     <script src="/bower_components/moment-timezone/builds/moment-timezone-with-data-2010-2020.js"></script>
+    <script src="/bower_components/angular-loading-bar/build/loading-bar.js"></script>
     <!-- endbower -->
     <!-- endbuild -->
 
@@ -196,6 +199,11 @@
         <script src="/scripts/services/stationdata.js"></script>
         <script src="/scripts/controllers/head.js"></script>
         <script src="/scripts/services/page.js"></script>
+        <script src="/scripts/controllers/dailyservicereport.js"></script>
+        <script src="/scripts/controllers/dailyservicereportlist.js"></script>
+        <script src="/scripts/controllers/press.js"></script>
+        <script src="/scripts/controllers/mainjumbotron.js"></script>
+        <script src="/scripts/controllers/datapage.js"></script>
         <!-- endbuild -->
 
         

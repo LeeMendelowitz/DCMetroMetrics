@@ -6,6 +6,7 @@ from mongoengine import *
 from operator import attrgetter
 from ..common.metroTimes import TimeRange, UTCToLocalTime, toUtc, tzny, utcnow, dateToOpen
 from ..common.WebJSONMixin import WebJSONMixin
+from ..common.DataWriteable import DataWriteable
 from ..common.utils import gen_days
 from .defs import symptomToCategory, SYMPTOM_CHOICES
 from ..common import dbGlobals
@@ -18,7 +19,6 @@ import sys
 
 import logging
 logger = logging.getLogger('ELESApp')
-
 
 
 
@@ -405,7 +405,7 @@ class Station(WebJSONMixin, Document):
     return station_to_data
 
 
-class Unit(WebJSONMixin, Document):
+class Unit(WebJSONMixin, DataWriteable, Document):
   """
   An escalator or an elevator.
   """
@@ -425,6 +425,9 @@ class Unit(WebJSONMixin, Document):
                      'station_desc', 'esc_desc', 'unit_type',
                      'key_statuses', 'performance_summary',
                      'statuses']
+
+  data_fields = ['unit_id', 'station_code', 'station_name',
+                     'station_desc', 'esc_desc', 'unit_type']
 
   def is_elevator(self):
     return self.unit_type == 'ELEVATOR'
@@ -651,6 +654,8 @@ class Unit(WebJSONMixin, Document):
       else:
         unit_status.update_type = "Update"
 
+    # Can we use a mongodb transaction here?
+    
     # Update the end_time of the previous status.
     key_statuses.lastStatus.end_time = unit_status.time
     key_statuses.lastStatus.save()
@@ -784,126 +789,9 @@ class Unit(WebJSONMixin, Document):
 
     return docs
 
-
-#############################################
-# Old format for UnitStatus, with reference to symptoms in old format.
-class UnitStatusOld(WebJSONMixin, Document):
-  """
-  Escalator or elevator status.
-  """
-  unit = ReferenceField(Unit, required=True, db_field='escalator_id')
-  time = DateTimeField(required=True)
-  end_time = DateTimeField()
-  metro_open_time = FloatField() # Duration of status for which metro was open (seconds)
-  symptom = ReferenceField(SymptomCodeOld, required=True, db_field='symptom_code')
-  tickDelta = FloatField(required=True, default=0.0)
-
-  # Denormalized fields
-  unit_id = StringField()
-  station_code = StringField()
-  station_name = StringField()
-  station_desc = StringField()
-  esc_desc = StringField()
-  unit_type = StringField(choices=('ESCALATOR', 'ELEVATOR'))
-
-  symptom_description = StringField()
-  symptom_category = StringField(choices=SYMPTOM_CHOICES)
-
-
-
-  #######################
-
-  meta = {'collection' : 'escalator_statuses_old',
-          'index' : [('escalator_id', '-time')]}
-
-  web_json_fields = ['unit_id', 'time', 'end_time', 'metro_open_time',
-    'tickDelta', 'symptom_description', 'symptom_category']
-
-
-  def to_new_format(self):
-    """Convert to the new UnitStatus format. Leave the symptom field blank"""
-    new = UnitStatus(unit = self.unit,
-      time = self.time,
-      end_time = self.end_time,
-      metro_open_time = self.metro_open_time, 
-      symptom = None,
-      tickDelta = self.tickDelta,
-      unit_id = self.unit_id,
-      station_code = self.station_code,
-      station_name = self.station_name,
-      station_desc = self.station_desc,
-      esc_desc = self.esc_desc,
-      unit_type = self.unit_type,
-      symptom_description = self.symptom_description,
-      symptom_category = self.symptom_category)
-    return new
-
-
-  def clean(self):
-    """
-    Convert the time and end_time fields to UTC time zone.
-    """
-    self.time = toUtc(self.time, allow_naive = True)
-    if self.end_time:
-      self.end_time = toUtc(self.end_time, allow_naive = True)
-
-
-  #######################
-  def __str__(self):
-    keys = ['unit_id', 'station_name', 'station_desc', 'esc_desc', 'unit_type', 'time', 'end_time', 'metro_open_time']
-    output = '' 
-    output += '\tunit: %s\n'%self.unit_id
-    output += '\tsymptom: %s\n'%self.symptom.description
-    for k in keys:
-      output += '\t%s: %s\n'%(k, getattr(self,k, 'N/A'))
-    return output
-
-  def denormalize(self):
-    """
-    Denormalize by grabbing fields from unit data and symptom data.
-    """
-    unit = self.unit
-    symptom = self.symptom
-
-    self.unit_id = unit.unit_id
-    self.station_code = unit.station_code
-    self.station_name = unit.station_name
-    self.station_desc = unit.station_desc
-    self.esc_desc = unit.esc_desc
-    self.unit_type = unit.unit_type
-
-    self.symptom_description = symptom.description
-    self.symptom_category = symptom.category
-
-  def compute_metro_open_time(self):
-    """
-    Compute the amount of time for which Metro was open that this status
-    lasted. 
-    """
-    start_time = UTCToLocalTime(self.time)
-    end_time = getattr(self, 'end_time', None)
-    if end_time:
-      end_time = UTCToLocalTime(end_time)
-      time_range = TimeRange(start_time, end_time)
-      self.metro_open_time = time_range.metroOpenTime
-
-  def _add_timezones(self):
-    """
-    Make the time and end_time fields non-naive timezones,
-    in UTC.
-
-    Timezones are stored as naive UTC datetimes in database,
-    but should be used in application logic as non-naive datetimes,
-    (i.e. they shoudl have UTC timezone.)
-    """
-    self.time = toUtc(self.time, allow_naive = True)
-    end_time = getattr(self, 'end_time', None)
-    if end_time:
-      self.end_time = toUtc(self.end_time, allow_naive = True)
-
 #############################################
 # New format for UnitStatus, with reference to symptoms in new format.
-class UnitStatus(WebJSONMixin, Document):
+class UnitStatus(WebJSONMixin, DataWriteable, Document):
   """
   Escalator or elevator status.
   """
@@ -927,19 +815,20 @@ class UnitStatus(WebJSONMixin, Document):
 
   update_type = StringField(choices = ('Off', 'On', 'Break', 'Fix', 'Update'))
 
-
-
   #######################
 
   meta = {'collection' : 'escalator_statuses',
-          'index' : [('escalator_id', '-time'),
+          'indexes' : [('unit_id', '-time'),
                      ('station_code', '-time'),
-                     ('time', 'end_time'),
+                     ('time', 'end_time')
                     ]}
 
   web_json_fields = ['unit_id', 'time', 'end_time', 'metro_open_time',
     'update_type',
     'tickDelta', 'symptom_description', 'symptom_category']
+
+  data_fields = ['unit_id', 'time', 'end_time', 'metro_open_time',
+    'update_type', 'symptom_description', 'symptom_category']
 
   def clean(self):
     """

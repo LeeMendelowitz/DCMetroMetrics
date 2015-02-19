@@ -4,6 +4,7 @@ Models for HotCars app.
 
 from mongoengine import *
 from ..common.WebJSONMixin import WebJSONMixin
+from ..common.DataWriteable import DataWriteable
 from ..common.metroTimes import utcnow, tzutc
 
 from datetime import timedelta, datetime, date
@@ -96,7 +97,7 @@ class HotCarTweet(WebJSONMixin, Document):
       self.handle = user_doc.handle
     self.save()
 
-class HotCarReport(WebJSONMixin, Document):
+class HotCarReport(WebJSONMixin, DataWriteable, Document):
   """Information on a hot car parsed from a tweet.
   The tweet is given by tweet_id.
   """
@@ -113,10 +114,25 @@ class HotCarReport(WebJSONMixin, Document):
   meta = {'collection' : 'hotcars',
           'indexes': [('car_number', '-time'),
                       ('tweet'),
-                      ('handle', '-time')]}
+                      ('handle', '-time'),
+                       'time']}
 
   web_json_fields = ['car_number', 'color', 'time', 'tweet']
 
+  data_fields = ['car_number', 'color',
+   'time',
+   'text',
+   'handle', 'user_id', 'tweet_id']
+
+  def clean(self):
+    """Convert time to UTC"""
+    self.time = self.time.replace(tzinfo = tzutc)
+    return self
+
+  @property
+  def tweet_id(self):
+    return self.tweet.tweet_id
+  
   @classmethod
   def reports_for_car(cls, car_number):
     reports = list(cls.objects(car_number = car_number).order_by('-time').select_related())

@@ -17,8 +17,11 @@ var app = angular
     'ngSanitize',
     'ngTouch',
     'mgcrea.ngStrap',
-    'mgcrea.ngStrap.helpers.dimensions',
-    'mgcrea.ngStrap.scrollspy',
+    // 'mgcrea.ngStrap.helpers.dimensions',
+    // 'mgcrea.ngStrap.scrollspy',
+    // 'mgcrea.ngStrap.tooltip',
+    // 'mgcrea.ngStrap.helpers.dateParser',
+    // 'mgcrea.ngStrap.datepicker',
     'ui.bootstrap',
     'ngTable',
     'angular-loading-bar',
@@ -34,10 +37,15 @@ app.config(function($locationProvider) {
   });
 });
   
-app.config(function($stateProvider, $urlRouterProvider) {
-  //
+app.config(function($stateProvider, $urlRouterProvider, $urlMatcherFactoryProvider) {
+  
+
   // For any unmatched url, redirect to /state1
   $urlRouterProvider.otherwise("/home");
+
+  // Do not require trailing slashes
+  $urlMatcherFactoryProvider.strictMode(false);
+
   //
   // Now set up the states
   $stateProvider
@@ -72,6 +80,7 @@ app.config(function($stateProvider, $urlRouterProvider) {
     .state('outages.elevators', {
       url: "/elevators",
     })
+
     .state('stations', {
       abstract: true,
       url: '/stations',
@@ -139,6 +148,26 @@ app.config(function($stateProvider, $urlRouterProvider) {
       templateUrl: '/views/rankings.html',
       controller: 'RankingsCtrl',
       reloadOnSearch: false // Search params will change frequently in this state as filters are applied to the rankings table.
+    })
+    // Was having trouble here, needed the abstract parent view to get
+    // this to work!
+    .state('dailyservicereport', {
+      url: '/dailyservicereport/:day',
+      templateUrl: '/views/dailyservicereport.html',
+      controller: 'DailyServiceReportCtrl',
+      params : {
+        day: moment().startOf("day").subtract(1, "day").format("YYYY_MM_DD") // default value
+      }
+    })
+    .state('press', {
+      url: '/press',
+      templateUrl: '/views/press.html',
+      controller: 'PressCtrl'
+    })
+    .state('data', {
+      url: '/data',
+      templateUrl: 'views/data.html',
+      controller: 'DataPageCtrl'
     });
 
 });
@@ -158,3 +187,21 @@ app.run(
     }
   ]
 );
+
+app.run(['$anchorScroll', function($anchorScroll) {
+  $anchorScroll.yOffset = 60;   // always scroll by 50 extra pixels
+}]);
+
+// Hack to fix date picker
+// https://github.com/angular-ui/bootstrap/issues/2659
+app.directive('datepickerPopup', function (){
+  return {
+    restrict: 'EAC',
+    require: 'ngModel',
+    link: function(scope, element, attr, controller) {
+      //remove the default formatter from the input directive to prevent conflict
+      controller.$formatters.shift();
+    }
+  }
+})
+

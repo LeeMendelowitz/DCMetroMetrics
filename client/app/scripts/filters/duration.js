@@ -39,9 +39,10 @@ angular.module('dcmetrometricsApp')
       if (hours) {
         ret = ret + " " + hours + "h";
       }
-      if (minutes) {
-        ret = ret + " " + minutes + "m";
-      }
+
+      ret = ret + " " + minutes + "m";
+      
       return ret;
+      
     };
   });

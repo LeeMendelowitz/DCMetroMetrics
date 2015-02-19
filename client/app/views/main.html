@@ -24,21 +24,45 @@
     <h1>DC Metro Metrics</h1>
 
     <h3>Tracking escalator outages, elevator breakdowns, and 
-    <a href="https://twitter.com/idiot3qu3/statuses/493882919341940736" target="_blank">#wmata</a> 
-    <a href="https://twitter.com/be_rettDC/statuses/361835301057998848" target="_blank">#hotcar</a>'s since 2013.</h3>
-
-    <br><br>
-
+      <a href="https://twitter.com/idiot3qu3/statuses/493882919341940736" target="_blank">#wmata</a> 
+      <a href="https://twitter.com/be_rettDC/statuses/361835301057998848" target="_blank">#hotcar</a>'s since 2013.</h3>
     <a ui-sref="outages.escalators" class="btn btn-primary btn-lg" role="button">{{ escalatorOutages.length}} Escalator Outages</a>
-
     <a ui-sref="outages.elevators" class="btn btn-warning btn-lg" role="button">{{ elevatorOutages.length}} Elevator Outages</a>
-    
   </div>
+
 </div>
 
-<div class="container">
+<div class="container" >
 
-  <div class="row">
+  <div class="row" ng-controller="MainJumbotronCtrl">
+      <h3>New Features!</h3>
+      <ul>
+        <li>
+          <a ui-sref="dailyservicereport">Daily Escalator/Elevator Service Reports</a>
+          <span class="label label-success">New!</span>
+        </li>
+
+        <li>
+          <a ui-sref="hotcars.main.timeseries">HotCars Visualization</a>
+          <span class="label label-success">New!</span>
+        </li>
+
+        <li>
+          <a ui-sref="unit.calendar( {unitId: 'F06S03ESCALATOR'})">Unit Outage Calendars</a>
+          <span class="label label-success">New!</span>
+        </li>
+
+        <li><a href="#dcmm-escalator-outage-calendar" ng-click="goToOutageCalendar()">System Outage Calendars (see below)</a>
+        <span class="label label-success">New!</span>
+
+        </li>
+
+      </ul>
+    </div>
+
+
+
+  <div class="row" id="dcmm-escalator-outage-calendar">
     <unit-calendar-heatmap
       type='break'
       unitid='daily-outage-count-escalators'

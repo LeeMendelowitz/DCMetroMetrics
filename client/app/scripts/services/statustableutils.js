@@ -20,17 +20,6 @@ angular.module('dcmetrometricsApp')
           REHAB : 'info'
     };
 
-    var now = new Date();
-
-    var getNow = function() {
-      var newNow = new Date();
-      var isStale = (newNow - now) < 60*1000;
-      if (isStale) {
-        now = newNow;
-      }
-      return now;
-    };
-
     
     this.getRowClass = function(status) {
         var category = status.symptom_category;
@@ -38,7 +27,7 @@ angular.module('dcmetrometricsApp')
     };
 
     this.getDuration = function(status) {
-      var end_time = status.end_time ? new Date(status.end_time) : getNow();
+      var end_time = status.end_time ? new Date(status.end_time) : new Date();
       var start_time = new Date(status.time);
       var duration = end_time - start_time;
       return duration;
@@ -46,7 +35,7 @@ angular.module('dcmetrometricsApp')
 
     this.getTimeSince = function(status) {
       var start_time = new Date(status.time);
-      var timeSince = getNow() - start_time;
+      var timeSince = (new Date()) - start_time;
       return timeSince;
     };
 

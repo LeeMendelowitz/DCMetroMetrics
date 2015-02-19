@@ -8,7 +8,7 @@
  * Factory in the dcmetrometricsApp.
  */
 angular.module('dcmetrometricsApp')
-  .factory('UnitStatus', function () {
+  .factory('UnitStatus', ['$filter', function ($filter) {
 
     // Service logic
     // ...
@@ -18,7 +18,9 @@ angular.module('dcmetrometricsApp')
 
       this.unit_id = data.unit_id;
       this.time = data.time;
-      this.end_time = data.end_time || moment();
+      this.is_active = (this.end_time == null);
+      this.actual_end_time = data.end_time;
+      this.end_time = data.end_time || moment(); // Hack to make end_time now.
       this.metro_open_time = data.metro_open_time;
       this.update_type = data.update_type;
       this.symptom_description = data.symptom_description;
@@ -26,8 +28,10 @@ angular.module('dcmetrometricsApp')
 
       // Convert times to moments with the East coast time zone
       this.end_time = moment.tz(this.end_time, zone);
+      this.actual_end_time = this.actual_end_time && moment.tz(this.actual_end_time, zone);
       this.time = moment.tz(this.time, zone);
       this.start_time = this.time; 
+      this.duration = this.end_time - this.start_time;
 
     };
 
@@ -68,4 +72,4 @@ angular.module('dcmetrometricsApp')
     // Public API here
     return UnitStatus;
 
-  });
+  }]);
