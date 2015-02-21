@@ -1,0 +1,75 @@
+@media (max-width:991px) {
+.bs-sidebar.affix {
+    position:static!important
+}
+}
+
+.bs-sidenav {
+    margin-top:40px;
+    margin-bottom:20px;
+    width:124px
+}
+
+.bs-sidebar .nav>li>a {
+    display:block;
+    font-size:13px;
+    font-weight:500;
+    color:#999;
+    padding:4px 15px;
+    text-align:right
+}
+
+.bs-sidebar .nav>li>a:focus,.bs-sidebar .nav>li>a:hover {
+    padding-right:14px;
+    color:#b94846;
+    text-decoration:none;
+    background-color:transparent;
+    border-right:1px solid #b94846
+}
+
+.bs-sidebar .nav>.active:focus>a,.bs-sidebar .nav>.active:hover>a,.bs-sidebar .nav>.active>a {
+    padding-right:13px;
+    font-weight:700;
+    color:#b94846;
+    background-color:transparent;
+    border-right:2px solid #b94846
+}
+
+.bs-sidebar .nav .nav {
+    display:none;
+    padding-bottom:10px
+}
+
+.bs-sidebar .nav .nav>li>a {
+    padding-top:2px;
+    padding-bottom:2px;
+    padding-right:30px;
+    font-size:12px;
+    font-weight:400
+}
+
+.bs-sidebar .nav .nav>li>a:focus,.bs-sidebar .nav .nav>li>a:hover {
+    padding-right:29px
+}
+
+.bs-sidebar .nav .nav>.active:focus>a,.bs-sidebar .nav .nav>.active:hover>a,.bs-sidebar .nav .nav>.active>a {
+    font-weight:500;
+    padding-right:28px
+}
+
+@media (min-width:992px) {
+.bs-sidebar .nav>.active>ul {
+    display:block
+}
+
+.bs-sidebar.affix .bs-sidenav,.bs-sidebar.affix-bottom .bs-sidenav {
+    margin-top:0;
+    margin-bottom:0
+}
+}
+
+@media (min-width:1200px) {
+.bs-sidebar {
+    margin-right:30px
+}
+}

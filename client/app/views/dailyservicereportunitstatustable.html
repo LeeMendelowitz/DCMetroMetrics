@@ -1,0 +1,42 @@
+<table class="table table-condensed table-striped table-bordered" ng-hide="no_escalator_broken" ts-wrapper>
+  <thead>
+    <tr>
+      <th>Item</th>
+      <th class="col-sm-2" ts-criteria="unit_id">Unit</th>
+      <th class="col-sm-4">Description</th>
+      <th class="col-sm-2" ts-criteria="symptom_description">Status</th>
+      <th class="col-sm-1" ts-criteria="update_type">Type</th>
+      <th class="col-sm-1" ts-criteria="time" ts-default>Start</th>
+      <th class="col-sm-1" ts-criteria="actual_end_time">End</th>
+      <th class="col-sm-1" ts-criteria="duration">Duration</th>
+    </tr>
+  </thead>
+
+  <tbody>
+
+    <tr ng-repeat="status in statuses | orderBy:'time'" ng-controller="StatusentryCtrl" ts-repeat>
+
+      <td>{{ $index }}</td>
+      <td>
+        <a ui-sref="unit({unitId: unit.unit_id})">{{ status.unit_id | unitIdToHuman }}</a> 
+      </td>
+
+      <td>
+
+        <a ui-sref="stations.detail({station: directory.getStationShortName(unit)})">
+        {{ directory.getStationName(directory.unitFromStatus(status)) }}
+        <lineColors lines="{{directory.getStationLinesForStatus(status).join()}}"></lineColors>
+        </a>
+        <br>
+        {{ directory.unitDescription(unit) }}
+
+      </td>
+      <td>{{ status.symptom_description | capFirst }}</td>
+      <td>{{ status.update_type }}</td>
+      <td>{{ status.time.format("MM/DD/YY h:mm A") }}</td>
+      <td>{{ status.actual_end_time.format("MM/DD/YY h:m A") }}</td>
+      <td>{{ status.duration | duration }}</td>
+    </tr>
+  </tbody>
+
+</table>

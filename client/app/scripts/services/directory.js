@@ -64,6 +64,14 @@ angular.module('dcmetrometricsApp')
 
           var i, unit;
 
+          if(!d) {  
+            deferred.reject();
+            return;
+          } else if (angular.equals({}, d)) {
+            deferred.reject();
+            return;
+          }
+
           stationDirectory = convertStationDirectory(d);
 
           // Populate shortNameToData;

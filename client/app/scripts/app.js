@@ -17,13 +17,13 @@ var app = angular
     'ngSanitize',
     'ngTouch',
     'mgcrea.ngStrap',
-    // 'mgcrea.ngStrap.helpers.dimensions',
-    // 'mgcrea.ngStrap.scrollspy',
-    // 'mgcrea.ngStrap.tooltip',
-    // 'mgcrea.ngStrap.helpers.dateParser',
-    // 'mgcrea.ngStrap.datepicker',
+    'mgcrea.ngStrap.helpers.dimensions',
+    'mgcrea.ngStrap.scrollspy',
+    'mgcrea.ngStrap.tooltip',
+    'mgcrea.ngStrap.helpers.debounce',
     'ui.bootstrap',
     'ngTable',
+    'tableSort',
     'angular-loading-bar',
     'angularSpinner',
     'ui.utils',
@@ -154,10 +154,7 @@ app.config(function($stateProvider, $urlRouterProvider, $urlMatcherFactoryProvid
     .state('dailyservicereport', {
       url: '/dailyservicereport/:day',
       templateUrl: '/views/dailyservicereport.html',
-      controller: 'DailyServiceReportCtrl',
-      params : {
-        day: moment().startOf("day").subtract(1, "day").format("YYYY_MM_DD") // default value
-      }
+      controller: 'DailyServiceReportCtrl'
     })
     .state('press', {
       url: '/press',
@@ -166,7 +163,7 @@ app.config(function($stateProvider, $urlRouterProvider, $urlMatcherFactoryProvid
     })
     .state('data', {
       url: '/data',
-      templateUrl: 'views/data.html',
+      templateUrl: '/views/data.html',
       controller: 'DataPageCtrl'
     });
 
