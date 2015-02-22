@@ -145,7 +145,7 @@ class DataWriter(object):
 
       keys = None
       
-      reports = SystemServiceReport.objects.timeout(False).order_by('time').no_cache()
+      reports = SystemServiceReport.objects.timeout(False).order_by('day').no_cache()
       for report in reports:
         report_data = report.to_data_record()
         if not keys:
@@ -170,7 +170,7 @@ class DataWriter(object):
 
       keys = None
       
-      reports = DailyServiceReport.objects.timeout(False).order_by('time').no_cache()
+      reports = DailyServiceReport.objects.timeout(False).order_by('day').no_cache()
       for report in reports:
         report_data = report.to_data_record()
         if not keys:
