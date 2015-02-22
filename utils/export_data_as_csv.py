@@ -9,6 +9,7 @@ dbGlobals.connect()
 import sys, os
 from datetime import datetime, date, timedelta
 from operator import attrgetter
+import shutil
 # gc.set_debug(gc.DEBUG_STATS)
 
 from dcmetrometrics.eles.models import Unit, SymptomCode, UnitStatus, SystemServiceReport
@@ -47,6 +48,43 @@ def run():
   logger.info("Writing hotcars...")
   dwriter.write_hot_cars()
   logger.info("done.")
+
+  logger.info("Writing stations...")
+  dwriter.write_stations()
+  logger.info("done")
+
+  logger.info("Writing daily system report...")
+  dwriter.write_system_daily_service_report()
+  logger.info("done")
+
+  logger.info("Writing daily unit report...")
+  dwriter.write_unit_daily_service_report()
+  logger.info("done")
+
+  # Write a timestamp
+  dwriter.write_timestamp()
+
+  # Now copy the tree
+  logger.info("copying output directory...")
+  tree_to_zip = os.path.join(dwriter.outdir, 'dcmetrometrics')
+  shutil.copytree(dwriter.outdir, tree_to_zip)
+
+
+  logger.info("making archive...")
+
+  # and zip it
+  output_file = shutil.make_archive('dcmetrometrics', 'zip', root_dir = dwriter.outdir,
+    base_dir = 'dcmetrometrics')
+
+  logger.info('writing to %s', dest)
+  dest = os.path.join(dwriter.outdir, 'dcmetrometrics.zip')
+  shutil.move(output_file, dest)
+
+  logger.info('cleaning up...')
+  shutil.rmtree(tree_to_zip)
+
+
+
 
 
 if __name__ == '__main__':

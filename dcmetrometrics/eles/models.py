@@ -270,7 +270,7 @@ class SymptomCode(Document):
     except NotUniqueError:
       pass
 
-class Station(WebJSONMixin, Document):
+class Station(WebJSONMixin, DataWriteable, Document):
   """
   A WMATA Station
   """
@@ -282,13 +282,46 @@ class Station(WebJSONMixin, Document):
   all_lines = ListField(StringField(choices = ('RD', 'OR', 'YL', 'GR', 'BL', 'SV'))) # Lines for all platforms at this station
   all_codes = ListField(StringField()) # Station codes for all the platforms at this station
   
+  web_json_fields = ['code', 'long_name', 'short_name',
+                     'lines', 'all_lines', 'all_codes']
+
+
+  data_fields = ['code', 'long_name', 'short_name',
+                     'medium_name',  'line_code1',
+                     'line_code2','line_code3','line_code4',
+                     'line_code5', 'station_code1', 'station_code2']
 
   meta = {'collection' : 'stations',
           'indexes': ['long_name']}
 
-  web_json_fields = ['code', 'long_name', 'short_name',
-                     'medium_name', 'lines', 'all_lines', 'all_codes']
 
+  @property
+  def line_code1(self):
+    return self.all_lines[0]
+
+  @property
+  def line_code2(self):
+    return self.all_lines[1] if len(self.all_lines) > 1 else None
+
+  @property
+  def line_code3(self):
+    return self.all_lines[2] if len(self.all_lines) > 2 else None
+
+  @property
+  def line_code4(self):
+    return self.all_lines[3] if len(self.all_lines) > 3 else None
+
+  @property
+  def line_code5(self):
+    return self.all_lines[4] if len(self.all_lines) > 4 else None
+
+  @property
+  def station_code1(self):
+    return self.all_codes[0]
+
+  @property
+  def station_code2(self):
+    return self.all_codes[1] if len(self.all_codes) > 1 else None
 
   def get_shared_stations(self):
     """Get stations that are shared with this one. Return as a list,
@@ -905,7 +938,7 @@ class UnitStatus(WebJSONMixin, DataWriteable, Document):
       return self.time
 
 
-class DailyServiceReport(WebJSONMixin, Document):
+class DailyServiceReport(WebJSONMixin, DataWriteable, Document):
   """A daily service report for a unit.
   Compute availability, outage statuses, inspection statuses,
   etc for a Metro Day
@@ -932,6 +965,8 @@ class DailyServiceReport(WebJSONMixin, Document):
   web_json_fields = ['unit_id', 'day', 'availability', 'broken_time_percentage',
   'num_breaks', 'num_inspections', 'num_fixes', 'statuses']
 
+  data_fields = ['unit_id', 'day', 'availability', 'broken_time_percentage',
+  'num_breaks', 'num_inspections', 'num_fixes']
 
   @classmethod
   def compute_for_unit(cls, unit, day, statuses = None):
@@ -956,7 +991,7 @@ class DailyServiceReport(WebJSONMixin, Document):
 
     return ret
 
-class UnitTypeServiceReport(WebJSONMixin, EmbeddedDocument):
+class UnitTypeServiceReport(WebJSONMixin, DataWriteable, EmbeddedDocument):
 
   availability = FloatField(required = True)
   broken_time_percentage = FloatField(required = True)
@@ -970,6 +1005,8 @@ class UnitTypeServiceReport(WebJSONMixin, EmbeddedDocument):
   web_json_fields = ['availability', 'broken_time_percentage',
     'num_breaks', 'num_inspections', 'num_fixes', 'statuses', 'num_units']
 
+  data_fields = ['availability', 'broken_time_percentage',
+    'num_breaks', 'num_inspections', 'num_fixes', 'num_units']
 
   @classmethod
   def from_daily_service_reports(cls, reports):
@@ -991,7 +1028,7 @@ class UnitTypeServiceReport(WebJSONMixin, EmbeddedDocument):
     return doc
 
 
-class SystemServiceReport(WebJSONMixin, Document):
+class SystemServiceReport(WebJSONMixin, DataWriteable, Document):
   """A daily service report for the system
   Compute availability, outage statuses, inspection statuses,
   etc for a Metro Day
@@ -1006,9 +1043,13 @@ class SystemServiceReport(WebJSONMixin, Document):
   escalators = EmbeddedDocumentField(UnitTypeServiceReport)
   elevators = EmbeddedDocumentField(UnitTypeServiceReport)
 
+
   meta = { 'indexes' : ['day']  }
 
   web_json_fields = ['day', 'escalators', 'elevators']
+
+  data_fields = ['day', 'escalators', 'elevators']
+
 
   @classmethod
   def compute_for_day(cls, day, reports = None, save = True):

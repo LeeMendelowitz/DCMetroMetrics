@@ -5,7 +5,7 @@ def convert(k, v):
   """Convert a k,v pair into a dictionary.
   If v is a dictionary, it will be flattened
   """
-  if isinstance(v, (int, float, str, unicode)) or v is None:
+  if isinstance(v, (int, float, str, unicode, list)) or v is None:
     return {k: v}
   elif isinstance(v, long):
     return {k: unicode(v)} # Return as unicode to prevent loss of precision
@@ -17,6 +17,14 @@ def convert(k, v):
       k3 = '%s_%s'%(k, k2) # flatten the keys
       ret.update(convert(k3, v2))
     return ret
+  elif isinstance(v, DataWriteable):
+    ret = {}
+    dr = v.to_data_record()
+    for k2, v2 in dr.iteritems():
+      k3 = '%s_%s'%(k, k2) # flatten the keys
+      ret.update(convert(k3, v2))
+    return ret
+
   raise TypeError("Cannot convert value of %s"%type(v))
 
 class DataWriteable(object):
