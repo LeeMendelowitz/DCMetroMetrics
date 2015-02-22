@@ -27,13 +27,15 @@ angular.module('dcmetrometricsApp')
 
         // I think we need to strip timezone to get this to work.
         var now = moment().tz(zone);
-        var day_start = moment().tz(zone).hour(7).minute(0).second(0);
+        var day_start = moment().tz(zone).hour(8).minute(0).second(0); // Give the crontab time to run
+
         if(now > day_start) {
-          // Can use today
-          return day_start.startOf('day').toDate();
+          // Can use yesterday
+          return day_start.startOf('day').subtract(1, "day").toDate();
         }
 
-        return day_start.subtract(1, "day").startOf('day').toDate();
+        // Have to use two days ago
+        return day_start.subtract(2, "day").startOf('day').toDate();
 
       };
 
