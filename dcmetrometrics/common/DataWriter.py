@@ -11,7 +11,7 @@ from collections import defaultdict
 from ..eles.models import (Unit, UnitStatus, KeyStatuses, Station, DailyServiceReport, SystemServiceReport)
 from ..hotcars.models import HotCarReport
 from ..hotcars.models import (HotCarReport, Temperature)
-from ..common.metroTimes import tzutc, isNaive, toUtc
+from ..common.metroTimes import tzutc, isNaive, toUtc, utcnow
 
 def s(v):
   if v is None:
@@ -44,9 +44,7 @@ class DataWriter(object):
     outpath = os.path.join(outdir, fname)
 
     with open(outpath, 'w') as fout:
-
-      now = datetime.now()
-      fout.write(now.isoformat() + '\n')
+      fout.write(utcnow().isoformat() + '\n')
 
   
   def write_units(self):

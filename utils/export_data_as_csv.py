@@ -13,11 +13,13 @@ import shutil
 # gc.set_debug(gc.DEBUG_STATS)
 
 from dcmetrometrics.eles.models import Unit, SymptomCode, UnitStatus, SystemServiceReport
-from dcmetrometrics.common.globals import WWW_DIR
+from dcmetrometrics.common.globals import (WWW_DIR, REPO_DIR)
 from dcmetrometrics.common.DataWriter import DataWriter
 
 import argparse
 parser = argparse.ArgumentParser(description='Export CSV data.')
+parser.add_argument('--no-write', action = 'store_true',
+                   help='Do not write database .csv files - use existing instead.')
 
 
 ##########################################
@@ -33,58 +35,66 @@ logger_eles = logging_utils.create_logger("ELESApp")
 #########################################
 
 
-def run():
+def run(no_write = False):
 
   dwriter = DataWriter(WWW_DIR)
+  OUT_DIR = dwriter.outdir
 
-  logger.info("Writing units...")
-  dwriter.write_units()
-  logger.info("done.")
+  if not no_write:
+    logger.info("Writing units...")
+    dwriter.write_units()
+    logger.info("done.")
 
-  logger.info("Writing unit statuses...")
-  dwriter.write_unit_statuses()
-  logger.info("done.")
+    logger.info("Writing unit statuses...")
+    dwriter.write_unit_statuses()
+    logger.info("done.")
 
-  logger.info("Writing hotcars...")
-  dwriter.write_hot_cars()
-  logger.info("done.")
+    logger.info("Writing hotcars...")
+    dwriter.write_hot_cars()
+    logger.info("done.")
 
-  logger.info("Writing stations...")
-  dwriter.write_stations()
-  logger.info("done")
+    logger.info("Writing stations...")
+    dwriter.write_stations()
+    logger.info("done")
 
-  logger.info("Writing daily system report...")
-  dwriter.write_system_daily_service_report()
-  logger.info("done")
+    logger.info("Writing daily system report...")
+    dwriter.write_system_daily_service_report()
+    logger.info("done")
 
-  logger.info("Writing daily unit report...")
-  dwriter.write_unit_daily_service_report()
-  logger.info("done")
+    logger.info("Writing daily unit report...")
+    dwriter.write_unit_daily_service_report()
+    logger.info("done")
 
   # Write a timestamp
   dwriter.write_timestamp()
 
+  # Copy the readme
+  readme = os.path.join(REPO_DIR, 'data', 'data_readme.md')
+  readme_target = os.path.join(OUT_DIR, 'README.md')
+  shutil.copy(readme, readme_target)
+
+  # Copy the license
+  license = os.path.join(REPO_DIR, 'data', 'odbl-10.txt')
+  shutil.copy(license, os.path.join(OUT_DIR, "LICENSE"))
+
   # Now copy the tree
   logger.info("copying output directory...")
-  tree_to_zip = os.path.join(dwriter.outdir, 'dcmetrometrics')
-  shutil.copytree(dwriter.outdir, tree_to_zip)
+  tree_to_zip = os.path.join(OUT_DIR, 'dcmetrometrics')
+  shutil.rmtree(tree_to_zip, ignore_errors = True)
+  shutil.copytree(OUT_DIR, tree_to_zip)
 
-
+  # zip the copied tree
   logger.info("making archive...")
-
-  # and zip it
   output_file = shutil.make_archive('dcmetrometrics', 'zip', root_dir = dwriter.outdir,
     base_dir = 'dcmetrometrics')
 
+  dest = os.path.join(OUT_DIR, 'dcmetrometrics.zip')
   logger.info('writing to %s', dest)
-  dest = os.path.join(dwriter.outdir, 'dcmetrometrics.zip')
   shutil.move(output_file, dest)
 
+  # delete the copied tree
   logger.info('cleaning up...')
   shutil.rmtree(tree_to_zip)
-
-
-
 
 
 if __name__ == '__main__':
@@ -92,7 +102,7 @@ if __name__ == '__main__':
   args = parser.parse_args()
 
   start_time = datetime.now()
-  run()
+  run(args.no_write)
   end_time = datetime.now()
 
   run_time = (end_time - start_time).total_seconds()

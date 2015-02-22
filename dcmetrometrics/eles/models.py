@@ -287,41 +287,38 @@ class Station(WebJSONMixin, DataWriteable, Document):
 
 
   data_fields = ['code', 'long_name', 'short_name',
-                     'medium_name',  'line_code1',
-                     'line_code2','line_code3','line_code4',
-                     'line_code5', 'station_code1', 'station_code2']
+                     'line_code1',
+                     'line_code2','line_code3',
+                     'other_station_code']
 
   meta = {'collection' : 'stations',
           'indexes': ['long_name']}
 
+  @property
+  def other_lines(self):
+    return [l for l in all_lines if l not in lines]
 
   @property
+  def other_station_code(self):
+    if len(self.all_codes) > 1:
+      return [c for c in self.all_codes if c != self.code][0]
+    else:
+      return None
+
+  # Line codes belong to this station platform
+  @property
   def line_code1(self):
-    return self.all_lines[0]
+    return self.lines[0]
 
   @property
   def line_code2(self):
-    return self.all_lines[1] if len(self.all_lines) > 1 else None
+    return self.lines[1] if len(self.lines) > 1 else None
 
   @property
   def line_code3(self):
-    return self.all_lines[2] if len(self.all_lines) > 2 else None
+    return self.lines[2] if len(self.lines) > 2 else None
 
-  @property
-  def line_code4(self):
-    return self.all_lines[3] if len(self.all_lines) > 3 else None
 
-  @property
-  def line_code5(self):
-    return self.all_lines[4] if len(self.all_lines) > 4 else None
-
-  @property
-  def station_code1(self):
-    return self.all_codes[0]
-
-  @property
-  def station_code2(self):
-    return self.all_codes[1] if len(self.all_codes) > 1 else None
 
   def get_shared_stations(self):
     """Get stations that are shared with this one. Return as a list,
