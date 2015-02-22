@@ -35,7 +35,7 @@ module.exports = function (grunt) {
     }
     grunt.log.write('Have ' + urls_for_snapshots.length + ' urls.\n');
     return urls_for_snapshots;
-  }
+  };
 
   grunt.log.write("WWWDIR: ", process.env.WWW_DIR, '\n');
 

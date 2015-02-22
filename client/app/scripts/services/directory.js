@@ -294,9 +294,12 @@ angular.module('dcmetrometricsApp')
           .success( function(d) {
 
             var data = d.daily_sytem_service_report;
-            data.escalators.statuses = data.escalators.statuses.map(function(s) { return new UnitStatus(s) }); 
-            data.elevators.statuses = data.elevators.statuses.map(function(s) { return new UnitStatus(s) }); 
+
+            data.escalators.statuses = data.escalators.statuses.map(function(s) { return new UnitStatus(s); }); 
+            data.elevators.statuses = data.elevators.statuses.map(function(s) { return new UnitStatus(s); }); 
+            
             deferred.resolve(data);
+
           })
           .error (function() {
             deferred.reject();

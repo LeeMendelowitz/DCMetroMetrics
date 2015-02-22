@@ -41,6 +41,7 @@ def run(no_write = False):
   OUT_DIR = dwriter.outdir
 
   if not no_write:
+
     logger.info("Writing units...")
     dwriter.write_units()
     logger.info("done.")
@@ -77,6 +78,12 @@ def run(no_write = False):
   license = os.path.join(REPO_DIR, 'data', 'odbl-10.txt')
   shutil.copy(license, os.path.join(OUT_DIR, "LICENSE"))
 
+  # If the zip file already exists in the tree, delete it
+  zip_file = os.path.join(OUT_DIR, 'dcmetrometrics.zip')
+  if os.path.exists(zip_file):
+    logger.info('Deleting existing zip file: %s', zip_file)
+    os.unlink(zip_file)
+
   # Now copy the tree
   logger.info("copying output directory...")
   tree_to_zip = os.path.join(OUT_DIR, 'dcmetrometrics')
@@ -88,9 +95,8 @@ def run(no_write = False):
   output_file = shutil.make_archive('dcmetrometrics', 'zip', root_dir = dwriter.outdir,
     base_dir = 'dcmetrometrics')
 
-  dest = os.path.join(OUT_DIR, 'dcmetrometrics.zip')
-  logger.info('writing to %s', dest)
-  shutil.move(output_file, dest)
+  logger.info('writing to %s', zip_file)
+  shutil.move(output_file, zip_file)
 
   # delete the copied tree
   logger.info('cleaning up...')

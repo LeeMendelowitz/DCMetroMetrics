@@ -199,6 +199,6 @@ app.directive('datepickerPopup', function (){
       //remove the default formatter from the input directive to prevent conflict
       controller.$formatters.shift();
     }
-  }
-})
+  };
+});
 

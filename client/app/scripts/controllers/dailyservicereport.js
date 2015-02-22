@@ -35,7 +35,7 @@ angular.module('dcmetrometricsApp')
 
         return day_start.subtract(1, "day").startOf('day').toDate();
 
-      }
+      };
 
       $scope.minDate = moment().tz(zone).month(5).day(1).year(2013).startOf('day').toDate(); // June 1. Months are zero indexed!
       $scope.maxDate = computeMaxDate(); // Last day we should have data for.
@@ -71,7 +71,7 @@ angular.module('dcmetrometricsApp')
           $scope.dt_input = moment($scope.dt).format("M/D/YY");
           $scope.submitDate();
         }
-      }
+      };
 
       var inputTimer;
       $scope.$watch('dt_picker', function(newVal) {
@@ -158,13 +158,13 @@ angular.module('dcmetrometricsApp')
           $scope.escalators = split_statuses(data.escalators.statuses);
           $scope.elevators = split_statuses(data.elevators.statuses);
 
-          $scope.no_escalator_broken = $scope.escalators.broken.length == 0;
-          $scope.no_escalator_inspection = $scope.escalators.inspections.length == 0;
-          $scope.no_escalator_off = $scope.escalators.off.length == 0;
+          $scope.no_escalator_broken = $scope.escalators.broken.length === 0;
+          $scope.no_escalator_inspection = $scope.escalators.inspections.length === 0;
+          $scope.no_escalator_off = $scope.escalators.off.length === 0;
 
-          $scope.no_elevator_broken = $scope.elevators.broken.length == 0;
-          $scope.no_elevator_inspection = $scope.elevators.inspections.length == 0;
-          $scope.no_elevator_off = $scope.elevators.off.length == 0;
+          $scope.no_elevator_broken = $scope.elevators.broken.length === 0;
+          $scope.no_elevator_inspection = $scope.elevators.inspections.length === 0;
+          $scope.no_elevator_off = $scope.elevators.off.length === 0;
 
           $scope.haveData = true;
 
@@ -231,7 +231,7 @@ angular.module('dcmetrometricsApp')
 
         $scope.dt_picker = new Date(2014, 1, 1);
 
-      }
+      };
 
       // Date picker stuff
       $scope.today = function() {
@@ -294,12 +294,12 @@ angular.module('dcmetrometricsApp')
 
         $scope.helpMsg = "";
         return true;
-      }
+      };
 
 
       var dateIsInvalid = function(date_val) {
         return !dateIsValid(date_val);
-      }
+      };
 
       $scope.submitDate = function() {
 
