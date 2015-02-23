@@ -1,14 +1,15 @@
-<table class="table table-condensed table-striped table-bordered" ng-hide="no_escalator_broken" ts-wrapper>
+<div style="overflow: auto;">
+  <table class="table table-condensed table-striped table-bordered" ng-hide="no_escalator_broken" ts-wrapper style="overflow: auto;">
   <thead>
     <tr>
       <th>Item</th>
-      <th class="col-sm-2" ts-criteria="unit_id">Unit</th>
-      <th class="col-sm-4">Description</th>
-      <th class="col-sm-2" ts-criteria="symptom_description">Status</th>
-      <th class="col-sm-1" ts-criteria="update_type">Type</th>
-      <th class="col-sm-1" ts-criteria="time" ts-default>Start</th>
-      <th class="col-sm-1" ts-criteria="actual_end_time">End</th>
-      <th class="col-sm-1" ts-criteria="duration">Duration</th>
+      <th class="col-xs-2" ts-criteria="unit_id">Unit</th>
+      <th class="col-xs-4">Description</th>
+      <th class="col-xs-2" ts-criteria="symptom_description">Status</th>
+      <th class="col-xs-1" ts-criteria="update_type">Type</th>
+      <th class="col-xs-1" ts-criteria="time" ts-default>Start</th>
+      <th class="col-xs-1" ts-criteria="actual_end_time">End</th>
+      <th class="col-xs-1" ts-criteria="duration">Duration</th>
     </tr>
   </thead>
 
@@ -39,4 +40,5 @@
     </tr>
   </tbody>
 
-</table>
+  </table>
+</div>

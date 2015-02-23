@@ -148,12 +148,10 @@ body {
 */
 
 .dcmm-topnav.affix {
-  width: 100%;
-  top: 45px;
-  left: 0px;
   padding-bottom: 2px;
   box-sizing: border-box;
   background-color: white;
+  border-bottom: 1px solid #ccc;
   z-index: 100;
 }
 

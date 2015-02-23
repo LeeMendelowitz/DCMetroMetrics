@@ -40,7 +40,7 @@
   <div class="row">
 
     <div class = "col-md-2 visible-md-block visible-lg-block" >
-        <ul class="nav nav-pills nav-stacked dcmm-sidenav" affix offset-top="400">
+        <ul class="nav nav-pills nav-stacked dcmm-sidenav" data-offset-top="-90" bs-affix>
           <li ng-class="{active : showSummary()}"><a ui-sref="unit.summary">Summary</a></li>
           <li ng-class="{active : showCalendar()}"><a ui-sref="unit.calendar">Calendar View</a></li>
           <li ng-class="{active : showStatuses()}"><a ui-sref="unit.statuses">Statuses</a></li>
@@ -48,142 +48,125 @@
     </div>
 
 
-    <div class="col-xs-12 col-md-10">
 
-        <div class = "col-xs-12 hidden-md hidden-lg" >
-          <ul class="nav nav-pills dcmm-topnav" affix offset-top="400">
-            <li ng-class="{active : showSummary()}"><a ui-sref="unit.summary">Summary</a></li>
-            <li ng-class="{active : showCalendar()}"><a ui-sref="unit.calendar">Calendar View</a></li>
-            <li ng-class="{active : showStatuses()}"><a ui-sref="unit.statuses">Statuses</a></li>
-          </ul>
-        </div>
-
-
-        <div class="col-xs-12" ng-show="showSummary()">
-
-          <h2>Summary</h2>
-
-          <p>Current Status: {{ key_statuses.lastStatus.symptom_description }} since {{ key_statuses.lastStatus.start_time.format("MMM D, YYYY") }} ( {{ key_statuses.lastStatus.start_time.fromNow() }})<br>
-
-          <span ng-hide="key_statuses.lastStatus.isOperational()">
-          Last worked on  {{ key_statuses.lastOperationalStatus.end_time.format("MMM D, YYYY")}} ({{ key_statuses.lastOperationalStatus.end_time.fromNow() }})<br></span>
-
-          <span ng-show="key_statuses.lastStatus.isOperational()">
-          Last broke on  {{ key_statuses.lastBreakStatus.end_time.format("MMM D, YYYY")}} ({{ key_statuses.lastBreakStatus.end_time.fromNow() }})<br></span>
-
-          Last inspected on {{ key_statuses.lastInspectionStatus.end_time.format("MMM D, YYYY")}} ({{ key_statuses.lastInspectionStatus.end_time.fromNow() }})</p>
-
-          <p> Here is a summary of the unit's all time and recent performance.</p>
-          <br>
-
-            <table class = "table table-bordered" ng-controller="UnitPerformanceAccordianCtrl">
-              <thead>
-                <tr>
-                  <th></th>
-                  <th ng-repeat = "h in headings">{{ h }}</th>
-                </tr>
-              </thead>
-              <tbody>
-
-                <tr>
-                  <th>Availability</th>
-                  <td ng-repeat = "k in keys">{{ unitData.performance_summary[k].availability | percentage:2 }}</td>
-                </tr>
-
-                <tr>
-                  <th>Broken Time Percentage</th>
-                  <td ng-repeat = "k in keys">{{ unitData.performance_summary[k].broken_time_percentage | percentage:2 }}</td>
-                </tr>
-
-                <tr>
-                  <th># Breaks</th>
-                  <td ng-repeat = "k in keys">{{ unitData.performance_summary[k].num_breaks }}</td>
-                </tr>
-
-                <tr>
-                  <th># Inspections</th>
-                  <td ng-repeat = "k in keys">{{ unitData.performance_summary[k].num_inspections }}</td>
-                </tr>
-
-              </tbody>
-            </table>
-
-        </div>
-
-        <div class="col-xs-12" ng-show="showCalendar()">
-
-          <h2>Calendar View</h2>
-
-          <unit-calendar-heatmap
-            type='break'
-            unitid="{{unitId}}"
-            header="Outages"
-            description="Days with an unexpected outage."
-            data="unitData.day_has_outage"
-            legend="[1]"
-            legend-colors="{'min': '#e3e3e3', 'max': '#cc3333'}">
-          </unit-calendar-heatmap>
+    <div class = "col-xs-12 hidden-md hidden-lg" >
+      <ul class="nav nav-pills dcmm-topnav" data-offset-top="-45" bs-affix>
+        <li ng-class="{active : showSummary()}"><a ui-sref="unit.summary">Summary</a></li>
+        <li ng-class="{active : showCalendar()}"><a ui-sref="unit.calendar">Calendar View</a></li>
+        <li ng-class="{active : showStatuses()}"><a ui-sref="unit.statuses">Statuses</a></li>
+      </ul>
+    </div>
 
 
-    <!--       <unit-calendar-heatmap
-            type='break'
-            unitid="{{unitId}}"
-            data="unitData.performance_summary.all_time.day_seconds_to_break_count"
-            header="Daily Break Counts"
-            legend="[1,2,3]"
-            legend-min-color="#e3e3e3"
-            legend-max-color="blue">
-          </unit-calendar-heatmap>
+    <div class="col-xs-12 col-md-10" ng-show="showSummary()" style="overflow: auto;">
 
-     -->
+      <h2>Summary</h2>
 
-          <unit-calendar-heatmap
-            type='break'
-            unitid="{{unitId}}"
-            header="Inspections"
-            description="Days with an inspection."
-            data="unitData.day_has_inspection"
-            legend="[1]"
-            legend-colors="{'min': '#e3e3e3', 'max': 'green'}">
-          </unit-calendar-heatmap>
+      <p>Current Status: {{ key_statuses.lastStatus.symptom_description }} since {{ key_statuses.lastStatus.start_time.format("MMM D, YYYY") }} ( {{ key_statuses.lastStatus.start_time.fromNow() }})<br>
 
+      <span ng-hide="key_statuses.lastStatus.isOperational()">
+      Last worked on  {{ key_statuses.lastOperationalStatus.end_time.format("MMM D, YYYY")}} ({{ key_statuses.lastOperationalStatus.end_time.fromNow() }})<br></span>
 
-          <unit-calendar-heatmap
-            type='break'
-            unitid="{{unitId}}"
-            header="Rehabilitations"
-            description="Days where the escalator was closed for rehabilitation/modernization work."
-            data="unitData.day_has_rehab"
-            legend="[1]"
-            legend-colors="{'min': '#e3e3e3', 'max': 'orange'}">
-          </unit-calendar-heatmap>
-        </div>
+      <span ng-show="key_statuses.lastStatus.isOperational()">
+      Last broke on  {{ key_statuses.lastBreakStatus.end_time.format("MMM D, YYYY")}} ({{ key_statuses.lastBreakStatus.end_time.fromNow() }})<br></span>
 
-        <div class="col-xs-12" ng-show="showStatuses()">
-          <h2>Statuses</h2>
-            <table class = "table table-bordered table-hover table-condensed table-hover">
-              <thead>
-              <tr>
-                <th>Time</th>
-                <th>Status</th>
-                <th>Type</th>
-                <th>Duration</th>
-              </tr>
-              </thead>
-              <tbody>
-              <tr ng-repeat = "status in unitData.statuses" class = "{{statusTableUtils.getRowClass(status)}}">
-                <td> {{ status.time | date:'short' }} </td>
-                <td> {{ status.symptom_description | capFirst }} </td>
-                <td> {{ status.update_type }} </td>
-                <td> {{ statusTableUtils.getDuration(status) | duration }} </td>
-              </tr>
-              </tbody>
-            </table>
-        </div>
+      Last inspected on {{ key_statuses.lastInspectionStatus.end_time.format("MMM D, YYYY")}} ({{ key_statuses.lastInspectionStatus.end_time.fromNow() }})</p>
 
+      <p> Here is a summary of the unit's all time and recent performance.</p>
+      <br>
 
+        <table class = "table table-bordered" ng-controller="UnitPerformanceAccordianCtrl">
+          <thead>
+            <tr>
+              <th></th>
+              <th ng-repeat = "h in headings">{{ h }}</th>
+            </tr>
+          </thead>
+          <tbody>
+
+            <tr>
+              <th>Availability</th>
+              <td ng-repeat = "k in keys">{{ unitData.performance_summary[k].availability | percentage:2 }}</td>
+            </tr>
+
+            <tr>
+              <th>Broken Time Percentage</th>
+              <td ng-repeat = "k in keys">{{ unitData.performance_summary[k].broken_time_percentage | percentage:2 }}</td>
+            </tr>
+
+            <tr>
+              <th># Breaks</th>
+              <td ng-repeat = "k in keys">{{ unitData.performance_summary[k].num_breaks }}</td>
+            </tr>
+
+            <tr>
+              <th># Inspections</th>
+              <td ng-repeat = "k in keys">{{ unitData.performance_summary[k].num_inspections }}</td>
+            </tr>
+
+          </tbody>
+        </table>
 
     </div>
+
+    <div class="col-xs-12 col-md-10" ng-show="showCalendar()" style="overflow: auto;">
+
+      <h2>Calendar View</h2>
+
+      <unit-calendar-heatmap
+        type='break'
+        unitid="{{unitId}}"
+        header="Outages"
+        description="Days with an unexpected outage."
+        data="unitData.day_has_outage"
+        legend="[1]"
+        legend-colors="{'min': '#e3e3e3', 'max': '#cc3333'}">
+      </unit-calendar-heatmap>
+
+      <unit-calendar-heatmap
+        type='break'
+        unitid="{{unitId}}"
+        header="Inspections"
+        description="Days with an inspection."
+        data="unitData.day_has_inspection"
+        legend="[1]"
+        legend-colors="{'min': '#e3e3e3', 'max': 'green'}">
+      </unit-calendar-heatmap>
+
+
+      <unit-calendar-heatmap
+        type='break'
+        unitid="{{unitId}}"
+        header="Rehabilitations"
+        description="Days where the escalator was closed for rehabilitation/modernization work."
+        data="unitData.day_has_rehab"
+        legend="[1]"
+        legend-colors="{'min': '#e3e3e3', 'max': 'orange'}">
+      </unit-calendar-heatmap>
+    </div>
+
+    <div class="col-xs-12 col-md-10" ng-show="showStatuses()" style="overflow: auto;">
+      <h2>Statuses</h2>
+        <table class = "table table-bordered table-hover table-condensed table-hover">
+          <thead>
+          <tr>
+            <th>Time</th>
+            <th>Status</th>
+            <th>Type</th>
+            <th>Duration</th>
+          </tr>
+          </thead>
+          <tbody>
+          <tr ng-repeat = "status in unitData.statuses" class = "{{statusTableUtils.getRowClass(status)}}">
+            <td> {{ status.time | date:'short' }} </td>
+            <td> {{ status.symptom_description | capFirst }} </td>
+            <td> {{ status.update_type }} </td>
+            <td> {{ statusTableUtils.getDuration(status) | duration }} </td>
+          </tr>
+          </tbody>
+        </table>
+    </div>
+
 
   </div> <!-- end row -->
 

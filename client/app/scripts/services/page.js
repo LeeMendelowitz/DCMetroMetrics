@@ -12,7 +12,7 @@ angular.module('dcmetrometricsApp')
 
     var title = "DC Metro Metrics";
     var description = "";
-
+    var h;
     return {
 
       title: function(s) {
@@ -28,6 +28,10 @@ angular.module('dcmetrometricsApp')
       },
       setDescription: function(s) {
         description = s;
+      },
+      navbarHeight: function() {
+        var ret = h || (h = $('.dcmm-navbar').height()); // compute once and cache.
+        return ret;
       }
 
     };

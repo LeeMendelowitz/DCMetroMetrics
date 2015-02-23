@@ -11,7 +11,7 @@
   <div class="row">
 
     <div class = "col-md-2 visible-md-block visible-lg-block" >
-        <ul class="nav nav-pills nav-stacked dcmm-sidenav" affix offset-top="250">
+        <ul class="nav nav-pills nav-stacked dcmm-sidenav" data-offset-top="-90" bs-affix>
           <li ng-class='{active: showTweets()}'><a ui-sref="hotcars.main.tweets">Tweets</a></li>
           <li ng-class='{active: showLeaderboard()}'><a ui-sref="hotcars.main.leaderboard" >Leaderboard</a></li>
         
@@ -19,116 +19,113 @@
         </ul>
     </div>
 
+    <div class="col-sm-12 hidden-md hidden-lg dcmm-topnav" data-offset-top="-45" bs-affix>
+      <ul class="nav nav-pills" >
+        <li ng-class='{active: showTweets()}'><a ui-sref="hotcars.main.tweets">Tweets</a></li>
+        <li ng-class='{active: showLeaderboard()}'><a ui-sref="hotcars.main.leaderboard" >Leaderboard</a></li>
+        <li ng-class='{active: showTimeseries()}'><a ui-sref="hotcars.main.timeseries">Timeseries</a></li>
+      </ul>
+    </div>
 
-    <div class = "col-xs-12 col-md-10">
+    <div class="col-sm-12 col-md-10" ng-show="showLeaderboard()" style="overflow: auto;">
+      
+      <h2 id="sec-leaderboard">Leaderboard</h2>
 
-        <div class="col-sm-12 hidden-md hidden-lg">
-            <ul class="nav nav-pills dcmm-topnav" affix offset-top="250">
-            <li ng-class='{active: showTweets()}'><a ui-sref="hotcars.main.tweets">Tweets</a></li>
-            <li ng-class='{active: showLeaderboard()}'><a ui-sref="hotcars.main.leaderboard" >Leaderboard</a></li>
-            <li ng-class='{active: showTimeseries()}'><a ui-sref="hotcars.main.timeseries">Timeseries</a></li>
-          </ul>
-        </div>
-
-        <div class="col-sm-12" ng-show="showLeaderboard()">
-          
-          <h2 id="sec-leaderboard">Leaderboard</h2>
-
-          <div>
-            <button ng-click="leaderboardTableParams.sorting({ count : 'desc'}); leaderboardTableParams.count(10);" class="btn btn-default pull-right">Reset</button>
-            <table ng-table="leaderboardTableParams" class="table table-bordered table-striped table-condensed">
-                <thead>
-                    <tr>
-                        <th class="text-center">Rank</th>
-                        <th class="text-center sortable" ng-class="{
-                            'sort-asc': leaderboardTableParams.isSortBy('carNumber', 'asc'),
-                            'sort-desc': leaderboardTableParams.isSortBy('carNumber', 'desc')
-                          }"
-                            ng-click="leaderboardTableParams.sorting({'carNumber' : leaderboardTableParams.isSortBy('carNumber', 'asc') ? 'desc' : 'asc'})">
-                           <div>Car</div>
-                        </th>
-                        <th class="text-center sortable" ng-class="{
-                            'sort-asc': leaderboardTableParams.isSortBy('count', 'asc'),
-                            'sort-desc': leaderboardTableParams.isSortBy('count', 'desc')
-                          }"
-                            ng-click="leaderboardTableParams.sorting({'count' : leaderboardTableParams.isSortBy('count', 'asc') ? 'desc' : 'asc'})" >
-                            <div>Reports</div>
-                        </th>
-                        <th class="text-center sortable" ng-class="{
-                            'sort-asc': leaderboardTableParams.isSortBy('d1', 'asc'),
-                            'sort-desc': leaderboardTableParams.isSortBy('d1', 'desc')
-                          }"
-                            ng-click="leaderboardTableParams.sorting({'d1' : leaderboardTableParams.isSortBy('d1', 'asc') ? 'desc' : 'asc'})"
-                            tooltip = '# of reports last 24 hours' tooltip-append-to-body='true'>
-                           <div>1 day</div>
-                        </th>
-                        <th class="text-center sortable" ng-class="{
-                            'sort-asc': leaderboardTableParams.isSortBy('d3', 'asc'),
-                            'sort-desc': leaderboardTableParams.isSortBy('d3', 'desc')
-                          }"
-                            ng-click="leaderboardTableParams.sorting({'d3' : leaderboardTableParams.isSortBy('d3', 'asc') ? 'desc' : 'asc'})"
-                            tooltip = '# of reports last 3 days' tooltip-append-to-body='true'>
-                            <div>3 day</div>
-                        </th>
-                        <th class="text-center sortable" ng-class="{
-                            'sort-asc': leaderboardTableParams.isSortBy('d7', 'asc'),
-                            'sort-desc': leaderboardTableParams.isSortBy('d7', 'desc')
-                          }"
-                            ng-click="leaderboardTableParams.sorting({'d7' : leaderboardTableParams.isSortBy('d7', 'asc') ? 'desc' : 'asc'})"
-                            tooltip = '# of reports last 7 days' tooltip-append-to-body='true'>
-                            <div>7 day</div>
-                        </th>
-                        <th class="text-center sortable" ng-class="{
-                            'sort-asc': leaderboardTableParams.isSortBy('d14', 'asc'),
-                            'sort-desc': leaderboardTableParams.isSortBy('d14', 'desc')
-                          }"
-                            ng-click="leaderboardTableParams.sorting({'d14' : leaderboardTableParams.isSortBy('d14', 'asc') ? 'desc' : 'asc'})"
-                            tooltip = '# of reports last 14 days' tooltip-append-to-body='true'>
-                            <div>14 day</div>
-                        </th>
-                    </tr>
-                 </thead>
-
-                <tbody>
-                <tr ng-repeat = "summary in $data">
-                  <td data-title="'Rank'"> {{ (leaderboardTableParams.page()-1) * leaderboardTableParams.count() + 1  + $index }} </td> 
-                  <td data-title="'Car'" sortable="'carNumber'"><a ui-sref="hotcars.detail({ carNumber: summary.carNumber })">
-                    {{ summary.carNumber }}</a>
-                  </td>
-                  <td data-title="'Reports'" sortable="'count'">{{ summary.count }}</td>
-                  <td data-title="'1 day'" sortable="'d1'">{{ summary.d1 }}</td>
-                  <td data-title="'3 day'" sortable="'d3'">{{ summary.d3 }}</td>
-                  <td data-title="'7 day'" sortable="'d7'">{{ summary.d7 }}</td>
-                  <td data-title="'14 day'" sortable="'d14'">{{ summary.d14 }}</td>
+      <div>
+        <button ng-click="leaderboardTableParams.sorting({ count : 'desc'}); leaderboardTableParams.count(10);" class="btn btn-default pull-right">Reset</button>
+        <table ng-table="leaderboardTableParams" class="table table-bordered table-striped table-condensed">
+            <thead>
+                <tr>
+                    <th class="text-center">Rank</th>
+                    <th class="text-center sortable" ng-class="{
+                        'sort-asc': leaderboardTableParams.isSortBy('carNumber', 'asc'),
+                        'sort-desc': leaderboardTableParams.isSortBy('carNumber', 'desc')
+                      }"
+                        ng-click="leaderboardTableParams.sorting({'carNumber' : leaderboardTableParams.isSortBy('carNumber', 'asc') ? 'desc' : 'asc'})">
+                       <div>Car</div>
+                    </th>
+                    <th class="text-center sortable" ng-class="{
+                        'sort-asc': leaderboardTableParams.isSortBy('count', 'asc'),
+                        'sort-desc': leaderboardTableParams.isSortBy('count', 'desc')
+                      }"
+                        ng-click="leaderboardTableParams.sorting({'count' : leaderboardTableParams.isSortBy('count', 'asc') ? 'desc' : 'asc'})" >
+                        <div>Reports</div>
+                    </th>
+                    <th class="text-center sortable" ng-class="{
+                        'sort-asc': leaderboardTableParams.isSortBy('d1', 'asc'),
+                        'sort-desc': leaderboardTableParams.isSortBy('d1', 'desc')
+                      }"
+                        ng-click="leaderboardTableParams.sorting({'d1' : leaderboardTableParams.isSortBy('d1', 'asc') ? 'desc' : 'asc'})"
+                        tooltip = '# of reports last 24 hours' tooltip-append-to-body='true'>
+                       <div>1 day</div>
+                    </th>
+                    <th class="text-center sortable" ng-class="{
+                        'sort-asc': leaderboardTableParams.isSortBy('d3', 'asc'),
+                        'sort-desc': leaderboardTableParams.isSortBy('d3', 'desc')
+                      }"
+                        ng-click="leaderboardTableParams.sorting({'d3' : leaderboardTableParams.isSortBy('d3', 'asc') ? 'desc' : 'asc'})"
+                        tooltip = '# of reports last 3 days' tooltip-append-to-body='true'>
+                        <div>3 day</div>
+                    </th>
+                    <th class="text-center sortable" ng-class="{
+                        'sort-asc': leaderboardTableParams.isSortBy('d7', 'asc'),
+                        'sort-desc': leaderboardTableParams.isSortBy('d7', 'desc')
+                      }"
+                        ng-click="leaderboardTableParams.sorting({'d7' : leaderboardTableParams.isSortBy('d7', 'asc') ? 'desc' : 'asc'})"
+                        tooltip = '# of reports last 7 days' tooltip-append-to-body='true'>
+                        <div>7 day</div>
+                    </th>
+                    <th class="text-center sortable" ng-class="{
+                        'sort-asc': leaderboardTableParams.isSortBy('d14', 'asc'),
+                        'sort-desc': leaderboardTableParams.isSortBy('d14', 'desc')
+                      }"
+                        ng-click="leaderboardTableParams.sorting({'d14' : leaderboardTableParams.isSortBy('d14', 'asc') ? 'desc' : 'asc'})"
+                        tooltip = '# of reports last 14 days' tooltip-append-to-body='true'>
+                        <div>14 day</div>
+                    </th>
                 </tr>
-                </tbody>
-            </table>
-          </div>
+             </thead>
+
+            <tbody>
+            <tr ng-repeat = "summary in $data">
+              <td data-title="'Rank'"> {{ (leaderboardTableParams.page()-1) * leaderboardTableParams.count() + 1  + $index }} </td> 
+              <td data-title="'Car'" sortable="'carNumber'"><a ui-sref="hotcars.detail({ carNumber: summary.carNumber })">
+                {{ summary.carNumber }}</a>
+              </td>
+              <td data-title="'Reports'" sortable="'count'">{{ summary.count }}</td>
+              <td data-title="'1 day'" sortable="'d1'">{{ summary.d1 }}</td>
+              <td data-title="'3 day'" sortable="'d3'">{{ summary.d3 }}</td>
+              <td data-title="'7 day'" sortable="'d7'">{{ summary.d7 }}</td>
+              <td data-title="'14 day'" sortable="'d14'">{{ summary.d14 }}</td>
+            </tr>
+            </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="col-sm-12 col-md-10" ng-show="showTweets()" style="overflow: auto;">
+      <h2 id="sec-recentTweets">Recent Tweets</h2>
+
+        <div class = "dcmm-hotcar-twitter-section">
+
+              <tweetline reports="recentReports" post-load = "postLoad()" show-link = "true"></tweetline>
+
         </div>
+    </div>
 
-        <div class="col-sm-12" ng-show="showTweets()">
-          <h2 id="sec-recentTweets">Recent Tweets</h2>
+    <div class="col-sm-12 col-md-10" ng-show="showTimeseries()" style="overflow: auto;">
 
-            <div class = "dcmm-hotcar-twitter-section">
+      <h2>Hotcar Timeseries</h2>
 
-                  <tweetline reports="recentReports" post-load = "postLoad()" show-link = "true"></tweetline>
+      <p>These new interactive graphs show the #hotcar report count by day, along with the daily high temperature in Washington, D.C.
+       Select a date range by clicking and brushing in the top plot, and click outside the selected date range to clear.</p>
 
-            </div>
-        </div>
+      <hotcarstempcountplot><hotcarstempcountplot>
 
-        <div class="col-sm-12" ng-show="showTimeseries()">
-
-          <h2>Hotcar Timeseries</h2>
-
-          <p>These new interactive graphs show the #hotcar report count by day, along with the daily high temperature in Washington, D.C.
-           Select a date range by clicking and brushing in the top plot, and click outside the selected date range to clear.</p>
-
-          <hotcarstempcountplot><hotcarstempcountplot>
-
-        </div>
+    </div>
 
 
-    </div> <!-- end cell -->
+    
 
   </div> <!-- end row -->
 

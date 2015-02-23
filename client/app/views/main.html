@@ -1,23 +1,3 @@
-  <!--   <div class="jumbotron home">
-   
-    <h1>DC Metro Metrics</h1>
-
-    <h3>Tracking escalator outages, elevator breakdowns, and 
-    <a href="https://twitter.com/idiot3qu3/statuses/493882919341940736" target="_blank">#wmata</a> 
-    <a href="https://twitter.com/be_rettDC/statuses/361835301057998848" target="_blank">#hotcar</a>'s since 2013.</h3>
-
-    <br><br>
-
-    <a href="#/outages/escalator" class="btn btn-primary btn-lg" role="button">{{ escalatorOutages.length}} Escalator Outages</a>
-
-    <a href="#/outages/elevator" class="btn btn-warning btn-lg" role="button">{{ elevatorOutages.length}} Elevator Outages</a>
-    
-    <br><br><br><br>
-
-    <p class="bg-info text-left">This site is being actively updated. We hope to have the escalator and elevator rankings and HotCar pages updated soon.</p>
-
-  </div> -->
-
 <div class="jumbotron dcmm-page-header">
   <div class="container">
 
@@ -35,7 +15,7 @@
 
   <div class="row" ng-controller="MainJumbotronCtrl">
 
-    <div class="col-md-6" ng-controller="MainJumbotronCtrl">
+    <div class="col-sm-6" ng-controller="MainJumbotronCtrl">
       <div class="panel panel-default">
         <div class="panel-heading">
           <h3 class="panel-title">New Features!</h3>
@@ -67,19 +47,19 @@
       </div>  
     </div>
 
-    <div class="col-md-6">
+    <div class="col-sm-6">
       <div class="panel panel-default">
         <div class="panel-heading">
           <h3 class="panel-title">Current Outages</h3>
         </div>
         <div class="panel-body">
 
-          <div class="col-xs-6">
-            <a ui-sref="outages.escalators" class="btn btn-primary btn-lg" role="button">{{ escalatorOutages.length}} Escalators</a>
+          <div class="col-xs-12 col-md-6">
+            <a ui-sref="outages.escalators" class="btn btn-primary btn-lg" role="button" style="margin: 2px;">{{ escalatorOutages.length}} Escalators</a>
           </div>
 
-          <div class="col-xs-6">
-            <a ui-sref="outages.elevators" class="btn btn-warning btn-lg" role="button">{{ elevatorOutages.length}} Elevators</a>
+          <div class="col-xs-12 col-md-6">
+            <a ui-sref="outages.elevators" class="btn btn-warning btn-lg" role="button" style="margin: 2px;">{{ elevatorOutages.length}} Elevators</a>
           </div>
 
         </div>
@@ -90,7 +70,8 @@
 
 
   <div class="row" id="dcmm-escalator-outage-calendar">
-    <div class="col-xs-12">
+
+    <div class="col-xs-12" style="overflow: auto;">
       <unit-calendar-heatmap
         type='break'
         unitid='daily-outage-count-escalators'
@@ -108,7 +89,7 @@
   </div>
 
   <div class="row">
-    <div class="col-xs-12">
+    <div class="col-xs-12" style="overflow: auto;">
       <unit-calendar-heatmap
         type='break'
         unitid='daily-break-count-elevators'
@@ -127,7 +108,7 @@
 
   <!-- Table of recent outages -->
   <div class="row">
-    <div class="col-xs-12">
+    <div class="col-xs-12" style="overflow: auto;">
       <h3>Recent Updates</h3>
 
       <table class="table table-bordered table-condensed table-striped">
