@@ -19,14 +19,13 @@
         "DCMetroMetrics": "http://dcmetrometrics.com/download/dcmetrometrics.zip"
     },
     "needs": [
-        null,
-        "web vizualizations",
-        "better support for mobile browsers"
+        {"need":"web vizualizations"},
+        {"need":"better support for mobile browsers"}
     ],
     "categories": [
-        "Public Transportation",
-        "WMATA",
-        "Open Data"
+        {"category":"Public Transportation"},
+        {"category":"WMATA"},
+        {"category":"Open Data"}
     ],
     "moreInfo": "http://dcmetrometrics.com/about"
 }
