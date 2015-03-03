@@ -1,0 +1,32 @@
+{
+    "conformsTo": "http://codefordc.org/resources/specification.html",
+    "status": "Production",
+    "thumbnailUrl": "",
+    "contact": {
+        "name": "Lee Mendelowitz",
+        "email": "lmendy@gmail.c",
+        "twitter": "lmendy7"
+    },
+    "bornAt": "Lee's apartment",
+    "geography": "Washington, DC",
+    "politicalEntity": {
+        "WMATA": "http://www.wmata.com"
+    },
+    "governmentPartner": {},
+    "communityPartner": {},
+    "type": "Web App",
+    "data": {
+        "DCMetroMetrics": "http://dcmetrometrics.com/download/dcmetrometrics.zip"
+    },
+    "needs": [
+        null,
+        "web vizualizations",
+        "better support for mobile browsers"
+    ],
+    "categories": [
+        "Public Transportation",
+        "WMATA",
+        "Open Data"
+    ],
+    "moreInfo": "http://dcmetrometrics.com/about"
+}
