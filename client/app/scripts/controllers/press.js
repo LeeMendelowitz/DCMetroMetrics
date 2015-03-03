@@ -23,6 +23,24 @@ angular.module('dcmetrometricsApp')
 
     var item_data = [
 
+      ["3/3/2015",
+      "WJLA ABC 7",
+      "http://www.wjla.com/articles/2015/03/dupont-circle-escalators-still-facing-issues-after-12m-fix-111955.html",
+      "Dupont Circle Metro escalators still facing issues after $12M fix"
+      ],
+
+      ["3/2/2015",
+      "WAMU 88.5",
+      "http://wamu.org/news/15/03/02/new_dupont_circle_escalator_already_undergoing_major_repair",
+      "New Escalator At Dupont Circle South Already Undergoing Major Repair"
+      ],
+
+      ["3/2/2015",
+      "DC Inno",
+      "http://dcinno.streetwise.co/2015/03/02/dupont-circle-escalator-repair-costs/",
+      "2-Year-Old Dupont Circle Escalator Will Cost $100K to Repair"
+      ],
+
       ["11/21/2014",
       "WAMU 88.5",
       "http://wamu.org/news/14/11/21/despite_replacements_some_of_metro_escalators_spend_more_time_down_than_going_down",
