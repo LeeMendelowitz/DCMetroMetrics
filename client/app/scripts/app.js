@@ -80,7 +80,6 @@ app.config(function($stateProvider, $urlRouterProvider, $urlMatcherFactoryProvid
     .state('outages.elevators', {
       url: "/elevators",
     })
-
     .state('stations', {
       abstract: true,
       url: '/stations',
@@ -165,6 +164,11 @@ app.config(function($stateProvider, $urlRouterProvider, $urlMatcherFactoryProvid
       url: '/data',
       templateUrl: '/views/data.html',
       controller: 'DataPageCtrl'
+    })
+    .state('mechanics', {
+      url: '/mechanics',
+      templateUrl: '/views/mechanics.html',
+      controller: 'OutagesCtrl'
     });
 
 });

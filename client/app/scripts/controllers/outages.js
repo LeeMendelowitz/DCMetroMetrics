@@ -8,9 +8,9 @@
  * Controller of the dcmetrometricsApp
  */
 angular.module('dcmetrometricsApp')
-  .controller('OutagesCtrl', ['$scope', 'Page', '$uiViewScroll', '$location', '$state', 'directory', 'statusTableUtils', 
+  .controller('OutagesCtrl', ['$scope', 'Page', '$uiViewScroll', '$location', '$state', '$timeout', '$rootScope', 'directory', 'statusTableUtils', 
 
-     function ($scope, Page, $uiViewScroll, $location, $state, directory, statusTableUtils) {
+     function ($scope, Page, $uiViewScroll, $location, $state, $timeout, $rootScope, directory, statusTableUtils) {
       if($state.includes('outages')) { 
         Page.title("DC Metro Metrics: Escalator and Elevator Outages");
         Page.description("Current listing of escalator and elevator outages in the WMATA Metrorail system in Washington, DC.");
@@ -84,6 +84,15 @@ angular.module('dcmetrometricsApp')
         directory.get_recent_updates().then( function(data) {
           $scope.recentUpdates = data;
           $scope.mostRecent = $scope.recentUpdates[0];
+
+          // Send a signal that we have loaded more data into the view.
+          // scrollspy listens for this.
+          $timeout(function() {
+            $rootScope.$broadcast('dcmm-data-load', 'data-here?');
+            $rootScope.$broadcast('$viewContentLoaded');
+          }, false); // false because we don't need to redo dirty checking.
+
+
         });
 
 
@@ -108,6 +117,8 @@ angular.module('dcmetrometricsApp')
             escalators: convertDailyCountsForHeatCal(data.escalators),
             elevators: convertDailyCountsForHeatCal(data.elevators)
           };
+
+
         });
 
         directory.get_daily_broken_count().then( function(data) {
@@ -118,7 +129,15 @@ angular.module('dcmetrometricsApp')
           };
         });
 
-      });
+
+          // Send a signal that we have loaded more data into the view.
+          // scrollspy listens for this.
+          $timeout(function() {
+            $rootScope.$broadcast('dcmm-data-load', 'data-here?');
+            $rootScope.$broadcast('$viewContentLoaded');
+          }, false); // false because we don't need to redo dirty checking.
+
+      }); // end get-directory
 
 
 
