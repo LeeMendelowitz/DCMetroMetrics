@@ -23,6 +23,12 @@ angular.module('dcmetrometricsApp')
 
     var item_data = [
 
+      ["3/4/2015",
+      "WTTG FOX 5 DC",
+      "http://www.myfoxdc.com/clip/11198982/dupont-circle-metro-escalator-remains-a-problem-despite-replacement-2-years-ago",
+      "Dupont Circle Metro escalator remains a problem despite replacement 2 years ago"
+      ],
+
       ["3/3/2015",
       "WJLA ABC 7",
       "http://www.wjla.com/articles/2015/03/dupont-circle-escalators-still-facing-issues-after-12m-fix-111955.html",
