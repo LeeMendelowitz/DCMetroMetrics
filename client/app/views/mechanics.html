@@ -4,19 +4,57 @@
 
 
       <h1>Mechanic's Dashboard</h1>
+      <div>
 
-      <div class="dcmm-topnav">
-          <ul class="nav nav-pills">
+          <ul class="nav nav-pills dcmm-topnav" data-offset-top="-45" bs-affix bs-scrollspy-list="">
+            <li><a href="#sec-updates">Recent Updates</a></li>
             <li><a href="#sec-escalators">Escalators</a></li>
             <li><a href="#sec-elevators">Elevators</a></li>
-            <li><a href="#sec-updates">Recent Updates</a></li>
           </ul>
+
       </div>
 
 <!--       <h1 class="visible-md-block">Medium</h1>
       <h1 class="visible-sm-block">Small</h1>
       <h1 class="visible-xs-block">XS</h1>
       <h1 class="visible-lg-block">Large</h1> -->
+
+      <h2 id="sec-updates">Recent Updates</h2>
+
+      <table class="table table-bordered table-condensed table-striped">
+        <thead>
+          <tr>
+            <th class="col-sm-2">Unit</th>
+            <th class="col-sm-5">Description</th>
+            <th class="col-sm-2">Status</th>
+            <th class="col-sm-1">Type</th>
+            <th class="col-sm-2">When</th>
+          </tr>
+        </thead>
+
+        <tr ng-repeat="status in recentUpdates" ng-controller="StatusentryCtrl">
+          <td>
+            <a ui-sref="unit({unitId: unit.unit_id})">{{ status.unit_id | unitIdToHuman }}</a> 
+          </td>
+
+          <td>
+
+            <a ui-sref="stations.detail({station: directory.getStationShortName(unit)})">
+            {{ directory.getStationName(directory.unitFromStatus(status)) }}
+            <lineColors lines="{{directory.getStationLinesForStatus(status).join()}}"></lineColors>
+            </a>
+            <br>
+            {{ directory.unitDescription(unit) }}
+
+          </td>
+          <td>{{ status.symptom_description | capFirst }}</td>
+          <td>{{ status.update_type }}</td>
+          <td>{{ statusTableUtils.getTimeSince(status) | duration }} ago</td>
+        </tr>
+      </table>
+
+
+
 
       <h2 id="sec-escalators">Escalator Outages</h2>
 
@@ -52,43 +90,8 @@
         </tr>
       </table>
 
-      <h3 id="sec-updates">Recent Updates</h3>
 
-      <table class="table table-bordered table-condensed table-striped">
-        <thead>
-          <tr>
-            <th class="col-sm-2">Unit</th>
-            <th class="col-sm-5">Description</th>
-            <th class="col-sm-2">Status</th>
-            <th class="col-sm-1">Type</th>
-            <th class="col-sm-2">When</th>
-          </tr>
-        </thead>
-
-        <tr ng-repeat="status in recentUpdates" ng-controller="StatusentryCtrl">
-          <td>
-            <a ui-sref="unit({unitId: unit.unit_id})">{{ status.unit_id | unitIdToHuman }}</a> 
-          </td>
-
-          <td>
-
-            <a ui-sref="stations.detail({station: directory.getStationShortName(unit)})">
-            {{ directory.getStationName(directory.unitFromStatus(status)) }}
-            <lineColors lines="{{directory.getStationLinesForStatus(status).join()}}"></lineColors>
-            </a>
-            <br>
-            {{ directory.unitDescription(unit) }}
-
-          </td>
-          <td>{{ status.symptom_description | capFirst }}</td>
-          <td>{{ status.update_type }}</td>
-          <td>{{ statusTableUtils.getTimeSince(status) | duration }} ago</td>
-        </tr>
-      </table>
 
     </div>
-
-
-
 
 </div> <!-- /container -->
