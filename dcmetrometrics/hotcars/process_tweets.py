@@ -143,7 +143,8 @@ def tweetIsValidReport(tweet, hotCarData):
                   '3' : (3000, 3289),
                   '4' : (4000, 4099),
                   '5' : (5000, 5191),
-                  '6' : (6000, 6183)
+                  '6' : (6000, 6183),
+                  '7' : (7000, 7747)
                 }
 
     if firstDigit not in carRanges:
