@@ -117,9 +117,9 @@ def tweetIsValidReport(tweet, hotCarData):
       - the tweet mentions MBTA or BART
     """
 
-    # Ignore tweets from self
-    me = 'MetroHotCars'
-    if tweet.user.screen_name.upper() == me.upper():
+    # Ignore tweets from self or other forbidden users
+    forbidden_users = set(sn.upper() for sn in('MetroHotCars', 'AsbestosCar'))
+    if tweet.user.screen_name.upper() in forbidden_users:
         return False
 
     # Ignore retweets
