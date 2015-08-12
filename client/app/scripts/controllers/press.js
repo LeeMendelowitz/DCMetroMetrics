@@ -23,6 +23,12 @@ angular.module('dcmetrometricsApp')
 
     var item_data = [
 
+      ["8/10/2015",
+      "Washington City Paper",
+      "http://www.washingtoncitypaper.com/blogs/citydesk/2015/08/10/metros-brand-new-bethesda-station-escalator-malfunctions-again/",
+      "Metro’s Brand New Bethesda Station Escalator Malfunctions Again"
+      ],
+
       ["3/4/2015",
       "WTTG FOX 5 DC",
       "http://www.myfoxdc.com/clip/11198982/dupont-circle-metro-escalator-remains-a-problem-despite-replacement-2-years-ago",
