@@ -413,8 +413,14 @@ class Station(WebJSONMixin, DataWriteable, Document):
 
     for u in all_units:
 
-      station_name = code_to_name[u.station_code]
-      station = code_to_station[u.station_code]
+      station_name = code_to_name.get(u.station_code, None)
+      station = code_to_station.get(u.station_code, None)
+
+      # If the unit has a station code that we are not expecting,
+      # do not include it in the station directory.
+      if not all((station_name, station)):
+          continue
+
       station_data = station_to_data.get(station_name, None)
 
       # station_data should not be None, but check anyway
@@ -441,7 +447,7 @@ class Unit(WebJSONMixin, DataWriteable, Document):
   """
   unit_id = StringField(required=True, unique=True)
   station_code = StringField(required=True)
-  station_name = StringField(required=True)
+  station_name = StringField(required=False)
   station_desc = StringField(required=False)
   esc_desc = StringField(required=True)
   unit_type = StringField(required=True, choices=('ESCALATOR', 'ELEVATOR'))
