@@ -62,8 +62,10 @@ class Incident(object):
         self.UnitId = self.UnitName + self.UnitType
         self.cleanTimes()
 
-
         self.StationDesc = ''
+        if not self.StationName:
+            self.StationName = ''
+
         stationName = self.StationName
         if ',' in stationName:
             sname, sdesc = stationName.split(',', 1)

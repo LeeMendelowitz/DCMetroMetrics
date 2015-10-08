@@ -65,7 +65,7 @@ def update_db_from_incident(inc, curTime):
     # Add the escalator to the database
     doc = { 'unit_id' : inc.UnitId,
           'station_code' : inc.StationCode,
-          'station_name' : stations.codeToName[inc.StationCode], # Use the station name from stations.py
+          'station_name' : stations.codeToName.get(inc.StationCode, None), # Use the station name from stations.py
           'esc_desc' : inc.LocationDescription,
           'station_desc' : inc.StationDesc,
           'unit_type' : inc.UnitType
@@ -137,8 +137,21 @@ def get_system_availability(escalators=False, elevators=False):
     def compute_weighted_availability(statusList):
         avail = [d for d in statusList if d['symptomCategory'] == 'ON']
         unavail = [d for d in statusList if d['symptomCategory'] != 'ON']
-        availWeights = [stations.codeToStationData[d['station_code']]['escalatorWeight'] for d in avail]
-        unavailWeights = [stations.codeToStationData[d['station_code']]['escalatorWeight'] for d in unavail]
+
+        availWeights = []
+        for d in avail:
+            sd = stations.codeToStationData.get(d['station_code'], None)
+            if not sd:
+                availWeights.append(0.0)
+            availWeigths.append(sd.get('escalatorWeight', 0.0))
+
+        unavailWeights = []
+        for d in unavail:
+            sd = stations.codeToStationData.get(d['station_code'], None)
+            if not sd:
+                unavailWeights.append(0.0)
+            unavailWeigths.append(sd.get('escalatorWeight', 0.0))
+
         wA1 = sum(availWeights)
         wA2 = 1.0 - sum(unavailWeights)
         assert(abs(wA1 - wA2) < 1E-6)

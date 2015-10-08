@@ -88,8 +88,18 @@ def getELESIncidents():
     api = WMATA_API(key=WMATA_API_KEY)
     res = api.getEscalator()
     incidents = res.json()['ElevatorIncidents']
-    incidents = [Incident(i) for i in incidents]
-    return incidents
+    parsed_incidents = []
+    for i in incidents:
+        try:
+            inc = Incident(i)
+            # For now, do not allow incidents with empty station name
+            if not inc.StationName:
+                continue
+            parsed_incidents.append(inc)
+        except Exception as e:
+            logger.error('Caught Error when trying to parse incident: %s, %s'%(str(i), str(e)))
+            continue
+    return parsed_incidents
 
 #############################################
 class ELESApp(object):
@@ -112,6 +122,7 @@ class ELESApp(object):
 
         if self.escTwitterKeys:
             self.escTwitter = twitterUtils.getApi(self.escTwitterKeys)
+
 
         if self.eleTwitterKeys:
             self.eleTwitter = twitterUtils.getApi(self.eleTwitterKeys)
@@ -406,7 +417,11 @@ class ELESApp(object):
             # Get 6 char escalator code
             station_code = unit.station_code
             unit_id_sort = unit_id[0:6]
-            station_short_name = stations.codeToShortName[station_code]
+            station_short_name = stations.codeToShortName.get(station_code, None)
+
+            # If we don't have station data for this station, avoid tweeting for time being
+            if not station_short_name:
+                continue
 
             tweet_msg = ''
 
