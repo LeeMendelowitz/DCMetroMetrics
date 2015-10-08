@@ -32,9 +32,10 @@ class WMATA_API(object):
 
     def request(self, url, params):
         payload = { 'api_key' : self.API_KEY }
+        headers = { 'api_key' : self.API_KEY }
         if params is not None:
             payload.update(params)
-        r = requests.get(url, params=payload, timeout = self.TIMEOUT)
+        r = requests.get(url, params=payload, timeout = self.TIMEOUT, headers = headers)
         self.checkRequest(r)
         return r
 
