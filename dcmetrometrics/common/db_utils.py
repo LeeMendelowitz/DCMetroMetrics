@@ -29,24 +29,24 @@ class DBManager(object):
     return self.sessionmaker()
 
 
-_trackman_www_db = None
-def get_trackman_www_db():
-  global _trackman_www_db
-  if _trackman_www_db is None:
-    user = os.environ["TM_WWW_DB_USERNAME"]
-    password = os.environ["TM_WWW_DB_PASSWORD"]
-    host = os.environ["TM_WWW_DB_HOST"]
-    database = "www_trackman"
-    _trackman_www_db = DBManager(user, password, host, database)
-  return _trackman_www_db
+_dcmm_db = None
+def get_dcmm_db():
+  global _dcmm_db
+  if _dcmm_db is None:
+    user = os.environ["DCMM_DB_USERNAME"]
+    password = os.environ["DCMM_DB_PASSWORD"]
+    host = os.environ["DCMM_DB_HOST"]
+    database = "dcmm"
+    _dcmm_db = DBManager(user, password, host, database)
+  return _dcmm_db
 
-_trackman_www_db_test = None
-def get_trackman_www_test_db():
-  global _trackman_www_db_test
-  if _trackman_www_db_test is None:
-    user = os.environ["TM_WWW_DB_USERNAME"]
-    password = os.environ["TM_WWW_DB_PASSWORD"]
-    host = os.environ["TM_WWW_DB_HOST"]
-    database = "www_trackman_test"
-    _trackman_www_db_test = DBManager(user, password, host, database)
-  return _trackman_www_db_test
+_dcmm_db_test = None
+def get_dcmm_test_db():
+  global _dcmm_db_test
+  if _dcmm_db_test is None:
+    user = os.environ["DCMM_DB_USERNAME"]
+    password = os.environ["DCMM_DB_PASSWORD"]
+    host = os.environ["DCMM_DB_HOST"]
+    database = "dcmm_test"
+    _dcmm_db_test = DBManager(user, password, host, database)
+  return _dcmm_db_test
