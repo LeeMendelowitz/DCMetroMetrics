@@ -3,9 +3,9 @@ Models for HotCars app.
 """
 
 from mongoengine import *
-from ..common.WebJSONMixin import WebJSONMixin
-from ..common.DataWriteable import DataWriteable
-from ..common.metroTimes import utcnow, tzutc
+from ..common.web_json_mixin import WebJSONMixin
+from ..common.data_writeable import DataWriteable
+from ..common.metro_times import utcnow, tzutc
 
 from datetime import timedelta, datetime, date
 from collections import defaultdict

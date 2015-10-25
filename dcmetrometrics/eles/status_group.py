@@ -18,8 +18,8 @@ import sys
 
 from ..common.descriptors import setOnce, computeOnce
 from ..common.utils import gen_dates, gen_days
-from ..common import metroTimes
-from ..common.metroTimes import TimeRange, isNaive, getLastOpenTime
+from ..common import metro_times
+from ..common.metro_times import TimeRange, isNaive, getLastOpenTime
 from .misc_utils import *
 
 
@@ -374,7 +374,7 @@ class StatusGroupBase(object):
             msg = '\t'.join([
                             s.time.strftime(tfmt),
                             s.symptom_description, 
-                            metroTimes.secondsToHMS(totalSeconds)
+                            metro_times.secondsToHMS(totalSeconds)
                             ])
             p(msg)
 

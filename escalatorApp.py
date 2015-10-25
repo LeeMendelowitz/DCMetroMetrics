@@ -21,8 +21,8 @@ from datetime import datetime
 import gevent
 from gevent import Greenlet
 
-from dcmetrometrics.common.restartingGreenlet import RestartingGreenlet
-from dcmetrometrics.eles.EscalatorApp import EscalatorApp as App
+from dcmetrometrics.common.restarting_greenlet import RestartingGreenlet
+from dcmetrometrics.eles.escalator_app import EscalatorApp as App
 from dcmetrometrics.common.globals import DATA_DIR, REPO_DIR
 
 OUTPUT_DIR = DATA_DIR

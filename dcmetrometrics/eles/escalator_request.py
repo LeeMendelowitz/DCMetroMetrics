@@ -15,8 +15,8 @@ from datetime import datetime
 # Custom modules
 from ..common import stations
 from ..keys import WMATA_API_KEY
-from .WMATA_API import WMATA_API, WMATA_API_ERROR
-from .Incident import Incident
+from .wmata_api import WMATA_API, WMATA_API_ERROR
+from .incident import Incident
 
 api = None
 def getAPI():

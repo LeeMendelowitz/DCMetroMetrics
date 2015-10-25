@@ -4,22 +4,21 @@ Models for eles data.
 
 from mongoengine import *
 from operator import attrgetter
-from ..common.metroTimes import TimeRange, UTCToLocalTime, toUtc, tzny, utcnow, dateToOpen
-from ..common.WebJSONMixin import WebJSONMixin
-from ..common.DataWriteable import DataWriteable
+from ..common.metro_times import TimeRange, UTCToLocalTime, toUtc, tzny, utcnow, dateToOpen
+from ..common.web_json_mixin import WebJSONMixin
+from ..common.data_writeable import DataWriteable
 from ..common.utils import gen_days
 from .defs import symptomToCategory, SYMPTOM_CHOICES
-from ..common import dbGlobals
+from ..common import db_globals
 from .misc_utils import *
-from .StatusGroup import StatusGroup
+from .status_group import StatusGroup
 
 from datetime import timedelta, datetime, date
 import sys
 
 
-import logging
-logger = logging.getLogger('ELESApp')
-
+from ..common.logging_utils import get_logger
+logger = get_logger(__name__)
 
 
 class KeyStatuses(WebJSONMixin, EmbeddedDocument):
@@ -512,7 +511,7 @@ class Unit(WebJSONMixin, DataWriteable, Document):
         if curTime is None:
           curTime = datetime.now() 
 
-        G = dbGlobals.G()
+        G = db_globals.G()
 
         
         first_status = UnitStatus(unit = unit,

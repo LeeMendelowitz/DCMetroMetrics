@@ -8,7 +8,7 @@ class Incident: An item on the WMATA list of escalator outages.
 from ..common.utils import *
 from ..common import utils
 from datetime import date, datetime, time
-from ..common.metroTimes import parse_iso_time
+from ..common.metro_times import parse_iso_time
 import pprint
 
 ###################################################################

@@ -11,8 +11,8 @@ from collections import defaultdict
 
 from ..eles.models import (Unit, UnitStatus, KeyStatuses, Station, DailyServiceReport, SystemServiceReport)
 from ..hotcars.models import (HotCarReport, Temperature)
-from ..common.WebJSONMixin import WebJSONMixin
-from ..common.metroTimes import tzutc, isNaive, toUtc
+from ..common.web_json_mixin import WebJSONMixin
+from ..common.metro_times import tzutc, isNaive, toUtc
 
 class WebJSONEncoder(JSONEncoder):
   """JSON Encoder for DC Metro Metrics data types.

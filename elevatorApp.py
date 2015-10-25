@@ -24,8 +24,8 @@ from gevent import Greenlet
 
 # custom imports
 from dcmetrometrics.common.globals import DATA_DIR, REPO_DIR, DATA_DIR
-from dcmetrometrics.common.restartingGreenlet import RestartingGreenlet
-from dcmetrometrics.eles.ElevatorApp import ElevatorApp as App
+from dcmetrometrics.common.restarting_greenlet import RestartingGreenlet
+from dcmetrometrics.eles.elevator_app import ElevatorApp as App
 
 OUTPUT_DIR = DATA_DIR
 if OUTPUT_DIR is None:

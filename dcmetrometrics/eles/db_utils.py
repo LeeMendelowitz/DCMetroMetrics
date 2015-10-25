@@ -19,11 +19,11 @@ import itertools
 
 # custom imports
 
-from ..common.dbGlobals import G
-from ..common import dbGlobals, stations
-from ..common.metroTimes import TimeRange, utcnow, isNaive, toUtc, tzutc
+from ..common.db_globals import G
+from ..common import stations
+from ..common.metro_times import TimeRange, utcnow, isNaive, toUtc, tzutc
 from .defs import symptomToCategory, OPERATIONAL_CODE as OP_CODE
-from .StatusGroup import StatusGroup
+from .status_group import StatusGroup
 from .models import Unit, UnitStatus, KeyStatuses, SymptomCode
 from .misc_utils import *
 

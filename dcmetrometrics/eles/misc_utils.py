@@ -5,7 +5,7 @@ Miscellaneous utility functions
 import itertools
 from operator import itemgetter, attrgetter
 
-from ..common.metroTimes import isNaive
+from ..common.metro_times import isNaive
 
 def get_one(cursor):
     """

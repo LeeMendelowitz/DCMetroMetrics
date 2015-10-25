@@ -20,8 +20,8 @@ import logging
 
 # custom imports
 from dcmetrometrics.common.globals import DATA_DIR, REPO_DIR, DATA_DIR
-from dcmetrometrics.common.restartingGreenlet import RestartingGreenlet
-from dcmetrometrics.eles.ELESApp import ELESApp
+from dcmetrometrics.common.restarting_greenlet import RestartingGreenlet
+from dcmetrometrics.eles.eles_app import ELESApp
 from dcmetrometrics.keys.keys import MetroEscalatorKeys, MetroElevatorKeys
 
 OUTPUT_DIR = DATA_DIR

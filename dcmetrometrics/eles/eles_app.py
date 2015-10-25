@@ -15,8 +15,9 @@ import gc
 
 ##########################################
 # Set up logging
+from ..common.logging_utils import create_logger
 import logging
-logger = logging.getLogger('ELESApp')
+logger = create_logger(__name__)
 logger.setLevel(logging.DEBUG)
 DEBUG = logger.debug
 WARNING = logger.warning
@@ -26,16 +27,16 @@ INFO = logger.info
 
 # Custom modules
 from ..common import dbGlobals, twitterUtils, utils, stations
-from ..common.metroTimes import utcnow, tzutc, metroIsOpen, toLocalTime, isNaive
+from ..common.metro_times import utcnow, tzutc, metroIsOpen, toLocalTime, isNaive
 from ..common.globals import DATA_DIR, WWW_DIR
-from ..common.JSONifier import JSONWriter
-import dbUtils
-from .dbUtils import invert_dict, update_db_from_incident
+from ..common.jsonifier import JSONWriter
+import db_utils
+from .db_utils import invert_dict, update_db_from_incident
 from .models import KeyStatuses, UnitStatus, SymptomCode, Unit, EscalatorAppState
 from ..keys import WMATA_API_KEY
 from twitter import TwitterError
-from .Incident import Incident
-from .WMATA_API import WMATA_API_ERROR, WMATA_API
+from .incident import Incident
+from .wmata_api import WMATA_API_ERROR, WMATA_API
 from .defs import symptomToCategory, OPERATIONAL_CODE as OP_CODE
 
 TWEET_LEN = 140

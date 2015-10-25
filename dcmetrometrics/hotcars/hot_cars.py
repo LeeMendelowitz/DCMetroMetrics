@@ -24,13 +24,13 @@ from .models import (HotCarAppState, HotCarTweet, HotCarTweeter, HotCarReport, C
 
 from twitter import TwitterError
 from ..common.globals import WWW_DIR
-from ..common import twitterUtils
-from ..common import dbGlobals
-from ..common.JSONifier import JSONWriter
-from ..common.metroTimes import utcnow, toLocalTime, UTCToLocalTime, tzutc
+from ..common import db_globals
+from ..common.jsonifier import JSONWriter
+from ..common.metro_times import utcnow, toLocalTime, UTCToLocalTime, tzutc
 
 import logging
-logger = logging.getLogger('HotCarApp')
+from ..common.logging_utils import get_logger
+logger = get_logger(__name__)
 logger.setLevel(logging.DEBUG)
 DEBUG = logger.debug
     
@@ -49,7 +49,7 @@ def getHotCarUrl(carNum):
     return url
 
 def getWundergroundAPI():
-    from .wundergroundAPI import WundergroundAPI
+    from .wunderground_api import WundergroundAPI
     try:
         # Import may fail if keys/keys.py has not been created.
         from ..keys import WUNDERGROUND_API_KEY
@@ -63,7 +63,7 @@ def getWundergroundAPI():
 #######################################
 def tick(tweetLive = False):
 
-    dbGlobals.connect()
+    db_globals.connect()
     curTime = utcnow()
     curTimeLocal = toLocalTime(curTime)
     logger.info('Running HotCar Tick. %s'%(str(curTimeLocal)))
