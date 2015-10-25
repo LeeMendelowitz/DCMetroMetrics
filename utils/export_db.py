@@ -22,13 +22,13 @@ JSON_DIR = os.path.join(OUTPUT_DIR_BASE, JSON_DIR_NAME)
 SHARED_DATA_DIR = os.path.join(DATA_DIR, 'shared')
 
 # Making output directories if they do not exist
-def makeDir(path):
+def make_dir(path):
     if not os.path.exists(path):
         os.mkdir(path)
 
-makeDir(OUTPUT_DIR_BASE)
-makeDir(JSON_DIR)
-makeDir(SHARED_DATA_DIR)
+make_dir(OUTPUT_DIR_BASE)
+make_dir(JSON_DIR)
+make_dir(SHARED_DATA_DIR)
 
 def dump(collection):
     """

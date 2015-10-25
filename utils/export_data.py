@@ -13,12 +13,12 @@ import json
 REPO_DIR = os.environ['OPENSHIFT_REPO_DIR']
 sys.path.append(REPO_DIR)
 
-from dcmetrometrics.common import dbGlobals
-from dcmetrometrics.eles import dbUtils
-from dcmetrometrics.common.metroTimes import toUtc
-from dcmetrometrics.hotcars.hotCars import getAllHotCarReports
+from dcmetrometrics.common import db_globals
+from dcmetrometrics.eles import db_utils
+from dcmetrometrics.common.metro_times import toUtc
+from dcmetrometrics.hotcars.hot_cars import getAllHotCarReports
 
-dbg = dbGlobals.DBGlobals()
+dbg = db_globals.DBGlobals()
 db = dbg.getDB()
 
 DATA_DIR = os.environ['OPENSHIFT_DATA_DIR']
@@ -71,7 +71,7 @@ def exportEscalatorData():
     escIds = dbg.getEscalatorIds()
     escIdToStatuses = {}
     for escId in escIds:
-        escIdToStatuses[escId] = dbUtils.getEscalatorStatuses(escId)
+        escIdToStatuses[escId] = db_utils.getEscalatorStatuses(escId)
 
     escDataKeys_old = ['esc_desc', 'station_code', 'station_desc', 'station_name', 'unit_id']
     escDataKeys_new = ['escalator_description', 'station_code', 'station_description', 'station_name', 'unit_id']

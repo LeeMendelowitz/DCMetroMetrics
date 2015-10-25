@@ -18,7 +18,7 @@ REPO_DIR = parentdir
 sys.path.append(REPO_DIR)
 
 import dcmetrometrics
-from dcmetrometrics.eles.WMATA_API import WMATA_API
+from dcmetrometrics.eles.wmata_api import WMATA_API
 from dcmetrometrics.keys import WMATA_API_KEY
 
 class StationEscalatorData(object):

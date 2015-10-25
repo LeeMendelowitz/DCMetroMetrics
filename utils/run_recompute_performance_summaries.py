@@ -17,8 +17,8 @@ logger_eles = logging_utils.create_logger("ELESApp")
 ##########################################
 
 # Connect to the database
-from dcmetrometrics.common import dbGlobals
-dbGlobals.connect()
+from dcmetrometrics.common import db_globals
+db_globals.connect()
 
 import sys, os
 from datetime import datetime, date, timedelta
@@ -26,14 +26,13 @@ import gc
 from operator import attrgetter
 # gc.set_debug(gc.DEBUG_STATS)
 
-from dcmetrometrics.common.dbGlobals import G
-from dcmetrometrics.eles import dbUtils
-from dcmetrometrics.common.metroTimes import getLastOpenTime
+from dcmetrometrics.common.db_globals import G
+from dcmetrometrics.common.metro_times import getLastOpenTime
 from dcmetrometrics.eles.models import Unit, SymptomCode, UnitStatus, SystemServiceReport
 from datetime import timedelta
 from dcmetrometrics.common.globals import WWW_DIR
 from dcmetrometrics.common.utils import gen_days
-from dcmetrometrics.common.JSONifier import JSONWriter
+from dcmetrometrics.common.jsonifier import JSONWriter
 
 
 
@@ -231,7 +230,7 @@ def recompute_performance_summaries():
 def write_json():
   """Generate all json files.
   """
-  from dcmetrometrics.common.JSONifier import JSONWriter
+  from dcmetrometrics.common.jsonifier import JSONWriter
   import os
 
   jwriter = JSONWriter(WWW_DIR)

@@ -3,7 +3,7 @@ Script to export data as csv to share on the world wide web.
 """
 
 # Connect to the database
-from dcmetrometrics.common import dbGlobals
+from dcmetrometrics.common import db_globals
 dbGlobals.connect()
 
 import sys, os
@@ -14,7 +14,7 @@ import shutil
 
 from dcmetrometrics.eles.models import Unit, SymptomCode, UnitStatus, SystemServiceReport
 from dcmetrometrics.common.globals import (WWW_DIR, REPO_DIR)
-from dcmetrometrics.common.DataWriter import DataWriter
+from dcmetrometrics.common.data_writer import DataWriter
 
 import argparse
 parser = argparse.ArgumentParser(description='Export CSV data.')

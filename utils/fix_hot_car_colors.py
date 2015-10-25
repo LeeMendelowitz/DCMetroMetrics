@@ -6,14 +6,14 @@
 # genUpdateScript: Generate a python script to update the MongoDB hotcars collection
 #####################################################
 #from . import test.test_setup
-from . import dbUtils
-from . import hotCars
+from . import db_utils
+from . import hot_cars
 
 import pandas
 import bson
 from StringIO import StringIO
 
-db = dbUtils.getDB()
+db = db_utils.getDB()
 
 def dumpCSV(fname = 'hotcars.colormissing.csv'):
     hotCarDict = hotCars.getAllHotCarReports(db)
@@ -54,8 +54,8 @@ if "OPENSHIFT_MONGODB_DB_HOST" not in os.environ:
     print "Seems like this is not the OPENSHIFT environment. Importing test_setup."
     import test_setup
 
-import dbUtils
-db = dbUtils.getDB()
+import db_utils
+db = db_utils.getDB()
 
 {cmds}
 

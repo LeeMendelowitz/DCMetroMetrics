@@ -16,7 +16,7 @@ from operator import attrgetter
 # gc.set_debug(gc.DEBUG_STATS)
 
 
-from dcmetrometrics.common.dbGlobals import G
+from dcmetrometrics.common.db_globals import G
 from dcmetrometrics.eles import dbUtils
 from dcmetrometrics.eles.models import Unit, SymptomCode, UnitStatus, SystemServiceReport
 from datetime import timedelta

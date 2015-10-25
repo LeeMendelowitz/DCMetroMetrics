@@ -12,14 +12,14 @@ utils.fixSysPath()
 import sys
 from datetime import datetime
 
-from dcmetrometrics.common.dbGlobals import G
+from dcmetrometrics.common.db_globals import G
 from dcmetrometrics.hotcars.models import (HotCarAppState, HotCarTweeter, HotCarTweet,
   HotCarReport, CarsForbiddenByMention, Temperature)
 from dcmetrometrics.hotcars.twitter_api import TwitterError, getTwitterAPI
 from datetime import timedelta
 import logging
 
-from dcmetrometrics.common.JSONifier import JSONWriter
+from dcmetrometrics.common.jsonifier import JSONWriter
 from dcmetrometrics.common.globals import WWW_DIR
 
 ##########################
