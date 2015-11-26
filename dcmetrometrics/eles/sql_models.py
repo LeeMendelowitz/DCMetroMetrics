@@ -88,11 +88,12 @@ class Unit(JSONMixin, DocMixin, Base):
 
   id = Column(String(31), primary_key = True)
   station_code = Column(String(3), ForeignKey('station.code'))
-  station_name = Column(String(255))
   station_desc = Column(String(255))
   unit_desc = Column(String(255))
   unit_type = Column(Enum('ESCALATOR', 'ELEVATOR'))
   statuses = relationship("UnitStatus", backref="unit")
+
+  station = relationship('Station')
 
   # TODO:
   # key_statuses = EmbeddedDocumentField(KeyStatuses)
@@ -108,17 +109,19 @@ class UnitStatus(JSONMixin, DocMixin, Base):
   time = Column(DateTime, nullable = False)
   end_time = Column(DateTime, nullable = False)
   metro_open_time = Column(Float)
-  symptom = Column(Integer, ForeignKey("symptom_code.pk"), nullable = False)
+  symptom_code = Column(Integer, ForeignKey("symptoms.pk"), nullable = False)
   tick_delta = Column(Float, nullable = False, default = 0.0)
   update_type = Column(Enum('Off', 'On', 'Break', 'Fix', 'Update'))
 
+  symptom = relationship("Symptom")
 
-class SymptomCode(JSONMixin, DocMixin, Base):
+
+class Symptom(JSONMixin, DocMixin, Base):
   """
   The different states an Unit can be in.
   """
 
-  __tablename__ = "symptom_code"
+  __tablename__ = "symptoms"
   pk = Column(Integer, primary_key = True)
   description = Column(String(63), nullable = False, unique = True)
   category = Column(Enum(*SYMPTOM_CHOICES), nullable = False)

@@ -12,74 +12,25 @@ logger = logging_utils.get_logger(__name__)
 db_manager = get_dcmm_db()
 engine = db_manager.engine
 session = db_manager.session
-import json
+import json, re
 
 sql_models.Base.metadata.create_all(engine) 
 
-# def migrate_stations(station_json):
-#   """
-#   Load stations from json and rebuild the entire
-#   station and station_group table
-#   """
+def clean_text(s):
+  """Remove punctuation from text"""
+  return re.sub('[^0-9a-zA-Z]', '', s)
 
-#   station_data = []
+def reset_database():
 
-#   with open(station_json) as f:
-#     for l in f:
-#       data = l.strip()
-#       if data:
-#         station_data.append(json.loads(data))
+  # Drop all tables
+  classes = [UnitStatus, Unit, Station, StationGroup]
 
-#   logger.info("Dropping and creating the station and station group tables")
+  for cl in classes:
+    logger.info("Dropping table %s"%cl.__name__)
+    cl.__table__.drop(engine, checkfirst=True)
 
-#   Station.__table__.drop(engine, checkfirst = True)
-#   StationGroup.__table__.drop(engine, checkfirst = True)
+  sql_models.Base.metadata.create_all(engine) 
 
-#   line_code_to_attr = [
-#     ('RD', 'red'),
-#     ('OR', 'orange'),
-#     ('YL', 'yellow'),
-#     ('GR', 'green'),
-#     ('BL', 'blue'),
-#     ('SV', 'silver')
-#   ]
-
-#   station_name_to_group = {}
-#   station_code_to_obj = {}
-#   station_objs = []
-
-#   for s in station_data:
-
-#     station_obj = Station(code = s['_id'])
-#     station_group = station_name_to_group.get(s['short_name'], None)
-
-#     if station_group is None:
-#       station_group = StationGroup(
-#           short_name = s['short_name'],
-#           medium_name = s['medium_name'],
-#           long_name = s['long_name'])
-#       station_name_to_group[station_group.short_name] = station_group
-
-#     lines = set(s['lines'])
-
-#     # Set the red/orange/yellow/green/blue/silver attributes
-#     for line_code, attr in line_code_to_attr:
-#       setattr(station_obj, attr, line_code in lines)
-
-#     station_objs.append(station_obj)
-
-#   logger.info("Created %i station objects"%(len(station_objs)))
-#   logger.info("Created %i station groups"%(len(station_name_to_group)))
-
-#   # Create the station groups
-#   for name, station_group in station_name_to_group.iteritems():
-#     session.add(station_group)
-
-#   # Create the stations
-#   for station in station_objs:
-#     session.add(station)
-
-#   session.commit()
 
 def migrate_stations(station_json):
   """
@@ -97,10 +48,7 @@ def migrate_stations(station_json):
 
   logger.info("Dropping and creating the station and station group tables")
 
-  engine.execute(Station.__table__.delete())
-  engine.execute(StationGroup.__table__.delete())
-  
-  sql_models.Base.metadata.create_all(engine)
+  reset_database()
 
   line_code_to_attr = [
     ('RD', 'red'),
@@ -122,7 +70,7 @@ def migrate_stations(station_json):
 
     if station_group is None:
       station_group = StationGroup(
-          short_name = s['short_name'],
+          short_name = clean_text(s['short_name']),
           medium_name = s['medium_name'],
           long_name = s['long_name'])
       station_name_to_group[station_group.short_name] = station_group
@@ -158,7 +106,6 @@ def migrate_units(units_json):
 
   recs = []
 
-
   with open(units_json) as f:
     for l in f:
       data = l.strip()
@@ -170,15 +117,35 @@ def migrate_units(units_json):
   engine.execute(UnitStatus.__table__.delete())
   engine.execute(Unit.__table__.delete())
 
-  
+  num_added = 0
 
   for rec in recs:
-    symptom = SymptomCode()
-    session.add(unit)
 
-  logger.info("Adding %i units"%len(recs))
-  
+    unit = Unit(
+      id = rec['unit_id'],
+      station_code = rec['station_code'],
+      unit_desc = rec['esc_desc'],
+      unit_type = rec['unit_type']
+    )
+
+    try:
+
+      session.add(unit)
+      session.commit()
+      logger.info("Added %s."%unit.id)
+      num_added += 1
+      
+    except Exception as e:
+      logger.error("Caught exception when adding unit %s: %s"%(rec['unit_id'], e))
+      session.rollback()
+
+    
+
+  logger.info("Added %i units."%num_added)
+
   session.commit()
+
+
 
 def migrate_symptoms(symptoms_json):
   """
@@ -195,6 +162,7 @@ def migrate_symptoms(symptoms_json):
         recs.append(json.loads(data))
 
   logger.info("Dropping and creating the symptom tables")
+
   engine.execute(UnitStatus.__table__.delete())
   engine.execute(SymptomCode.__table__.delete())
 
