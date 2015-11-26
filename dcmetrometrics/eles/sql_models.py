@@ -13,9 +13,13 @@ from datetime import datetime
 import pandas as pd
 import json
 
+from .defs import symptomToCategory, SYMPTOM_CHOICES
 
 Base = declarative_base()
 
+##############################################################################
+# Utility Class
+#
 class DocMixin(object):
 
   def update_from_dict(self, d):
@@ -44,15 +48,14 @@ class JSONMixin(object):
   def as_json(self):
     return json.dumps(self.as_dict())
 
-
 ###############################################################
 class Station(JSONMixin, DocMixin, Base):
-  """Team data from the MLBAM teamhistory table"""
+  """A Metrorail platform."""
 
   __tablename__ = 'station'
 
   code = Column(String(3), primary_key = True)
-  station_group = Column(Integer, ForeignKey('station_group.pk'))
+  station_group_id = Column(Integer, ForeignKey('station_group.pk'))
 
   # Define what lines the station belongs to
   red = Column(Boolean, nullable = False, default = False)
@@ -62,8 +65,10 @@ class Station(JSONMixin, DocMixin, Base):
   blue = Column(Boolean, nullable = False, default = False)
   silver = Column(Boolean, nullable = False, default = False)
 
+  units = relationship("Unit", backref="station")
 
 class StationGroup(JSONMixin, DocMixin, Base):
+  """A group of Metrorail platforms"""
 
   __tablename__ = 'station_group'
 
@@ -71,4 +76,49 @@ class StationGroup(JSONMixin, DocMixin, Base):
   long_name = Column(String(255))
   medium_name = Column(String(255))
   short_name = Column(String(255))
-  stations = relationship("Station")
+
+  stations = relationship("Station", backref="station_group")
+
+
+class Unit(JSONMixin, DocMixin, Base):
+  """
+  An escalator or an elevator.
+  """
+  __tablename__ = 'unit'
+
+  id = Column(String(31), primary_key = True)
+  station_code = Column(String(3), ForeignKey('station.code'))
+  station_name = Column(String(255))
+  station_desc = Column(String(255))
+  unit_desc = Column(String(255))
+  unit_type = Column(Enum('ESCALATOR', 'ELEVATOR'))
+  statuses = relationship("UnitStatus", backref="unit")
+
+  # TODO:
+  # key_statuses = EmbeddedDocumentField(KeyStatuses)
+  # performance_summary = EmbeddedDocumentField(UnitPerformanceSummary)
+
+class UnitStatus(JSONMixin, DocMixin, Base):
+  """
+  Escalator or elevator status.
+  """
+  __tablename__ = 'unit_status'
+  pk = Column(Integer, primary_key = True)
+  unit_id = Column(String(31), ForeignKey("unit.id"))
+  time = Column(DateTime, nullable = False)
+  end_time = Column(DateTime, nullable = False)
+  metro_open_time = Column(Float)
+  symptom = Column(Integer, ForeignKey("symptom_code.pk"), nullable = False)
+  tick_delta = Column(Float, nullable = False, default = 0.0)
+  update_type = Column(Enum('Off', 'On', 'Break', 'Fix', 'Update'))
+
+
+class SymptomCode(JSONMixin, DocMixin, Base):
+  """
+  The different states an Unit can be in.
+  """
+
+  __tablename__ = "symptom_code"
+  pk = Column(Integer, primary_key = True)
+  description = Column(String(63), nullable = False, unique = True)
+  category = Column(Enum(*SYMPTOM_CHOICES), nullable = False)
