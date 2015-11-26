@@ -93,8 +93,6 @@ class Unit(JSONMixin, DocMixin, Base):
   unit_type = Column(Enum('ESCALATOR', 'ELEVATOR'))
   statuses = relationship("UnitStatus", backref="unit")
 
-  station = relationship('Station')
-
   # TODO:
   # key_statuses = EmbeddedDocumentField(KeyStatuses)
   # performance_summary = EmbeddedDocumentField(UnitPerformanceSummary)

@@ -3,7 +3,7 @@
 
 from dcmetrometrics.eles import sql_models
 from dcmetrometrics.eles.sql_models import \
-  (Station, StationGroup, Unit, UnitStatus, SymptomCode)
+  (Station, StationGroup, Unit, UnitStatus, Symptom)
 
 from dcmetrometrics.common.db_utils import get_dcmm_db
 from dcmetrometrics.common import logging_utils
@@ -12,13 +12,33 @@ logger = logging_utils.get_logger(__name__)
 db_manager = get_dcmm_db()
 engine = db_manager.engine
 session = db_manager.session
-import json, re
+import json, re, dateutil.parser
 
 sql_models.Base.metadata.create_all(engine) 
+
+############################################
 
 def clean_text(s):
   """Remove punctuation from text"""
   return re.sub('[^0-9a-zA-Z]', '', s)
+
+def safe_get(d, k):
+  if d is None:
+    return d
+  v = d.get(k, None)
+  return v
+
+def safe_parse_time(v):
+
+  if v is None:
+    return None
+
+  return dateutil.parser.parse(v)
+
+def get_time_field(rec, k):
+  return safe_parse_time(safe_get(safe_get(rec, k), '$date'))
+
+##########################################
 
 def reset_database():
 
@@ -134,17 +154,70 @@ def migrate_units(units_json):
       session.commit()
       logger.info("Added %s."%unit.id)
       num_added += 1
-      
+
     except Exception as e:
       logger.error("Caught exception when adding unit %s: %s"%(rec['unit_id'], e))
       session.rollback()
-
-    
+  
 
   logger.info("Added %i units."%num_added)
 
   session.commit()
 
+
+def migrate_unit_statuses(unit_statuses_json):
+
+  engine.execute(UnitStatus.__table__.delete())
+
+  num_added = 0
+
+  # load units and symptoms for lookup
+  symptoms = session.query(Symptom).all()
+  symptom_lookup = {s.description:s for s in symptoms}
+
+  units = session.query(Unit).all()
+  unit_lookup = {u.id:u for u in units}
+
+  def process_record(rec):
+
+      unit = unit_lookup[rec['unit_id']]
+      symptom = symptom_lookup[rec['symptom_description'].upper()]
+
+      unit_status = UnitStatus(
+        unit = unit,
+        symptom = symptom,
+        time = get_time_field(rec, 'time'),
+        end_time = get_time_field(rec, 'end_time'),
+        metro_open_time = rec.get('metro_open_time', None),
+        tick_delta = rec['tickDelta'],
+        update_type = rec['update_type']
+      )
+
+      return unit_status
+
+  with open(unit_statuses_json) as f:
+
+    for l in f:
+
+      try:
+
+        data = l.strip()
+        rec = json.loads(data)
+
+        status = process_record(rec)
+        session.add(status)
+        session.commit()
+
+        num_added += 1
+
+        logger.info("Added %i statuses"%num_added)
+
+      except Exception as e:
+
+        session.rollback()
+        logger.error("Error while processing record: %s\n\n%s"%(str(e), l))
+
+  logger.info("Finished processing %i statuses"%num_added)
 
 
 def migrate_symptoms(symptoms_json):
@@ -164,7 +237,7 @@ def migrate_symptoms(symptoms_json):
   logger.info("Dropping and creating the symptom tables")
 
   engine.execute(UnitStatus.__table__.delete())
-  engine.execute(SymptomCode.__table__.delete())
+  engine.execute(Symptom.__table__.delete())
 
   # Make symptom descriptions upper case
   seen = set()
@@ -178,7 +251,7 @@ def migrate_symptoms(symptoms_json):
 
   symptoms = []
   for rec in urecs:
-    symptom = SymptomCode(
+    symptom = Symptom(
       description = rec['symptom_desc'],
       category = rec['category']
     )
@@ -202,3 +275,6 @@ if __name__ == '__main__':
 
   unit_json = '/data/repo_dev/mongoexport/escalators.json'
   migrate_units(unit_json)
+
+  unit_statuses_json = '/data/repo_dev/mongoexport/escalator_statuses.json'
+  migrate_unit_statuses(unit_statuses_json)
