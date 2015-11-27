@@ -105,7 +105,7 @@ class UnitStatus(JSONMixin, DocMixin, Base):
   pk = Column(Integer, primary_key = True)
   unit_id = Column(String(31), ForeignKey("unit.id"))
   time = Column(DateTime, nullable = False)
-  end_time = Column(DateTime, nullable = False)
+  end_time = Column(DateTime)
   metro_open_time = Column(Float)
   symptom_code = Column(Integer, ForeignKey("symptoms.pk"), nullable = False)
   tick_delta = Column(Float, nullable = False, default = 0.0)

@@ -190,7 +190,7 @@ def migrate_unit_statuses(unit_statuses_json):
         end_time = get_time_field(rec, 'end_time'),
         metro_open_time = rec.get('metro_open_time', None),
         tick_delta = rec['tickDelta'],
-        update_type = rec['update_type']
+        update_type = rec.get('update_type', None)
       )
 
       return unit_status
