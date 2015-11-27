@@ -5,8 +5,13 @@ from dcmetrometrics.eles import sql_models
 from dcmetrometrics.eles.sql_models import \
   (Station, StationGroup, Unit, UnitStatus, Symptom)
 
+import dcmetrometrics.hotcars.sql_models as hotcar_sql_models
+from dcmetrometrics.hotcars.sql_models import \
+  (Temperature)
+
 from dcmetrometrics.common.db_utils import get_dcmm_db
 from dcmetrometrics.common import logging_utils
+from datetime import datetime, date
 
 logger = logging_utils.get_logger(__name__)
 db_manager = get_dcmm_db()
@@ -14,7 +19,8 @@ engine = db_manager.engine
 session = db_manager.session
 import json, re, dateutil.parser
 
-sql_models.Base.metadata.create_all(engine) 
+sql_models.Base.metadata.create_all(engine)
+hotcar_sql_models.Base.metadata.create_all(engine)
 
 ############################################
 
@@ -263,18 +269,68 @@ def migrate_symptoms(symptoms_json):
   
   session.commit()
 
+def migrate_temperatures(temperature_json):
+  """
+  Load symptoms from json. This will delete the entries in the
+  UnitStatus table due to foreign key constraints.
+  """
+
+  recs = []
+
+  with open(temperature_json) as f:
+    for l in f:
+      data = l.strip()
+      if data:
+        recs.append(json.loads(data))
+
+  logger.info("Dropping and creating the temperatures tables")
+
+  engine.execute(Temperature.__table__.delete())
+
+  num_added = 0
+
+  for rec in recs:
+
+    temp = Temperature(
+      date = get_time_field(rec, "_id"),
+      max_temp = rec.get('maxTemp', None)
+    )
+
+    try:
+
+      session.add(temp)
+      session.commit()
+
+      num_added += 1
+
+    except Exception as e:
+
+      session.rollback()
+      logger.error("Caught exception while processing record: %s\n%s"%(str(e), rec))
+
+  logger.info("Adding %i temperatures"%num_added)
+  session.commit()
+
+
 if __name__ == '__main__':
 
   logger = logging_utils.create_root_logger()
 
-  station_json = '/data/repo_dev/mongoexport/stations.json'
-  migrate_stations(station_json)
+  date_str = date.today().strftime('%Y_%m_%d')
+  fname = 'migration.%s.log'%(date_str)
+  logging_utils.add_root_filehandler(fname)
 
-  symptom_json = '/data/repo_dev/mongoexport/symptom_codes.json'
-  migrate_symptoms(symptom_json)
+  # station_json = '/data/repo_dev/mongoexport/stations.json'
+  # migrate_stations(station_json)
 
-  unit_json = '/data/repo_dev/mongoexport/escalators.json'
-  migrate_units(unit_json)
+  # symptom_json = '/data/repo_dev/mongoexport/symptom_codes.json'
+  # migrate_symptoms(symptom_json)
 
-  unit_statuses_json = '/data/repo_dev/mongoexport/escalator_statuses.json'
-  migrate_unit_statuses(unit_statuses_json)
+  # unit_json = '/data/repo_dev/mongoexport/escalators.json'
+  # migrate_units(unit_json)
+
+  # unit_statuses_json = '/data/repo_dev/mongoexport/escalator_statuses.json'
+  # migrate_unit_statuses(unit_statuses_json)
+
+  temperatures_json = '/data/repo_dev/mongoexport/temperatures.json'
+  migrate_temperatures(temperatures_json)
