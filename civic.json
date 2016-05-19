@@ -1,31 +1,41 @@
 {
-    "conformsTo": "http://codefordc.org/resources/specification.html",
-    "status": "Production",
-    "thumbnailUrl": "",
+    "name": "Metro Metrics", 
+    "description": "DC Metro Metrics is a project dedicated to collecting and sharing publicly available data related to the DC WMATA Metrorail system.", 
+    "license": "GPL-2.0", 
+    "status": "Production", 
+    "type": "Web App", 
+    "homepage": "", 
+    "repository": "https://github.com/LeeMendelowitz/DCMetroMetrics", 
+    "thumbnail": "", 
+    "geography": [
+        "Washington, DC"
+    ], 
     "contact": {
-        "name": "Lee Mendelowitz",
-        "email": "Lee.Mendelowitz@gmail.com",
-        "twitter": "lmendy7"
-    },
-    "bornAt": "Lee's apartment",
-    "geography": "Washington, DC",
-    "politicalEntity": {
-        "WMATA": "http://www.wmata.com"
-    },
-    "governmentPartner": {},
-    "communityPartner": {},
-    "type": "Web App",
-    "data": {
-        "DCMetroMetrics": "http://dcmetrometrics.com/download/dcmetrometrics.zip"
-    },
-    "needs": [
-        {"need":"web vizualizations"},
-        {"need":"better support for mobile browsers"}
-    ],
-    "categories": [
-        {"category":"Public Transportation"},
-        {"category":"WMATA"},
-        {"category":"Open Data"}
-    ],
-    "moreInfo": "http://dcmetrometrics.com/about"
+        "name": "Lee Mendelowitz", 
+        "email": "Lee.Mendelowitz@gmail.com", 
+        "url": "https://twitter.com/lmendy7"
+    }, 
+    "partners": [
+        {
+            "url": "http://codefordc.org", 
+            "name": "Code for DC", 
+            "email": ""
+        }
+    ], 
+    "data": [
+        {
+            "url": "http://dcmetrometrics.com/download/dcmetrometrics.zip", 
+            "name": "DCMetroMetrics", 
+            "metadata": ""
+        }
+    ], 
+    "tags": [
+        "Public Transportation", 
+        "WMATA", 
+        "Open Data"
+    ], 
+    "links": [
+        "http://dcmetrometrics.com/about"
+    ], 
+    "id": "https://raw.githubusercontent.com/DCgov/civic.json/master/schemas/schema-v1.json"
 }
