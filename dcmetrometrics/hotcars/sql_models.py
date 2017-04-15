@@ -1,5 +1,5 @@
 """
-SQL models for eles data using sqlalchemy
+SQL models for hotcars data using sqlalchemy
 """
 
 from sqlalchemy import create_engine
@@ -8,6 +8,8 @@ from sqlalchemy import (Column, Integer, String, Binary, Boolean, Enum, DateTime
   Float, UniqueConstraint, Index, ForeignKey)
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, backref
+from sqlalchemy.dialects import mysql
+
 import sys, os
 import uuid, hashlib
 from datetime import datetime
@@ -56,3 +58,38 @@ class Temperature(JSONMixin, DocMixin, Base):
 
   date = Column(Date, primary_key = True)
   max_temp = Column(Float)
+
+
+class HotCarTweet(JSONMixin, DocMixin, Base):
+
+  __tablename__ = 'hot_car_tweets'
+
+  tweet_id = Column(mysql.BIGINT, primary_key = True)
+  ack = Column(Boolean, default = False)
+  embed_html = Column(String(1024))
+  text = Column(String(180))
+  time = Column(DateTime)
+  user_id = Column(mysql.BIGINT, ForeignKey('hot_car_tweeters.user_id'))
+  user = relationship("HotCarTweeter", back_populates="tweets")
+  reports = relationship("HotCarReport", back_populates="tweet")
+
+
+class HotCarTweeter(JSONMixin, DocMixin, Base):
+
+  __tablename__ = 'hot_car_tweeters'
+
+  user_id = Column(mysql.BIGINT, primary_key = True)
+  handle = Column(String(255))
+  tweets = relationship("HotCarTweet", back_populates="user")
+
+
+class HotCarReport(JSONMixin, DocMixin, Base):
+
+  __tablename__ = 'hot_car_reports'
+  
+  pk = Column(mysql.BIGINT, primary_key = True)
+  tweet_pk = Column(mysql.BIGINT, ForeignKey('hot_car_tweets.tweet_id'))
+  color = Column(String(16))
+  car_number = Column(Integer, index = True, nullable = False)
+  tweet = relationship("HotCarTweet", back_populates="reports")
+
