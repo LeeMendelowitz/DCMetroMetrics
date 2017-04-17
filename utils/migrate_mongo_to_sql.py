@@ -359,13 +359,20 @@ def migrate_hotcar_tweets(json_file):
 
   for rec in recs:
 
+    user_id = get_int_field(rec, 'user_id')
+    user = session.query(HotCarTweeter).get(user_id)
+
+    if user is None:
+      logger.error("Have no HotCarTweeter with user id %i", user_id)
+      continue
+
     hot_car_tweet = HotCarTweet(
       tweet_id = get_int_field(rec, '_id'),
       ack = rec['ack'],
       embed_html = get_utf8(rec, 'embed_html'),
       text = get_utf8(rec, 'text'),
       time = get_time_field(rec, 'time'),
-      user_id = get_int_field(rec, 'user_id')
+      user = user
     )
 
     try:
@@ -433,10 +440,10 @@ def migrate_hotcar_tweeters(json_file):
 
   for rec in recs:
 
-    row = HotCarTweeter(
-      user_id = get_int_field(rec, 'user_id'),
-      handle = get_utf8(rec, 'handle')
-    )
+    user_id = get_int_field(rec, '_id')
+    handle = get_utf8(rec, 'handle')
+
+    row = HotCarTweeter(user_id = user_id, handle = handle)
 
     try:
 
@@ -461,20 +468,20 @@ if __name__ == '__main__':
   fname = 'migration.%s.log'%(date_str)
   logging_utils.add_root_filehandler(fname)
 
-  station_json = '/data/repo_dev/mongoexport/stations.json'
-  migrate_stations(station_json)
+  # station_json = '/data/repo_dev/mongoexport/stations.json'
+  # migrate_stations(station_json)
 
-  symptom_json = '/data/repo_dev/mongoexport/symptom_codes.json'
-  migrate_symptoms(symptom_json)
+  # symptom_json = '/data/repo_dev/mongoexport/symptom_codes.json'
+  # migrate_symptoms(symptom_json)
 
-  unit_json = '/data/repo_dev/mongoexport/escalators.json'
-  migrate_units(unit_json)
+  # unit_json = '/data/repo_dev/mongoexport/escalators.json'
+  # migrate_units(unit_json)
 
-  unit_statuses_json = '/data/repo_dev/mongoexport/escalator_statuses.json'
-  migrate_unit_statuses(unit_statuses_json)
+  # unit_statuses_json = '/data/repo_dev/mongoexport/escalator_statuses.json'
+  # migrate_unit_statuses(unit_statuses_json)
 
-  temperatures_json = '/data/repo_dev/mongoexport/temperatures.json'
-  migrate_temperatures(temperatures_json)
+  # temperatures_json = '/data/repo_dev/mongoexport/temperatures.json'
+  # migrate_temperatures(temperatures_json)
 
   hot_car_tweeter_json = '/data/repo_dev/mongoexport/hotcars_tweeters.json'
   migrate_hotcar_tweeters(hot_car_tweeter_json)

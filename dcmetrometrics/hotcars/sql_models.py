@@ -64,12 +64,12 @@ class HotCarTweet(JSONMixin, DocMixin, Base):
 
   __tablename__ = 'hot_car_tweets'
 
-  tweet_id = Column(mysql.BIGINT, primary_key = True)
+  tweet_id = Column(mysql.BIGINT, primary_key = True, autoincrement = False)
   ack = Column(Boolean, default = False)
   embed_html = Column(String(1024))
   text = Column(String(180))
   time = Column(DateTime)
-  user_id = Column(mysql.BIGINT, ForeignKey('hot_car_tweeters.user_id'))
+  user_id = Column(mysql.BIGINT, ForeignKey('hot_car_tweeters.user_id', onupdate="CASCADE", ondelete="CASCADE"))
   user = relationship("HotCarTweeter", back_populates="tweets")
   reports = relationship("HotCarReport", back_populates="tweet")
 
@@ -78,7 +78,7 @@ class HotCarTweeter(JSONMixin, DocMixin, Base):
 
   __tablename__ = 'hot_car_tweeters'
 
-  user_id = Column(mysql.BIGINT, primary_key = True)
+  user_id = Column(mysql.BIGINT, primary_key = True, autoincrement = False)
   handle = Column(String(255))
   tweets = relationship("HotCarTweet", back_populates="user")
 
@@ -88,7 +88,7 @@ class HotCarReport(JSONMixin, DocMixin, Base):
   __tablename__ = 'hot_car_reports'
   
   pk = Column(mysql.BIGINT, primary_key = True)
-  tweet_pk = Column(mysql.BIGINT, ForeignKey('hot_car_tweets.tweet_id'))
+  tweet_pk = Column(mysql.BIGINT, ForeignKey('hot_car_tweets.tweet_id', onupdate="CASCADE", ondelete="CASCADE"))
   color = Column(String(16))
   car_number = Column(Integer, index = True, nullable = False)
   tweet = relationship("HotCarTweet", back_populates="reports")
