@@ -392,20 +392,30 @@ def genResponseTweet(handle, hotCarData):
     car = carNums[0]
 
     if color:
-        msg = '@wmata @MetroRailInfo {color} line car {car} is a #wmata #hotcar HT @{handle}'.format(color=color, car=car, handle=handle)
+        msg = '@MetroRailInfo {color} line car {car} is a #wmata #hotcar HT @{handle}'.format(color=color, car=car, handle=handle)
     else:
-        msg = '@wmata @MetroRailInfo Car {car} is a #wmata #hotcar HT @{handle}'.format(car=car, handle=handle)
+        msg = '@MetroRailInfo Car {car} is a #wmata #hotcar HT @{handle}'.format(car=car, handle=handle)
 
     # Add information about the number of reports for this hot car.
-    numReports = HotCarReport.num_reports_for_car(int(car))
-    carUrl = getHotCarUrl(car)
+    car_num_int = int(car)
+    cur_year = datetime.now().year
 
-    if numReports > 1:
-        msg = msg + '. Car reported {0} times. {1}'.format(numReports, carUrl)
-    elif numReports == 1:
-        msg = msg  + '. Car reported {0} time. {1}'.format(numReports, carUrl)
+    all_reports = HotCarReport.reports_for_car(car_num_int)
+    reports_this_year = [r for r in all_reports if r.time and r.time.year == cur_year]
+
+    num_reports_total = len(all_reports)
+    num_reports_this_year = len(reports_this_year)
+
+    car_url = getHotCarUrl(car)
+
+    msg = msg + '. Reported {num_reports_this_year}x in {yr}, {num_reports_total}x since 2013. {url}'.format( \
+            num_reports_this_year = num_reports_this_year, \
+            yr = cur_year, \
+            num_reports_total = num_reports_total, \
+            url = car_url)
 
     return msg
+
 
 
 
